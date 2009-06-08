@@ -1,0 +1,7 @@
+name = Reviews workflow
+description = Roles create reviews for users.
+package = "Creative Contigencies Conference"
+core = 6.x
+
+dependencies[] = nodereference
+dependencies[] = fivestar

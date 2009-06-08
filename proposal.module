@@ -1,0 +1,499 @@
+<?php
+
+/**
+ * Implementation of hook_menu().
+ */
+function proposal_menu() {
+  $items = array();
+  $items['admin/content/proposals'] = array(
+    'title' => t('Proposal Overview'),
+    'description' => 'An overview of submitted proposals and the ability to assign and review them.',
+    'page callback' => 'proposal_overview',
+    'access callback' => 'user_access',
+    'access arguments' => array('access proposal overview'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  // Admin page.
+  $items['admin/proposal/settings'] = array(
+   'title' => t('Proposal Settings'),
+   'description' => t('Change configuration and email templates for Proposals'),
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('proposal_admin_settings'),
+   'access arguments' => array('administer site configuration'),
+   'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+
+function proposal_admin_settings() {
+  $form['proposal_new_user_notify'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'New User Account Notification',
+    '#description' => t('Choose whether or not a user is notified of an account that is created via the proposal submission form.'),
+  );
+  $form['proposal_new_user_notify']['user_mail_proposal_new_user_notify_send'] = array(
+    '#title' => t('Send notification to user'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      t('Do not send notification emails.'),
+      t('Send notification emails.')
+    ),
+    '#default_value' => variable_get('user_mail_proposal_new_user_notify_send', 1),
+  );
+  $form['proposal_new_user_notify']['user_mail_proposal_new_user_notify_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email. The substitution variables !site_url and !site_name are available.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('user_mail_proposal_new_user_notify_subject', ''),
+  );
+  $form['proposal_new_user_notify']['user_mail_proposal_new_user_notify_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email. The substitution variables !username, !email, !password, !login_url, !site_url, !site_mail and !site_name are available.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('user_mail_proposal_new_user_notify_body', ''),
+  );
+
+  // Configure email: new proposal -> user
+  $form['proposal_notify_user'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'New Proposal Confirmation',
+    '#description' => t('Choose whether or not a user is sent a confirmation after submitting a proposal.'),
+  );
+  $form['proposal_notify_user']['user_mail_proposal_notify_user_send'] = array(
+    '#title' => t('Send confirmation to user'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      t('Do not send confirmation emails.'),
+      t('Send confirmation emails.')
+    ),
+    '#default_value' => variable_get('user_mail_proposal_notify_user_send', 1),
+  );
+  $form['proposal_notify_user']['user_mail_proposal_notify_user_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email. The substitution variables !site_url and !site_name are available.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('user_mail_proposal_notify_user_subject', ''),
+  );
+  $form['proposal_notify_user']['user_mail_proposal_notify_user_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email. The substitution variables !username, !email, !password, !title, !abstract, !login_url, !site_url, !site_mail and !site_name are available.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('user_mail_proposal_notify_user_body', ''),
+  );
+
+  // Configure email: new proposal -> admin
+  $form['proposal_notify_admin'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Site Administrator Notification',
+    '#description' => t('Choose whether or not a user is notified of an account that is created via the proposal submission form.'),
+  );
+  $form['proposal_notify_admin']['user_mail_proposal_notify_admin_send'] = array(
+    '#title' => t('Send notification to site administrator'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      t('Do not send notification emails.'),
+      t('Send notification emails.')
+    ),
+    '#default_value' => variable_get('user_mail_proposal_notify_admin_send', 1),
+  );
+  $form['proposal_notify_admin']['user_mail_proposal_notify_admin_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email. The substitution variables !site_url and !site_name are available.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('user_mail_proposal_notify_admin_subject', ''),
+  );
+  $form['proposal_notify_admin']['user_mail_proposal_notify_admin_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email. The substitution variables !username, !email, !password, !title, !abstract, !login_url, !site_url, !site_mail and !site_name are available.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('user_mail_proposal_notify_admin_body', ''),
+  );
+  
+  return system_settings_form($form);
+}
+
+// Admin pages.
+/*
+'user_mail_proposal_new_user_notify_send'
+'user_mail_proposal_new_user_notify_subject'
+'user_mail_proposal_new_user_notify_body'
+'user_mail_proposal_notify_user_send'
+'user_mail_proposal_notify_user_subject'
+'user_mail_proposal_notify_user_body'
+'user_mail_proposal_notify_admin_send'
+'user_mail_proposal_notify_admin_subject'
+'user_mail_proposal_notify_admin_body'
+*/
+
+/*
+ * Implementation of hook_form_alter()
+ *
+ * Insert fields that allow user creation when the form is submitted.
+ */
+function proposal_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+
+  if ($form_id == 'user_login') {
+    $form['name']['#title'] = t('Email address');
+    $form['name']['#description'] = t('Enter your email address.');
+
+  }
+
+  if ($form_id == 'proposal_node_form' && empty($form['#node']->nid) && $user->uid < 1) {  
+    $form['personal'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Your details'),
+      '#description' => t('Please enter your contact details. These details will be used to create a login on this site.'),
+      '#weight' => -6,
+      '#tree' => TRUE,
+    );
+
+    $form['personal']['login'] = array(
+      '#type' => 'markup',
+      '#value' => '<p>Are you an existing user? Please <a href="/user/login?'.drupal_get_destination().'">login</a> first.',
+    );
+
+    /* This goes into a user, the rest into a profile */
+    $form['personal']['email'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Your email'),
+      '#required' => TRUE,
+      '#description' => t('Please your email address. You will use this to login to the site, so please ensure the address is valid'),
+    );
+
+   $form['personal']['password'] = array(
+     '#type' => 'password',
+     '#title' => t('Choose Password'),
+     '#required' => TRUE,
+     '#description' => t('Please choose a secure password that is not easy to guess. You will use this password to login when you return to this site'),
+   );
+    
+
+    $form['personal']['firstname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('First Name'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['surname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Surname or Family Name'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['organisation'] = array(
+      '#type' => 'textfield',
+      '#title' => t('School, Organisation or Affiliation'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+
+    $form['personal']['phone'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Phone'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['address'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Address'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['city'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Town, City or Suburb'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['state'] = array(
+      '#type' => 'textfield',
+      '#title' => t('State, Region or Province'),
+      '#required' => FALSE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['postcode'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Postcode'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['country'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Country'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+    
+    $form['personal']['bio'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Bio'),
+      '#required' => TRUE,
+      '#description' => t('Please tell us a bit about yourself, such as relevant experience'),
+    );
+    
+    $form['#validate'][] = 'proposal_node_form_validate';
+    $form['#submit'] = array('proposal_node_form_submit') + $form['#submit'];
+  }
+
+  if (empty($form['#node']->nid) && $user->uid > 0 && isset($_SESSION['proposal_node_form_state_values'])) {  
+    $values = unserialize($_SESSION['proposal_node_form_state_values']);
+
+    $form['title']['#default_value'] = $values['title'];
+    $form['body_field']['body']['#default_value'] = $values['body'];
+
+    foreach($values['taxonomy'] as $taxonomy => $value) {
+      $multi_taxonomy_counter = 0;
+      if(!is_array($value)) {
+        $form['taxonomy'][$taxonomy]['#default_value'] = $value;
+      }
+      else {
+        $tags = array();
+        $multi_taxonomy_counter++;
+        foreach($value as $key => $val) {
+          $tags[] = $val;
+        }
+        $form['taxonomy'][$taxonomy][$multi_taxonomy_counter]['#default_value'] = implode(', ', $tags);
+      }
+    }
+  }
+
+}
+
+/*
+ * Implementation of hook_form_validate()
+ *
+ * Check that the fields inserted by hook_form_alter() contain valid data.
+ */
+function proposal_node_form_validate($form, &$form_state) {
+  // If we have a saved form_state, delete it.
+  if(isset($_SESSION['proposal_node_form_state_values'])) {
+    unset($_SESSION['proposal_node_form_state_values']);
+  }
+
+  $email_valid = valid_email_address($form_state['values']['personal']['email']);
+  if(!empty($form_state['values']['personal']['email']) && !$email_valid) {
+    form_set_error('personal][email', t('Please enter a valid email address'));
+  }
+
+  // Check if email address is already in use; redirect to login if so.
+  $email_exists = db_result(db_query("SELECT COUNT(uid) FROM {users} WHERE mail='%s'", $form_state['values']['personal']['email']));
+  if(!empty($form_state['values']['personal']['email']) && $email_exists) {
+    form_set_error('personal][email', t('This email address is already in use. Please <a href="/user/login?'.drupal_get_destination().'">login</a> before resubmitting'));
+    $_SESSION['proposal_node_form_state_values'] = serialize($form_state['values']);
+  }
+}
+
+/*
+ * Implementation of hook_form_submit()
+ *
+ * Process the field added by hook_form_alter() and create a user, then log
+ * this user in.
+ */
+ 
+function proposal_node_form_submit($form, &$form_state) {
+
+  global $user;
+  global $language;
+
+  // If we check here, we can never accidentally log the user out.
+  if (empty($form['#node']->nid) && $user->uid < 1) {  
+
+    /*
+     * Create a new user with submitted information.
+     */
+    $user_attributes = array(
+      'name' => $form_state['values']['personal']['firstname'] . ' ' . $form_state['values']['personal']['surname'],
+      'pass' => $form_state['values']['personal']['password'],
+      'mail' => $form_state['values']['personal']['email'],
+      'roles' => user_roles(1),
+      'status' => TRUE,
+    );
+    $new_user = user_save(
+      new stdClass(),
+      $user_attributes
+    );
+
+    /*
+     * And create a new profile, which will be associated with this user.
+     */
+    $profile_attributes = array(
+      'nid' => NULL, // NULL creates a new node.
+      'title' => $new_user->name .'\'s Profile',
+      'body' => NULL, // Defaults to no body.
+      'type' => 'profile',
+      'teaser' => NULL,
+      'log' => '',
+      'created' => '',
+      'format' => FILTER_FORMAT_DEFAULT,
+      'uid' => $new_user->uid,
+      'field_profile_firstname' => array( 'value' => $form_state['values']['personal']['firstname'] ),
+      'field_profile_surname' => array( 'value' => $form_state['values']['personal']['surname'] ),
+      'field_profile_organisation' => array( 'value' => $form_state['values']['personal']['organisation'] ),
+      'field_profile_phone' => array( 'value' => $form_state['values']['personal']['phone'] ),
+      'field_profile_address' => array( 'value' => $form_state['values']['personal']['address'] ),
+      'field_profile_city' => array( 'value' => $form_state['values']['personal']['city'] ),
+      'field_profile_state' => array( 'value' => $form_state['values']['personal']['state'] ),
+      'field_profile_postcode' => array( 'value' => $form_state['values']['personal']['postcode'] ),
+      'field_profile_country' => array( 'value' => $form_state['values']['personal']['country'] ),
+      'field_profile_bio' => array( 'value' => $form_state['values']['personal']['bio'] ),
+    );
+    $new_profile = (object) $profile_attributes;
+    node_save($new_profile);
+
+    // Send an email to the user and tell them about the new account.
+    if (variable_get('user_mail_proposal_new_user_notify_send', 0)) {
+      $params['!username'] = $new_user->name;
+      $params['!email'] = $new_user->mail;
+      $params['!password'] = $form_state['values']['personal']['password'];
+
+      // Prepare and send e-mail.
+      drupal_mail('proposal', 'new_user_notify', $new_user->mail, $language, $params);
+      drupal_set_message(t('An e-mail with your login details has been sent to !email.'), array('!email' => $new_user->mail));
+    }
+
+    // Set the new user as owner of this proposal.
+    $form_state['values']['uid'] = $new_user->uid;
+  
+    // And login as the new user.
+    $user = $new_user; 
+  } // endif uid
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ * Send emails when new proposals are created.
+ */
+function proposal_nodeapi(&$node, $op, $a1) {
+
+  if($node->type != 'proposal')
+    return;
+
+  global $user;
+  global $language;
+
+  switch ($op) {
+    case 'insert':
+      // Prepare and send e-mail to user.
+      $params['!username'] = $user->name;
+      $params['!email'] = $user->mail;
+      $params['!url'] = url('node/'. $node->nid, array('absolute' => TRUE, 'alias' => TRUE));
+      $params['!url-alias'] = url('node/'. $node->nid, array('absolute' => TRUE));
+      $params['!title'] = $node->title;
+      $params['!abstract'] = $node->body;
+      // This vocabulary id is hardcoded. Bad!
+      $params['!type'] = taxonomy_get_term($node->taxonomy[3]);
+
+      if (variable_get('user_mail_proposal_notify_user_send', 0)) {
+        drupal_mail('proposal', 'notify_user', $user->mail, $language, $params);
+        drupal_set_message(t('A confirmation e-mail with your proposal details has been sent.'));
+      }
+      if (variable_get('user_mail_proposal_notify_admin_send', 0)) {
+        // drupal_mail('proposal', 'notify_admin', variable_get('site_mail'), $language, $params);
+        drupal_mail('proposal', 'notify_admin', 'me@cafuego.net', $language, $params);
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_mail().
+ */
+function proposal_mail($key, &$message, $params) {
+
+  if(empty($params['!login_url']))
+      $params['!login_url'] = url('user', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!site_url']))
+     $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!site_name']))
+     $params['!site_name'] = variable_get('site_name', '');
+
+  switch ($key) {
+    case 'new_user_notify':
+      $message['subject'] = strtr(variable_get('user_mail_proposal_new_user_notify_subject'), $params);
+      $message['body'][] = strtr(variable_get('user_mail_proposal_new_user_notify_body'), $params);
+      break;
+    case 'notify_user':
+      $message['subject'] = strtr(variable_get('user_mail_proposal_notify_user_subject'), $params);
+      $message['body'][] = strtr(variable_get('user_mail_proposal_notify_user_body'), $params);
+      break;
+    case 'notify_admin':
+      $message['subject'] = strtr(variable_get('user_mail_proposal_notify_admin_subject'), $params);
+      $message['body'][] = strtr(variable_get('user_mail_proposal_notify_admin_body'), $params);
+      break;
+    default:
+      $message['subject'] = strtr(variable_get('user_mail_'. $key .'_subject'), $params);
+      $message['body'][] = strtr(variable_get('user_mail_'. $key .'_body'), $params);
+  }
+}
+
+/*
+ * Generate a list of proposals and their reviews.
+ */
+function proposal_overview() {
+  // TODO: add in person details (ie name/link).
+  
+  $header = array(
+    array('data' => t('Title'), 'field' => 'n.title'),
+    // array('data' => t('Presenter'), 'field' => 'u.full_name'),
+    array('data' => t('Submitted'), 'field' => 'n.created', 'sort' => 'desc'),
+    array('data' => t('Status'), 'field' => 'ctp.field_proposal_status'),
+    array('data' => t('Reviews'), 'field' => 'n..'),
+    array('data' => t('Action')),
+  );
+  $rows = array();
+  $query = "SELECT
+              n.nid,
+              n.title,
+              n.created,
+              ctp.field_proposal_status,
+            FROM {node} n
+			LEFT JOIN {content_type_proposal} ctp
+              ON 
+                n.nid=ctp.nid
+            LEFT JOIN {users} u
+              ON
+                n.uid=u.uid
+            WHERE
+              n.type='%s'
+            AND
+              u.uid=!uid"; //uid
+
+  $pager_num = 0;
+  
+  $query .= tablesort_sql($header);
+  $result = pager_query(db_rewrite_sql($query), 20, $pager_num, NULL, 'proposal');
+  
+  while ( $item = db_fetch_array( $result )) {
+    $query_reviews = "SELECT
+                        ctr.nid,
+                      FROM {content_type_review} ctr
+                      WHERE
+                        ctr.field_review_proposal_nid=1";
+    $foo = db_query($query_reviews);
+  }
+  
+  // Method:
+  //   1. Select all proposals
+  //   2. Loop over
+  //   2.1 Select all of the reviews for the proposal
+  //   2.2 Create list of reviews for review column
+  //   2.3 Create actions for action column
+  //   2.3.1 Assign Reviewer
+  //   2.3.2 Set Status (etc)
+  //   3. Output
+  
+  return theme('table', $header, $rows);                            
+}
+
+# vim: set filetype=php
