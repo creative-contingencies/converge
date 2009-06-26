@@ -13,8 +13,8 @@ function proposal_init() {
 function proposal_menu() {
   $items = array();
   $items['admin/content/proposals'] = array(
-    'title' => t('Proposal Overview'),
-    'description' => t('An overview of submitted proposals and the ability to assign and review them.'),
+    'title' => 'Proposal Overview',
+    'description' => 'An overview of submitted proposals and the ability to assign and review them.',
     'page callback' => 'proposal_overview',
     'access callback' => 'user_access',
     'access arguments' => array('access proposal overview'),
@@ -22,8 +22,8 @@ function proposal_menu() {
   );
   // Admin page.
   $items['admin/proposal/settings'] = array(
-   'title' => t('Proposal Settings'),
-   'description' => t('Change configuration and email templates for Proposals'),
+   'title' => 'Proposal Settings',
+   'description' => 'Change configuration and email templates for Proposals',
    'page callback' => 'drupal_get_form',
    'page arguments' => array('proposal_admin_settings'),
    'access arguments' => array('administer site configuration'),
@@ -32,11 +32,11 @@ function proposal_menu() {
 
   // Handler for the magic URL to add a user to a proposal.
   // Needs to be hit by an authenticated user.
-  $items['manage/proposal/%/%/%'] = array(
-    'title' => t('Change a proposal'),
-    'description' => t('Add a presenter to an existing proposal'),
-    'page callback' => 'proposal_manage_self',
-    'page arguments' => array(2, 3, 4),
+  $items['manage/proposal/%/%/%/%'] = array(
+    'title' => 'Modify a proposal',
+    'description' => 'Modify a proposal',
+    'page callback' => 'proposal_manage',
+    'page arguments' => array(2, 3, 4, 5),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -411,12 +411,14 @@ function proposal_nodeapi(&$node, $op, $a1) {
       // Prepare and send e-mail to user.
       $params['!username'] = $user->name;
       $params['!email'] = $user->mail;
-      $params['!url'] = url('node/'. $node->nid, array('absolute' => TRUE, 'alias' => TRUE));
-      $params['!url-alias'] = url('node/'. $node->nid, array('absolute' => TRUE));
+      $params['!url'] = url('node/' . $node->nid, array('absolute' => TRUE, 'alias' => TRUE));
+      $params['!url-alias'] = url('node/' . $node->nid, array('absolute' => TRUE));
       $params['!title'] = $node->title;
       $params['!abstract'] = $node->body;
       // This vocabulary id is hardcoded. Bad!
       $params['!type'] = taxonomy_get_term($node->taxonomy[3]);
+      // Magic URL a user can hit to be added as a presenter.
+      $params['!url-add-presenter'] = url('manage/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
       if (variable_get('user_mail_proposal_notify_user_send', 0)) {
         drupal_mail('proposal', 'notify_user', $user->mail, $language, $params);
@@ -464,7 +466,7 @@ function proposal_mail($key, &$message, $params) {
 /**
  * Add the current user as a presenter on this proposal.
  */
-function proposal_manage_self($op, $pid, $uuid) {
+function proposal_manage($op, $pid, $uuid, $vuid) {
 
   global $user;
 
@@ -472,21 +474,35 @@ function proposal_manage_self($op, $pid, $uuid) {
     print drupal_get_form('user_login');
   }
 
-  $result = db_query(db_rewrite_sql("SELECT nid, uuid FROM {uuid_node} WHERE nid=%d AND uuid='%s'", $pid, $uuid));
-  print_pre($result);
+  $proposal = node_load($pid);
 
+  // Check that the UUID matches.
+  if(!$proposal || $proposal->uuid != $uuid) {
+    // Not a valid proposal or UUID. Fuckoff.
+  }
+
+  // We have a valid proposal and we know what to do. Do it.
   switch($op) {
     case 'add':
+      // Check if $user is already on the list.
+      foreach($proposal->field_proposal_presenters as $p) {
+        if($p['uid'] == $user->uid) {
+          drupal_set_message('You are already a presenter for "' . $proposal->title . '"', 'warning');
+          break;
+        }
+      }
+      $proposal->field_proposal_presenters[] = array('uid' => $user->uid);
+      node_save($node);
+      drupal_set_message('You were added as a presenter to "' . $proposal->title. '"');
       break;
 
+    default:
+      drupal_set_message('I have no idea what to do.', 'error');
+      break;
   }
-  // If we have a node, check if the current user is a presenter already.
 
+  drupal_goto('user');
 
-  print_pre($op);
-  print_pre($pid);
-  print_pre($uuid);
-  die();
 }
 
 /*
