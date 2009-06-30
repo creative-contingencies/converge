@@ -4,7 +4,7 @@
  * Implementation of hook_init().
  */
 function proposal_init() {
-  drupal_add_css(drupal_get_path('module','proposal') .'/proposal.css');
+
 }
 
 /**
@@ -417,7 +417,7 @@ function proposal_nodeapi(&$node, $op, $a1) {
       $params['!abstract'] = $node->body;
       // This vocabulary id is hardcoded. Bad!
       $params['!type'] = taxonomy_get_term($node->taxonomy[3]);
-      // Magic URL a user can hit to be added as a presenter.
+      // Magic URL any registered user can hit to be added as a presenter.
       $params['!url-add-presenter'] = url('manage/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
       if (variable_get('user_mail_proposal_notify_user_send', 0)) {
@@ -470,39 +470,76 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
 
   global $user;
 
+  $user_is_presenter = FALSE;
+  $proposal_is_mine = FALSE;
+
   if(!in_array('authenticated user', $user->roles)) {
     print drupal_get_form('user_login');
   }
 
   $proposal = node_load($pid);
+  $victim = user_load($vuid);
 
   // Check that the UUID matches.
   if(!$proposal || $proposal->uuid != $uuid) {
     // Not a valid proposal or UUID. Fuckoff.
+    drupal_set_message('The link you clicked is invalid.', 'error');
+    drupal_goto('<front>');
+    return;
+  }
+
+  // Is the calling user the submitter?
+  if($proposal->uid == $user->uid) {
+    $proposal_is_mine = TRUE;
+  }
+
+  // Check if $user is already on the list.
+  foreach($proposal->field_proposal_presenters as $p) {
+    if($p['uid'] == $user->uid) {
+      $user_is_presenter = TRUE;
+    }
+    if($p['uid'] == $victim->uid) {
+      $user_is_presenter = TRUE;
+    }
   }
 
   // We have a valid proposal and we know what to do. Do it.
   switch($op) {
     case 'add':
-      // Check if $user is already on the list.
-      foreach($proposal->field_proposal_presenters as $p) {
-        if($p['uid'] == $user->uid) {
-          drupal_set_message('You are already a presenter for "' . $proposal->title . '"', 'warning');
-          break;
-        }
+      if($user_is_presenter) {
+        drupal_set_message('You are already a presenter for "' . $proposal->title . '"', 'warning');
+      } else {  // if user is not a presenter
+        $proposal->field_proposal_presenters[] = array('uid' => $user->uid);
+        node_save($proposal);
+        drupal_set_message('You were added as a presenter to "' . $proposal->title. '"');
       }
-      $proposal->field_proposal_presenters[] = array('uid' => $user->uid);
-      node_save($node);
-      drupal_set_message('You were added as a presenter to "' . $proposal->title. '"');
+      break;
+
+    case 'remove':
+      if($proposal_is_mine) {
+        if($user_is_presenter) {
+          for($i = 0; count($proposal->field_proposal_presenters); $i++) {
+            if($proposal->field_proposal_presenters[$i]['uid'] == $victim->uid) {
+              unset($proposal->field_proposal_presenters[$i]);
+            }
+            node_save($proposal);
+            drupal_set_message($victim->name . ' was removed as presenter for "' . $proposal->title .'"', 'error');
+          }
+        } else {  // if user is not presenter
+          drupal_set_message($victim->name . ' is not a listed presenter for "' . $proposal->title .'"', 'error');
+        }
+      } else {  // if proposal is not mine
+        drupal_set_message('You are not the submitter of "' . $proposal->title .'"', 'error');
+      }
       break;
 
     default:
-      drupal_set_message('I have no idea what to do.', 'error');
+      drupal_set_message('I have no idea what to do, sorry. Please use the contact page and let us know what happened.', 'error');
       break;
   }
 
-  drupal_goto('user');
-
+  drupal_goto('<front>');
+  return;
 }
 
 /*
@@ -526,8 +563,8 @@ function proposal_overview() {
               n.created,
               ctp.field_proposal_status,
             FROM {node} n
-			LEFT JOIN {content_type_proposal} ctp
-              ON 
+            LEFT JOIN {content_type_proposal} ctp
+              ON
                 n.nid=ctp.nid
             LEFT JOIN {users} u
               ON
@@ -538,10 +575,10 @@ function proposal_overview() {
               u.uid=!uid"; //uid
 
   $pager_num = 0;
-  
+
   $query .= tablesort_sql($header);
   $result = pager_query(db_rewrite_sql($query), 20, $pager_num, NULL, 'proposal');
-  
+
   while ( $item = db_fetch_array( $result )) {
     $query_reviews = "SELECT
                         ctr.nid,
@@ -550,7 +587,7 @@ function proposal_overview() {
                         ctr.field_review_proposal_nid=1";
     $foo = db_query($query_reviews);
   }
-  
+
   // Method:
   //   1. Select all proposals
   //   2. Loop over
@@ -560,8 +597,8 @@ function proposal_overview() {
   //   2.3.1 Assign Reviewer
   //   2.3.2 Set Status (etc)
   //   3. Output
-  
-  return theme('table', $header, $rows);                            
+
+  return theme('table', $header, $rows);
 }
 
-# vim: set filetype=php
+# vim: set ft=php
