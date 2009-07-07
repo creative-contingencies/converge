@@ -49,7 +49,7 @@ function proposal_admin_settings() {
     '#title' => 'New User Account Notification',
     '#description' => t('Choose whether or not a user is notified of an account that is created via the proposal submission form.'),
   );
-  $form['proposal_new_user_notify']['user_mail_proposal_new_user_notify_send'] = array(
+  $form['proposal_new_user_notify']['proposal_mail_proposal_new_user_notify_send'] = array(
     '#title' => t('Send notification to user'),
     '#description' => t(''),
     '#type' => 'radios',
@@ -57,19 +57,24 @@ function proposal_admin_settings() {
       t('Do not send notification emails.'),
       t('Send notification emails.')
     ),
-    '#default_value' => variable_get('user_mail_proposal_new_user_notify_send', 1),
+    '#default_value' => variable_get('proposal_mail_proposal_new_user_notify_send', 1),
   );
-  $form['proposal_new_user_notify']['user_mail_proposal_new_user_notify_subject'] = array(
+  $form['proposal_new_user_notify']['proposal_mail_proposal_new_user_notify_subject'] = array(
     '#title' => t('Subject'),
-    '#description' => t('The subject line to appear on the email. The substitution variables !site_url and !site_name are available.'),
+    '#description' => t('The subject line to appear on the email.'),
     '#type' => 'textfield',
-    '#default_value' => variable_get('user_mail_proposal_new_user_notify_subject', ''),
+    '#default_value' => variable_get('proposal_mail_proposal_new_user_notify_subject', ''),
   );
-  $form['proposal_new_user_notify']['user_mail_proposal_new_user_notify_body'] = array(
+  $form['proposal_new_user_notify']['proposal_mail_proposal_new_user_notify_body'] = array(
     '#title' => t('Body'),
-    '#description' => t('The body for the email. The substitution variables !username, !email, !password, !login_url, !site_url, !site_mail and !site_name are available.'),
+    '#description' => t('The body for the email.'),
     '#type' => 'textarea',
-    '#default_value' => variable_get('user_mail_proposal_new_user_notify_body', ''),
+    '#default_value' => variable_get('proposal_mail_proposal_new_user_notify_body', ''),
+    '#rows' => 16,
+  );
+  $form['proposal_new_user_notify']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !password, !login_url, !site, !site_url, !site_mail'),
   );
 
   // Configure email: new proposal -> user
@@ -78,7 +83,7 @@ function proposal_admin_settings() {
     '#title' => 'New Proposal Confirmation',
     '#description' => t('Choose whether or not a user is sent a confirmation after submitting a proposal.'),
   );
-  $form['proposal_notify_user']['user_mail_proposal_notify_user_send'] = array(
+  $form['proposal_notify_user']['proposal_mail_proposal_notify_user_send'] = array(
     '#title' => t('Send confirmation to user'),
     '#description' => t(''),
     '#type' => 'radios',
@@ -86,19 +91,24 @@ function proposal_admin_settings() {
       t('Do not send confirmation emails.'),
       t('Send confirmation emails.')
     ),
-    '#default_value' => variable_get('user_mail_proposal_notify_user_send', 1),
+    '#default_value' => variable_get('proposal_mail_proposal_notify_user_send', 1),
   );
-  $form['proposal_notify_user']['user_mail_proposal_notify_user_subject'] = array(
+  $form['proposal_notify_user']['proposal_mail_proposal_notify_user_subject'] = array(
     '#title' => t('Subject'),
-    '#description' => t('The subject line to appear on the email. The substitution variables !site_url and !site_name are available.'),
+    '#description' => t('The subject line to appear on the email.'),
     '#type' => 'textfield',
-    '#default_value' => variable_get('user_mail_proposal_notify_user_subject', ''),
+    '#default_value' => variable_get('proposal_mail_proposal_notify_user_subject', ''),
   );
-  $form['proposal_notify_user']['user_mail_proposal_notify_user_body'] = array(
+  $form['proposal_notify_user']['proposal_mail_proposal_notify_user_body'] = array(
     '#title' => t('Body'),
-    '#description' => t('The body for the email. The substitution variables !username, !email, !password, !title, !abstract, !login_url, !site_url, !site_mail and !site_name are available.'),
+    '#description' => t('The body for the email.'),
     '#type' => 'textarea',
-    '#default_value' => variable_get('user_mail_proposal_notify_user_body', ''),
+    '#default_value' => variable_get('proposal_mail_proposal_notify_user_body', ''),
+    '#rows' => 16,
+  );
+  $form['proposal_notify_user']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !firstname, !surname, !organisation, !phone, !address, !city, !state, !postcode, !country, !title, !abstract, !type, !add_url, !login_url, !site, !site_url, !site_mail'),
   );
 
   // Configure email: new proposal -> admin
@@ -107,7 +117,7 @@ function proposal_admin_settings() {
     '#title' => 'Site Administrator Notification',
     '#description' => t('Choose whether or not a user is notified of an account that is created via the proposal submission form.'),
   );
-  $form['proposal_notify_admin']['user_mail_proposal_notify_admin_send'] = array(
+  $form['proposal_notify_admin']['proposal_mail_proposal_notify_admin_send'] = array(
     '#title' => t('Send notification to site administrator'),
     '#description' => t(''),
     '#type' => 'radios',
@@ -115,36 +125,62 @@ function proposal_admin_settings() {
       t('Do not send notification emails.'),
       t('Send notification emails.')
     ),
-    '#default_value' => variable_get('user_mail_proposal_notify_admin_send', 1),
+    '#default_value' => variable_get('proposal_mail_proposal_notify_admin_send', 1),
   );
-  $form['proposal_notify_admin']['user_mail_proposal_notify_admin_subject'] = array(
+  $form['proposal_notify_admin']['proposal_mail_proposal_notify_admin_subject'] = array(
     '#title' => t('Subject'),
-    '#description' => t('The subject line to appear on the email. The substitution variables !site_url and !site_name are available.'),
+    '#description' => t('The subject line to appear on the email.'),
     '#type' => 'textfield',
-    '#default_value' => variable_get('user_mail_proposal_notify_admin_subject', ''),
+    '#default_value' => variable_get('proposal_mail_proposal_notify_admin_subject', ''),
   );
-  $form['proposal_notify_admin']['user_mail_proposal_notify_admin_body'] = array(
+  $form['proposal_notify_admin']['proposal_mail_proposal_notify_admin_body'] = array(
     '#title' => t('Body'),
-    '#description' => t('The body for the email. The substitution variables !username, !email, !password, !title, !abstract, !login_url, !site_url, !site_mail and !site_name are available.'),
+    '#description' => t('The body for the email.'),
     '#type' => 'textarea',
-    '#default_value' => variable_get('user_mail_proposal_notify_admin_body', ''),
+    '#default_value' => variable_get('proposal_mail_proposal_notify_admin_body', ''),
+    '#rows' => 16,
+  );
+  $form['proposal_notify_admin']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !title, !abstract, !add_url, !login_url, !site, !site_url, !site_mail'),
+  );
+
+  // Configure email: add presenter via magic url -> submitter
+  $form['presenter_add_notify'] = array(
+    '#type' => 'fieldset',
+    '#title' => ' Presenter Add Notification',
+    '#description' => t('Choose whether or not a proposal author is notified when a presenter is added to the proposal.'),
+  );
+  $form['presenter_add_notify']['proposal_mail_presenter_add_notify_send'] = array(
+    '#title' => t('Send notification to proposal author'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      t('Do not send notification email.'),
+      t('Send notification email.')
+    ),
+    '#default_value' => variable_get('proposal_mail_presenter_add_notify_send', 1),
+  );
+  $form['presenter_add_notify']['proposal_mail_presenter_add_notify_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('proposal_mail_presenter_add_notify_subject', ''),
+  );
+  $form['presenter_add_notify']['proposal_mail_presenter_add_notify_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('proposal_mail_presenter_add_notify_body', ''),
+    '#rows' => 16,
+  );
+  $form['presenter_add_notify']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !author, !authoremail, !title, !abstract, !remove_url, !login_url, !site, !site_url, !site_mail'),
   );
 
   return system_settings_form($form);
 }
-
-// Admin pages.
-/*
-'user_mail_proposal_new_user_notify_send'
-'user_mail_proposal_new_user_notify_subject'
-'user_mail_proposal_new_user_notify_body'
-'user_mail_proposal_notify_user_send'
-'user_mail_proposal_notify_user_subject'
-'user_mail_proposal_notify_user_body'
-'user_mail_proposal_notify_admin_send'
-'user_mail_proposal_notify_admin_subject'
-'user_mail_proposal_notify_admin_body'
-*/
 
 /*
  * Implementation of hook_form_alter()
@@ -263,8 +299,14 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
       '#description' => t('Please tell us a bit about yourself, such as relevant experience'),
     );
 
+    // Perform some extra validation steps.
     $form['#validate'][] = 'proposal_node_form_validate';
+
+    // Patch in account and profile creation.
     $form['#submit'] = array('proposal_node_form_submit') + $form['#submit'];
+
+    // Redirect to the user dashboard when submission is done.
+    $form['#redirect'] = url('user', array('absolute' => TRUE));
   }
 
   if (empty($form['#node']->nid) && $user->uid > 0 && isset($_SESSION['proposal_node_form_state_values'])) {  
@@ -304,14 +346,16 @@ function proposal_node_form_validate($form, &$form_state) {
 
   $email_valid = valid_email_address($form_state['values']['personal']['email']);
   if(!empty($form_state['values']['personal']['email']) && !$email_valid) {
-    form_set_error('personal][email', t('Please enter a valid email address'));
-  }
-
-  // Check if email address is already in use; redirect to login if so.
-  $email_exists = db_result(db_query("SELECT COUNT(uid) FROM {users} WHERE mail='%s'", $form_state['values']['personal']['email']));
-  if(!empty($form_state['values']['personal']['email']) && $email_exists) {
-    form_set_error('personal][email', t('This email address is already in use. Please <a href="/user/login?'.drupal_get_destination().'">login</a> before resubmitting'));
-    $_SESSION['proposal_node_form_state_values'] = serialize($form_state['values']);
+    form_set_error('personal][email', t('Please enter a valid email address.'));
+  } else if(strpos(strtolower($email), 'edumail.edu.au') !== FALSE) {
+    form_set_error('personal][email', t('Please enter a valid email address. Edumail addresses end in .gov.edu.au.'));
+  } else {
+    // Check if email address is already in use; redirect to login if so.
+    $email_exists = db_result(db_query("SELECT COUNT(uid) FROM {users} WHERE mail='%s'", $form_state['values']['personal']['email']));
+    if(!empty($form_state['values']['personal']['email']) && $email_exists) {
+      form_set_error('personal][email', t('This email address is already in use. Please <a href="/user/login?'.drupal_get_destination().'">login</a> before resubmitting'));
+      $_SESSION['proposal_node_form_state_values'] = serialize($form_state['values']);
+    }
   }
 }
 
@@ -328,13 +372,13 @@ function proposal_node_form_submit($form, &$form_state) {
   global $language;
 
   // If we check here, we can never accidentally log the user out.
-  if (empty($form['#node']->nid) && $user->uid < 1) {  
+  if (empty($form['#node']->nid) && $user->uid < 1) {
 
     /*
      * Create a new user with submitted information.
      */
     $user_attributes = array(
-      'name' => $form_state['values']['personal']['firstname'] . ' ' . $form_state['values']['personal']['surname'],
+      'name' => $form_state['values']['personal']['email'],
       'pass' => $form_state['values']['personal']['password'],
       'mail' => $form_state['values']['personal']['email'],
       'roles' => array(DRUPAL_AUTHENTICATED_RID),
@@ -358,22 +402,24 @@ function proposal_node_form_submit($form, &$form_state) {
       'created' => '',
       'format' => FILTER_FORMAT_DEFAULT,
       'uid' => $new_user->uid,
-      'field_profile_firstname' => array( 'value' => $form_state['values']['personal']['firstname'] ),
-      'field_profile_surname' => array( 'value' => $form_state['values']['personal']['surname'] ),
-      'field_profile_organisation' => array( 'value' => $form_state['values']['personal']['organisation'] ),
-      'field_profile_phone' => array( 'value' => $form_state['values']['personal']['phone'] ),
-      'field_profile_address' => array( 'value' => $form_state['values']['personal']['address'] ),
-      'field_profile_city' => array( 'value' => $form_state['values']['personal']['city'] ),
-      'field_profile_state' => array( 'value' => $form_state['values']['personal']['state'] ),
-      'field_profile_postcode' => array( 'value' => $form_state['values']['personal']['postcode'] ),
-      'field_profile_country' => array( 'value' => $form_state['values']['personal']['country'] ),
-      'field_profile_bio' => array( 'value' => $form_state['values']['personal']['bio'] ),
+      'field_profile_firstname' => array(array('value' => $form_state['values']['personal']['firstname'])),
+      'field_profile_surname' => array(array('value' => $form_state['values']['personal']['surname'])),
+      'field_profile_organisation' => array(array('value' => $form_state['values']['personal']['organisation'])),
+      'field_profile_phone' => array(array('value' => $form_state['values']['personal']['phone'])),
+      'field_profile_address' => array(array('value' => $form_state['values']['personal']['address'])),
+      'field_profile_city' => array(array('value' => $form_state['values']['personal']['city'])),
+      'field_profile_state' => array(array('value' => $form_state['values']['personal']['state'])),
+      'field_profile_postcode' => array(array('value' => $form_state['values']['personal']['postcode'])),
+      'field_profile_country' => array(array('value' => $form_state['values']['personal']['country'])),
+      'field_profile_bio' => array( array('value' => $form_state['values']['personal']['bio'])),
     );
     $new_profile = (object) $profile_attributes;
     node_save($new_profile);
 
+    $params = proposal_content_profile_vars('profile', $new_user->uid);
+
     // Send an email to the user and tell them about the new account.
-    if (variable_get('user_mail_proposal_new_user_notify_send', 0)) {
+    if (variable_get('proposal_mail_proposal_new_user_notify_send', 1)) {
       $params['!username'] = $new_user->name;
       $params['!email'] = $new_user->mail;
       $params['!password'] = $form_state['values']['personal']['password'];
@@ -406,11 +452,19 @@ function proposal_nodeapi(&$node, $op, $a1) {
   global $user;
   global $language;
 
+  // Munge the user profile into the params array (win!)
+  $params = proposal_content_profile_vars('profile', $user->uid);
+
   switch ($op) {
     case 'insert':
+      // Give the new node a uuid, if there isn't one yet.
+      if(empty($node->uuid))
+        $node->uuid = uuid_uuid();
+
       // Prepare and send e-mail to user.
       $params['!username'] = $user->name;
       $params['!email'] = $user->mail;
+
       $params['!url'] = url('node/' . $node->nid, array('absolute' => TRUE, 'alias' => TRUE));
       $params['!url-alias'] = url('node/' . $node->nid, array('absolute' => TRUE));
       $params['!title'] = $node->title;
@@ -418,13 +472,13 @@ function proposal_nodeapi(&$node, $op, $a1) {
       // This vocabulary id is hardcoded. Bad!
       $params['!type'] = taxonomy_get_term($node->taxonomy[3]);
       // Magic URL any registered user can hit to be added as a presenter.
-      $params['!url-add-presenter'] = url('manage/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
+      $params['!add_url'] = url('manage/proposal/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
-      if (variable_get('user_mail_proposal_notify_user_send', 0)) {
+      if (variable_get('proposal_mail_proposal_notify_user_send', 0)) {
         drupal_mail('proposal', 'notify_user', $user->mail, $language, $params);
-        drupal_set_message(t('A confirmation e-mail with your proposal details has been sent.'));
+        drupal_set_message(t('A confirmation e-mail with your proposal details has been sent to your e-mail address.'));
       }
-      if (variable_get('user_mail_proposal_notify_admin_send', 0)) {
+      if (variable_get('proposal_mail_proposal_notify_admin_send', 0)) {
         // drupal_mail('proposal', 'notify_admin', variable_get('site_mail'), $language, $params);
         drupal_mail('proposal', 'notify_admin', 'me@cafuego.net', $language, $params);
       }
@@ -441,25 +495,32 @@ function proposal_mail($key, &$message, $params) {
       $params['!login_url'] = url('user', array('absolute' => TRUE, 'alias' => TRUE));
   if(empty($params['!site_url']))
      $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
-  if(empty($params['!site_name']))
-     $params['!site_name'] = variable_get('site_name', '');
+  if(empty($params['!site']))
+     $params['!site'] = variable_get('site_name', '');
+  $params['!site_name'] = $params['!site'];
+  if(empty($params['!site_mail']))
+     $params['!site_mail'] = variable_get('site_mail', '');
 
   switch ($key) {
     case 'new_user_notify':
-      $message['subject'] = strtr(variable_get('user_mail_proposal_new_user_notify_subject'), $params);
-      $message['body'][] = strtr(variable_get('user_mail_proposal_new_user_notify_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_proposal_new_user_notify_subject'), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_proposal_new_user_notify_body'), $params);
       break;
     case 'notify_user':
-      $message['subject'] = strtr(variable_get('user_mail_proposal_notify_user_subject'), $params);
-      $message['body'][] = strtr(variable_get('user_mail_proposal_notify_user_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_proposal_notify_user_subject'), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_proposal_notify_user_body'), $params);
       break;
     case 'notify_admin':
-      $message['subject'] = strtr(variable_get('user_mail_proposal_notify_admin_subject'), $params);
-      $message['body'][] = strtr(variable_get('user_mail_proposal_notify_admin_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_proposal_notify_admin_subject'), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_proposal_notify_admin_body'), $params);
+      break;
+    case 'presenter_add_notify':
+      $message['subject'] = strtr(variable_get('proposal_mail_presenter_add_notify_subject'), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_presenter_add_notify_body'), $params);
       break;
     default:
-      $message['subject'] = strtr(variable_get('user_mail_'. $key .'_subject'), $params);
-      $message['body'][] = strtr(variable_get('user_mail_'. $key .'_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_'. $key .'_subject'), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_'. $key .'_body'), $params);
   }
 }
 
@@ -479,6 +540,8 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
 
   $proposal = node_load($pid);
   $victim = user_load($vuid);
+
+  // Don't bother if we're removing the guest user.
 
   // Check that the UUID matches.
   if(!$proposal || $proposal->uuid != $uuid) {
@@ -509,27 +572,46 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
       if($user_is_presenter) {
         drupal_set_message('You are already a presenter for "' . $proposal->title . '"', 'warning');
       } else {  // if user is not a presenter
+        $author = user_load($proposal->uid);
         $proposal->field_proposal_presenters[] = array('uid' => $user->uid);
         node_save($proposal);
-        drupal_set_message('You were added as a presenter to "' . $proposal->title. '"');
+
+        if(variable_get('presenter_add_notify_send', 1 )) {
+          $params['!username'] = $user->name;
+          $params['!email'] = $user->mail;
+          $params['!title'] = $proposal->title;
+          $params['!author'] = $author->name;
+          $params['!authoremail'] = $author->mail;
+          $params['!remove_url'] = url('manage/proposal/remove/' . $proposal->nid . '/' . $proposal->uuid . '/' . $user->uid, array('absolute' => TRUE, 'alias' => TRUE));
+
+          // Prepare and send e-mail.
+          drupal_mail('proposal', 'presenter_add_notify', $author->mail, $language, $params);
+          drupal_set_message(t('A notification email has been sent to ' . $new_user->mail . '.'));
+        }
+
+        drupal_set_message(t('You were added as a presenter to "' . $proposal->title . '"'));
       }
       break;
 
     case 'remove':
       if($proposal_is_mine) {
-        if($user_is_presenter) {
-          for($i = 0; count($proposal->field_proposal_presenters); $i++) {
-            if($proposal->field_proposal_presenters[$i]['uid'] == $victim->uid) {
-              unset($proposal->field_proposal_presenters[$i]);
+        if($user->uid == $victim->uid) {
+          drupal_set_message(t('You are the submitter of this proposal and you cannot be removed'), 'error');
+        } else {
+          if($user_is_presenter) {
+            for($i = 0; count($proposal->field_proposal_presenters); $i++) {
+              if($proposal->field_proposal_presenters[$i]['uid'] == $victim->uid) {
+                unset($proposal->field_proposal_presenters[$i]);
+              }
+              node_save($proposal);
+              drupal_set_message($victim->name . ' was removed as presenter for "' . $proposal->title .'"', 'error');
             }
-            node_save($proposal);
-            drupal_set_message($victim->name . ' was removed as presenter for "' . $proposal->title .'"', 'error');
+          } else {  // if user is not presenter
+            drupal_set_message($victim->name . ' is not a listed presenter for "' . $proposal->title .'"', 'error');
           }
-        } else {  // if user is not presenter
-          drupal_set_message($victim->name . ' is not a listed presenter for "' . $proposal->title .'"', 'error');
         }
       } else {  // if proposal is not mine
-        drupal_set_message('You are not the submitter of "' . $proposal->title .'"', 'error');
+        drupal_set_message('You are not the submitter of "' . $proposal->title .'", so you cannot remove co-presenters.', 'error');
       }
       break;
 
@@ -538,7 +620,7 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
       break;
   }
 
-  drupal_goto('<front>');
+  drupal_goto('user');
   return;
 }
 
@@ -599,6 +681,24 @@ function proposal_overview() {
   //   3. Output
 
   return theme('table', $header, $rows);
+}
+
+/**
+ * Helper to turn content_profile fields into subst vars.
+ */
+function proposal_content_profile_vars($type, $uid) {
+  $params = array();
+
+  $pattern = '/^field_' . $type . '_(?<name>.*)$/';
+
+  $profile = content_profile_load($type, $uid);
+
+  foreach($profile as $key => $val) {
+    $r = preg_match($pattern, $key, $matches);
+    if($r && !empty($matches['name']))
+      $params['!' . $matches['name']] = $val[0]['value'];
+  }
+  return $params;
 }
 
 # vim: set ft=php

@@ -1,0 +1,392 @@
+<?php
+
+/**
+ * 
+ * Handle registration info
+ *
+ * We are coupling a bit with uc_order. Using it's permission and
+ * with an expectation that this module is installed.
+ *
+ * 'view all orders' is a placeholder admin
+ * 'view own orders' is I've bought the tickets.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function register_menu() {
+  $items['admin/settings/register'] = array(
+    'title' => 'Registration settings',
+    'page callback' => 'register_settings',
+    'access callback' => 'user_access',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['user/%user/tickets'] = array(
+    'title' => 'Tickets',
+    'description' => 'Conference ticket allocation',
+    'page callback' => 'register_tickets',
+    'page arguments' => array(1, 3),
+    'access callback' => 'user_access',
+    'access arguments' => array('view own orders'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function register_theme() {
+  return array(
+    'user_overview_registrations' => array(
+      'arguments' => array('account' => NULL, $orders => NULL),
+    ),
+    'register_allocations_form_table' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function register_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+  switch ($op) {
+    case 'view':
+      if ($user->uid && (($user->uid == $account->uid && user_access('view own orders')) || user_access('view all orders'))) {
+
+        // Get a big list of event purchases and stuff.
+        $orders = register_get_orders($account->uid);
+        
+        foreach ($orders AS $key => $order) {
+          if (!$order->some_user_allocated && $order->qty == 1) {
+            // No-one is allocated to this ticket, we could allocate them here.
+            if (register_allocate_ticket($order->order_product_id, $account->uid)) {
+              $order->tickets[$account->uid] = $account;
+            }
+          }
+          // Other useful links:
+          $order->manage_path = 'user/' . $account->uid . '/tickets/' . $order->order_product_id;
+          // Assign modified data back to the array.
+          $orders[$key] = $order;
+        }
+
+        $account->content['registrations'] = array(
+          '#type' => 'user_profile_category',
+          '#weight' => -6,
+          '#title' => t('Conference registration'),
+          'link' => array(
+            '#type' => 'user_profile_item',
+            '#value' => theme('user_overview_registrations', $account, $orders),
+          ),
+        );
+      }
+      break;
+  }
+}
+
+/**
+ * This is the bit of information on the /user/% page.
+ */
+function theme_user_overview_registrations($account, $orders) {
+  foreach ($orders AS $order) {
+    $info = array();
+    $title = check_plain($order->title);
+    if ($order->this_user_purchased) {
+      // User bought this ticket.
+      $info['status'] = 'The status of your order is \'' . $order->order_status . '\'.';
+      if ($order->this_user_allocated && $order->qty == 1) {
+        $info['attendees'] = 'Your ticket is allocated to you. ';
+      }
+      else {
+        $info['attendees'] = count($order->ticket_links) ? t('Current attendees are ') . implode(', ', $order->ticket_links) . '. ' : t("No tickets have been allocated.");
+      }
+      $info['manage'] = t('Click here to change ') . l(t('ticket holders'), $order->manage_path) . '.';
+    }
+    elseif ($order->this_user_allocated) {
+      // User is just allocated to a ticket.
+      $purchaser = user_load(array('uid' => $order->uid));
+      $info['status'] = t('Your ticket has been purchased by ') . l($purchaser->name, 'user/' . $purchaser->uid) . '. ' . t('The status of the order is') . ' \'' . $order->order_status . '\'. ';
+    }
+    $output .= '<h2>' . $title . '</h2><p>' . implode(' ', $info) . '</p>';
+  }
+  return $output;
+}
+
+/**
+ * Get all orders that the user purchased and the ticket allocation
+ * information.
+ */
+function register_get_orders($uid) {
+  // Orders purchased by this user.
+  $sql = "
+    SELECT uco.order_id, uco.uid, uco.order_status, uco.created, ucop.order_product_id, ucop.nid, ucop.qty, n.title, n.status, n.type
+    FROM {uc_orders} uco
+    INNER JOIN {uc_order_products} ucop
+    ON uco.order_id = ucop.order_id
+    INNER JOIN {node} n
+    ON n.nid = ucop.nid
+    LEFT JOIN {ccc_ticket_allocation} cccta
+    ON ucop.order_product_id = cccta.order_product_id
+    WHERE (uco.uid = %d OR cccta.uid = %d)
+    AND ucop.nid IN ( " . implode(', ' , register_ticketable_products()) . " )";
+  $results = db_query($sql, $uid, $uid); 
+  $orders = array();
+  while ($row = db_fetch_object($results)) {
+    $key = $row->order_id . '.' . $row->order_product_id;
+    if (!isset($orders[$key])) {
+      $ticketholders = register_get_ticketholders($row);
+      // Determine some logic flags.
+      $row->this_user_allocated = FALSE;
+      $row->some_user_allocated = FALSE;
+      foreach ($ticketholders AS $ticket) {
+        $row->some_user_allocated = TRUE;
+        if ($ticket->uid == $uid) {
+          $row->this_user_allocated = TRUE;
+        }
+        $ticket_links[] = l($ticket->name, 'user/' . $ticket->uid);
+      }
+      // Can the user reallocate tickets?
+      if ($row->uid == $uid) {
+        $row->this_user_purchased = TRUE;
+        $row->manage_path = 'user/' . $uid . '/tickets/' . $order->order_product_id;
+      }
+      else {
+        $row->manage_path = FALSE;
+        $row->this_user_purchased = FALSE;
+      }
+      // Build the data up for returning.
+      $orders[$key] = $row;
+      $orders[$key]->tickets = $ticketholders;
+      $orders[$key]->ticket_links = $ticket_links;
+    }
+  }
+
+  return $orders;
+}
+
+/**
+ * Return a list of users who are allocated tickets on an order.
+ * 
+ * $order_product
+ *   Object that contains ->order_product_id and ->qty and ->uid (purchaser)
+ */
+function register_get_ticketholders($order_product) {
+  $result = db_query("
+    SELECT u.uid, u.name, u.mail, u.status, cccta.order_product_id, n.title
+    FROM {ccc_ticket_allocation} cccta
+    INNER JOIN {users} u
+    ON cccta.uid = u.uid
+    LEFT JOIN node n
+    ON n.uid = cccta.uid
+    WHERE cccta.order_product_id = %d
+    ", $order_product->order_product_id);
+  $ticketholders = array();
+  while ($row = db_fetch_object($result)) {
+    if ($row->uid) {
+      if (!$row->title) {
+        // Use the user account name if no profile found.
+        $row->title = $row->name;
+      }
+      $ticketholders[$row->uid] = $row;
+    }
+  }
+  return $ticketholders;
+}
+
+
+/**
+ * Display the ticket allocation form
+ *
+ * TODO: needs a t() cleanup and better for theming?
+ */
+ 
+function register_tickets($user, $order_product_id) {
+  return drupal_get_form('register_tickets_form', $user, $order_product_id);
+}
+
+
+function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
+
+  $orders = register_get_orders($user->uid);
+
+  $form = array();
+  $form['items'] = array('#tree' => TRUE);
+
+  foreach($orders AS $key => $order) {
+    $form['items'][$key] = array();
+    $form['items'][$key] = array(
+      '#type' => 'fieldset',
+       '#title' => check_plain($order->title),
+      '#collapsible' => TRUE,
+      '#collapsed' => ($order_product_id && $order_product_id != $order->order_product_id) ? TRUE : FALSE,
+    );
+    // $form[$key]['title']['#value'] = '<h2>' . check_plain($order->title) . '</h2>';
+    $form['items'][$key]['status']['#value'] = '<p><strong>Order ID:</strong> ' . $order->order_id . '. Status: ' . $order->order_status . '</p>';
+    $form['items'][$key]['tickets']['#value'] = '<p><strong>Number of tickets:</strong> ' . $order->qty . '</p>';
+    if (!variable_get('ccc_register_allow_prepay_allocation', TRUE) && $order->order_status != 'completed') {
+      $form['items'][$key]['warning']['#value'] = '<p class="error">You may not allocate tickets until the order is completed.</p>';      
+    }
+    else {
+      $exist_order_id = register_check_user_allocated_nid($order->nid, $user->uid);
+      if ($exist_order_id == $order->order_id) {
+        $exist_order_id = FALSE;
+      }
+      if ((!$order->this_user_allocated && $order->qty == 1) || $order->qty > 1) {
+        $form['items'][$key]['alloc_instructions']['#value'] = '<h3>' . t("Ticket Allocation.") . "</h3>\n<p>" . t("Please allocate tickets using a <strong>valid email address</strong> for each user. Click 'Save' when you are done.") . '</p>';
+      }
+      $form['items'][$key]['order_id'] = array('#type' => 'hidden', '#value' => $order->order_id);
+      $form['items'][$key]['order_product_id'] = array('#type' => 'hidden', '#value' => $order->order_product_id);
+      $form['items'][$key]['uid'] = array('#type' => 'hidden', '#value' =>  $user->uid);
+      $form['items'][$key]['myself'] = array(
+        '#type' => 'checkbox',
+        '#title'=> $exist_order_id ? 'You are already allocated a ticket under Order #' . $exist_order_id : 'One ticket is allocated to me',
+        '#default_value' => $order->this_user_allocated ? TRUE : FALSE,
+        '#disabled' => $exist_order_id ? TRUE : FALSE,
+      );
+      $allocations = $order->tickets;
+      ksort($allocations);
+      // Don't over allocate if current user is allocated.
+      unset($allocations[$user->uid]);
+      // And count form elements from 1 instead of 0.
+      $start = $order->this_user_allocated ? 2 : 1;
+      for ($count = $start; $count <= $order->qty; $count++) {
+        $form['items'][$key]['allocations']['rows']['#theme'] = 'register_allocations_form_table';
+        $user = array_shift($allocations);
+        $form['items'][$key]['allocations']['rows'][$count] = array();
+        $form['items'][$key]['allocations']['rows'][$count]['remove'] = array(
+          '#type' => 'checkbox',
+          '#default_value' => FALSE,
+          '#disabled' => $user ? FALSE : TRUE,
+        );
+        $form['items'][$key]['allocations']['rows'][$count]['mail'] = array(
+          '#type' => $user ? 'hidden' : 'textfield',
+          '#default_value' => $user ? $user->mail : '',
+          '#disabled' => $user ? TRUE : FALSE,
+        );
+        $form['items'][$key]['allocations']['rows'][$count]['info'] = array(
+          '#value' => $user ? l(check_plain($user->title) . ' (' . $user->mail . ')', 'user/' . $user->uid) : '',
+        );
+        // Extra info
+        $form['items'][$key]['allocations']['rows'][$count]['uid'] = array('#type' => 'hidden', '#value' => $user->uid);
+      }
+    }
+  }
+  
+  if (count($orders)) {
+    $form['submit'] = array('#type' => 'submit', '#value' => t('Save ticket allocations'));
+  }
+  
+  return $form;
+}
+
+/**
+ * Theme a table that is part of register_tickets_form
+ */
+function theme_register_allocations_form_table(&$element) {
+  $titles = array('Remove', 'Attendee');
+  foreach (element_children($element) AS $cnt) {
+    $data[$cnt] = array(drupal_render($element[$cnt]['remove']), drupal_render($element[$cnt]));
+  }
+  $output = theme('table', $titles, $data);
+  return $output;
+}
+
+function register_tickets_form_validate($form, &$form_state) {
+  foreach($form_state['values']['items'] AS $oi => $order) {    
+    foreach ($order['allocations']['rows'] AS $ri => $allocated) {
+      if (!$allocated['remove'] && !$allocated['uid'] && $allocated['mail']) {
+        // New allocation, shouldn't double up.
+        $uid = db_result(db_query("SELECT uid FROM users WHERE LCASE(mail) = '%s'", strtolower(trim($allocated['mail']))));
+        $order_id = register_check_user_allocated_nid($order->order_product_id, $uid);
+        dpm($uid); dpm($order_id);
+        if ($order_id) {
+          form_set_error('items][' . $oi . '][allocations][rows][' . $ri . '][mail',  $allocated['mail'] . ' already has a ticket on order #' . $order_id);
+        }
+      }
+    }
+  }
+  // register_check_user_allocated_nid
+
+  // 1. Check that the user is not allocated on another order
+  // 2. Check that the email is valid
+}
+
+function register_tickets_form_submit($form, &$form_state) {
+  foreach($form_state['values']['items'] AS $order) {    
+    $sql = "DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d";
+    db_query($sql, $order['order_product_id']);
+    if ($order['myself']) {
+      register_allocate_ticket($order['order_product_id'], $order['uid']);
+    }
+    foreach ($order['allocations']['rows'] AS $allocated) {
+      if (!$allocated['remove'] && ($allocated['uid'] || $allocated['mail'])) {
+        $uid = $allocated['uid'] ? $allocated['uid'] : db_result(db_query("SELECT uid FROM users WHERE LCASE(mail) = '%s'", strtolower(trim($allocated['mail']))));
+        if ($uid > 0) {
+          register_allocate_ticket($order['order_product_id'], $uid);
+        }
+      }
+    }
+  }
+  drupal_set_message("Ticket allocations have been saved.");
+}
+
+// ------------------------------------------------------------------------------------------
+// Short specific API Functions 
+
+/**
+ * This returns an order_id of any 1 order (should only ever be one) that a user is allocated to.
+ */
+function register_check_user_allocated_nid($nid, $uid) {
+  $found = db_result(db_query("SELECT ucop.order_id FROM {ccc_ticket_allocation} cccta INNER JOIN {uc_order_products} ucop ON ucop.order_product_id = cccta.order_product_id WHERE ucop.nid = %d AND cccta.uid = %d LIMIT 0, 1", $nid, $uid));
+  return $found;
+}
+
+/**
+ * Alocate a ticket to a user. Make sure we're not overallocating.
+ * 
+ * This could called on order completion using actions.
+ */
+function register_allocate_ticket($order_product_id, $uid) {
+  // Get the nid and make sure the user is not already allocated to this event.
+  $nid = db_result(db_query("SELECT nid FROM uc_order_products WHERE order_product_id = %d", $order_product_id));
+  if ($nid && $uid) {
+    $found = register_check_user_allocated_nid($nid, $uid);
+    if (!$found) {
+      if ($uid) {
+        db_query("INSERT INTO {ccc_ticket_allocation} VALUES ( %d, %d )", $order_product_id, $uid);
+        return TRUE;
+      }
+    }
+  }
+  
+  return FALSE;
+}
+
+
+// ------------------------------------------------------------------------------------------
+// This may be moved to settings and configurations.
+
+/**
+ * Variable called 'ccc_register_allow_prepay_allocation'
+ */
+
+/**
+ * Return a list of valid product IDs
+ * 
+ * Probably needs an admin screen to choose which nodes are allocatable.
+ *
+ * Another consideration is to make this funciton only return node types. Which would
+ * look attractive if you started getting hundreds of allocatable nids.
+ */
+function register_ticketable_products() {
+  $result = db_query("SELECT nid FROM node WHERE type = 'product' AND status = 1");
+  while ($row = db_fetch_array($result)) {
+    $nids[$row['nid']] = $row['nid'];
+  }
+  return $nids;
+}
+
+
