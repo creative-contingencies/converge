@@ -46,7 +46,7 @@ function proposal_menu() {
 
 function review_admin_settings() {
 
-  // Taxonomy settings.
+  // Reviewer settings.
   $form['reviewer_add_notify'] = array(
     '#type' => 'fieldset',
     '#title' => 'Reviewer Add Notification',
@@ -77,7 +77,41 @@ function review_admin_settings() {
   );
   $form['reviewer_add_notify']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !username, !email, !author, !authoremail, !title, !abstract, !remove_url, !login_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !reviewer, !revieweremail, !author, !authoremail, !title, !abstract, !review_url, !site, !site_url, !site_mail'),
+  );
+
+
+  $form['reviewer_remove_notify'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Reviewer Remove Notification',
+    '#description' => t('Choose whether or not a reviewer is notified when they are removed from a proposal.'),
+  );
+  $form['reviewer_remove_notify']['review_mail_reviewer_remove_notify_send'] = array(
+    '#title' => t('Send notification to reviewer'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      t('Do not send notification email.'),
+      t('Send notification email.')
+    ),
+    '#default_value' => variable_get('review_mail_reviewer_remove_notify_send', 1),
+  );
+  $form['reviewer_remove_notify']['review_mail_reviewer_remove_notify_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('review_mail_reviewer_remove_notify_subject', ''),
+  );
+  $form['reviewer_remove_notify']['review_mail_reviewer_remove_notify_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('review_mail_reviewer_remove_notify_body', ''),
+    '#rows' => 16,
+  );
+  $form['reviewer_remove_notify']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !reviewer, !revieweremail, !author, !authoremail, !title, !abstract, !review_url, !site, !site_url, !site_mail'),
   );
 
   return system_settings_form($form);
@@ -599,6 +633,37 @@ function proposal_nodeapi(&$node, $op, $a1) {
         drupal_mail('proposal', 'notify_admin', 'me@cafuego.net', $language, $params);
       }
       break;
+    case 'presave':
+
+      //!reviewer, !revieweremail, !author, !authoremail, !title, !abstract, !review_url, !site, !site_url, !site_mail'
+      //$params['!reviewer'] = $node->field_
+      
+      // Load in the already existing reviewers
+      $new_reviewers = $node->field_proposal_reviewers;
+      if ( $node->nid ) {
+        $old_node = node_load($node->nid);
+        $old_reviewers = $old_node->field_proposal_reviewers;
+        for ( $i = 0; $i < count($old_reviewers); $i++) {
+          for ( $j = 0; $j < count($new_reviewers); $j++) {
+            if ( $old_node->field_proposal_reviewers[$i]['uid'] == $new_reviewers[$j]['uid'] ) {
+              // no change. person was there before and is there now
+              unset($old_reviewers[$i], $new_reviewers[$j]);
+            }
+          }
+        }
+        // loop through the remaining old reviewers who have not been kept on and email them about being removed
+        if (variable_get('review_mail_reviewer_remove_notify_send', 0)) {
+          print_r($old_reviewers);
+        }
+      }
+      // email new reviewers
+      if (variable_get('review_mail_reviewer_add_notify_send', 0)) {
+        print_r($new_reviewers);
+      }
+      print_r($node); print_r($old_node);
+      die();
+
+      break;
   }
 }
 
@@ -633,6 +698,10 @@ function proposal_mail($key, &$message, $params) {
     case 'presenter_add_notify':
       $message['subject'] = strtr(variable_get('proposal_mail_presenter_add_notify_subject'), $params);
       $message['body'][] = strtr(variable_get('proposal_mail_presenter_add_notify_body'), $params);
+      break;
+    case 'reviewer_add_notify':
+      $message['subject'] = strtr(variable_get('review_mail_reviewer_add_notify_subject'), $params);
+      $message['body'][] = strtr(variable_get('review_mail_reviewer_add_notify_body'), $params);
       break;
     default:
       $message['subject'] = strtr(variable_get('proposal_mail_'. $key .'_subject'), $params);
