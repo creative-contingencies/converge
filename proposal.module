@@ -12,22 +12,23 @@ function proposal_init() {
  */
 function proposal_menu() {
   $items = array();
-  $items['admin/content/proposals'] = array(
-    'title' => 'Proposal Overview',
-    'description' => 'An overview of submitted proposals and the ability to assign and review them.',
-    'page callback' => 'proposal_overview',
-    'access callback' => 'user_access',
-    'access arguments' => array('access proposal overview'),
-    'type' => MENU_NORMAL_ITEM,
-  );
   // Admin page.
-  $items['admin/proposal/settings'] = array(
-   'title' => 'Proposal Settings',
-   'description' => 'Change configuration and email templates for Proposals',
-   'page callback' => 'drupal_get_form',
-   'page arguments' => array('proposal_admin_settings'),
-   'access arguments' => array('administer site configuration'),
-   'type' => MENU_CALLBACK
+  $items['admin/settings/proposal'] = array(
+    'title' => 'CCC Proposal Settings',
+    'description' => 'Change configuration and email templates for Proposals',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('proposal_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/settings/review'] = array(
+    'title' => 'CCC Review Settings',
+    'description' => 'Change configuration and email templates for Reviews',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('review_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
   );
 
   // Handler for the magic URL to add a user to a proposal.
@@ -43,7 +44,87 @@ function proposal_menu() {
   return $items;
 }
 
+function review_admin_settings() {
+
+  // Taxonomy settings.
+  $form['reviewer_add_notify'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Reviewer Add Notification',
+    '#description' => t('Choose whether or not a reviewer is notified when they are assigned to a proposal.'),
+  );
+  $form['reviewer_add_notify']['review_mail_reviewer_add_notify_send'] = array(
+    '#title' => t('Send notification to reviewer'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      t('Do not send notification email.'),
+      t('Send notification email.')
+    ),
+    '#default_value' => variable_get('review_mail_reviewer_add_notify_send', 1),
+  );
+  $form['reviewer_add_notify']['review_mail_reviewer_add_notify_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('review_mail_reviewer_add_notify_subject', ''),
+  );
+  $form['reviewer_add_notify']['review_mail_reviewer_add_notify_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('review_mail_reviewer_add_notify_body', ''),
+    '#rows' => 16,
+  );
+  $form['reviewer_add_notify']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !author, !authoremail, !title, !abstract, !remove_url, !login_url, !site, !site_url, !site_mail'),
+  );
+
+  return system_settings_form($form);
+  
+}
+
 function proposal_admin_settings() {
+
+  // Taxonomy settings.
+  $form['proposal_taxonomy'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Proposal Vocabularies',
+    '#description' => t('Define which vocabularies are used by the proposal content type.'),
+  );
+
+  // Grab list of taxonomies, so we can display pull-downs.
+  $vocabularies = taxonomy_get_vocabularies('proposal');
+
+  $options = array();
+  foreach($vocabularies as $i => $v) {
+    $options[$i] = $v->name;
+  }
+
+  $form['proposal_taxonomy']['proposal_vocabulary_kind'] = array(
+    '#title' => t('Kind'),
+    '#description' => t('The vocabulary that contains the <em>kind</em> of proposal.'),
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => variable_get('proposal_vocabulary_kind', 0),
+  );
+
+  $form['proposal_taxonomy']['proposal_vocabulary_category'] = array(
+    '#title' => t('Category'),
+    '#description' => t('The vocabulary that contains the proposal <em>category</em>.'),
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => variable_get('proposal_vocabulary_category', 0),
+  );
+
+  $form['proposal_taxonomy']['proposal_vocabulary_keywords'] = array(
+    '#title' => t('Keywords'),
+    '#description' => t('The vocabulary that contains the proposal <em>keywords</em>.'),
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => variable_get('proposal_vocabulary_keywords', 0),
+  );
+
   $form['proposal_new_user_notify'] = array(
     '#type' => 'fieldset',
     '#title' => 'New User Account Notification',
@@ -108,7 +189,7 @@ function proposal_admin_settings() {
   );
   $form['proposal_notify_user']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !username, !email, !firstname, !surname, !organisation, !phone, !address, !city, !state, !postcode, !country, !title, !abstract, !type, !add_url, !login_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !firstname, !surname, !organisation, !phone, !address, !city, !state, !postcode, !country, !title, !abstract, !kind, !category, !keywords, !add_url, !login_url, !site, !site_url, !site_mail'),
   );
 
   // Configure email: new proposal -> admin
@@ -200,7 +281,7 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
   unset($form['body_field']['teaser_js']);
   unset($form['body_field']['teaser_include']);
 
-  if ($form_id == 'proposal_node_form' && empty($form['#node']->nid) && $user->uid < 1) {  
+  if ($form_id == 'proposal_node_form' && empty($form['#node']->nid) && $user->uid < 1) {
     $form['personal'] = array(
       '#type' => 'fieldset',
       '#title' => t('Your details'),
@@ -228,6 +309,14 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
       '#required' => TRUE,
       '#description' => t('Please choose a secure password that is not easy to guess. You will use this password to login when you return to this site'),
     );
+
+    $form['personal']['verifypass'] = array(
+      '#type' => 'password',
+      '#title' => t('Verify Password'),
+      '#required' => TRUE,
+      '#description' => t('Please re-enter the password for verification'),
+    );
+
 
     $form['personal']['firstname'] = array(
       '#type' => 'textfield',
@@ -281,7 +370,7 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     $form['personal']['postcode'] = array(
       '#type' => 'textfield',
       '#title' => t('Postcode'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#description' => t(''),
     );
 
@@ -344,6 +433,15 @@ function proposal_node_form_validate($form, &$form_state) {
     unset($_SESSION['proposal_node_form_state_values']);
   }
 
+  // Check password.
+  if($form_state['values']['personal']['password'] != $form_state['values']['personal']['verifypass']) {
+    form_set_error('personal][password', t('The passwords do not match.'));
+    form_set_error('personal][verifypass', '');
+    unset($form_state['values']['personal']['password']);
+    unset($form_state['values']['personal']['verifypass']);
+  }
+
+  // Check email.
   $email_valid = valid_email_address($form_state['values']['personal']['email']);
   if(!empty($form_state['values']['personal']['email']) && !$email_valid) {
     form_set_error('personal][email', t('Please enter a valid email address.'));
@@ -469,8 +567,26 @@ function proposal_nodeapi(&$node, $op, $a1) {
       $params['!url-alias'] = url('node/' . $node->nid, array('absolute' => TRUE));
       $params['!title'] = $node->title;
       $params['!abstract'] = $node->body;
-      // This vocabulary id is hardcoded. Bad!
-      $params['!type'] = taxonomy_get_term($node->taxonomy[3]);
+
+      // Grab the taxonomies too.
+      $terms = taxonomy_node_get_terms_by_vocabulary($node, variable_get('proposal_vocabulary_kind', 0));
+      foreach($terms as $tid => $term) {
+        $kind[] = $term->name;
+      }
+      $params['!kind'] = implode(', ', $kind);
+
+      $terms = taxonomy_node_get_terms_by_vocabulary($node, variable_get('proposal_vocabulary_category', 0));
+      foreach($terms as $tid => $term) {
+        $category[] = $term->name;
+      }
+      $params['!category'] = implode(', ', $category);
+
+      $terms = taxonomy_node_get_terms_by_vocabulary($node, variable_get('proposal_vocabulary_keywords', 0));
+      foreach($terms as $tid => $term) {
+        $keywords[] = $term->name;
+      }
+      $params['!keywords'] = implode(', ', $keywords);
+
       // Magic URL any registered user can hit to be added as a presenter.
       $params['!add_url'] = url('manage/proposal/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
@@ -562,7 +678,7 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
       $user_is_presenter = TRUE;
     }
     if($p['uid'] == $victim->uid) {
-      $user_is_presenter = TRUE;
+      $victim_is_presenter = TRUE;
     }
   }
 
@@ -586,7 +702,7 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
 
           // Prepare and send e-mail.
           drupal_mail('proposal', 'presenter_add_notify', $author->mail, $language, $params);
-          drupal_set_message(t('A notification email has been sent to ' . $new_user->mail . '.'));
+          drupal_set_message(t('A notification email has been sent to ' . $author->mail . '.'));
         }
 
         drupal_set_message(t('You were added as a presenter to "' . $proposal->title . '"'));
@@ -598,14 +714,14 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
         if($user->uid == $victim->uid) {
           drupal_set_message(t('You are the submitter of this proposal and you cannot be removed'), 'error');
         } else {
-          if($user_is_presenter) {
-            for($i = 0; count($proposal->field_proposal_presenters); $i++) {
+          if($victim_is_presenter) {
+            for($i = 0; $i < count($proposal->field_proposal_presenters); $i++) {
               if($proposal->field_proposal_presenters[$i]['uid'] == $victim->uid) {
                 unset($proposal->field_proposal_presenters[$i]);
               }
-              node_save($proposal);
-              drupal_set_message($victim->name . ' was removed as presenter for "' . $proposal->title .'"', 'error');
             }
+            node_save($proposal);
+            drupal_set_message($victim->name . ' was removed as presenter for "' . $proposal->title .'"', 'error');
           } else {  // if user is not presenter
             drupal_set_message($victim->name . ' is not a listed presenter for "' . $proposal->title .'"', 'error');
           }
@@ -624,65 +740,6 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
   return;
 }
 
-/*
- * Generate a list of proposals and their reviews.
- */
-function proposal_overview() {
-  // TODO: add in person details (ie name/link).
-  
-  $header = array(
-    array('data' => t('Title'), 'field' => 'n.title'),
-    // array('data' => t('Presenter'), 'field' => 'u.full_name'),
-    array('data' => t('Submitted'), 'field' => 'n.created', 'sort' => 'desc'),
-    array('data' => t('Status'), 'field' => 'ctp.field_proposal_status'),
-    array('data' => t('Reviews'), 'field' => 'n..'),
-    array('data' => t('Action')),
-  );
-  $rows = array();
-  $query = "SELECT
-              n.nid,
-              n.title,
-              n.created,
-              ctp.field_proposal_status,
-            FROM {node} n
-            LEFT JOIN {content_type_proposal} ctp
-              ON
-                n.nid=ctp.nid
-            LEFT JOIN {users} u
-              ON
-                n.uid=u.uid
-            WHERE
-              n.type='%s'
-            AND
-              u.uid=!uid"; //uid
-
-  $pager_num = 0;
-
-  $query .= tablesort_sql($header);
-  $result = pager_query(db_rewrite_sql($query), 20, $pager_num, NULL, 'proposal');
-
-  while ( $item = db_fetch_array( $result )) {
-    $query_reviews = "SELECT
-                        ctr.nid,
-                      FROM {content_type_review} ctr
-                      WHERE
-                        ctr.field_review_proposal_nid=1";
-    $foo = db_query($query_reviews);
-  }
-
-  // Method:
-  //   1. Select all proposals
-  //   2. Loop over
-  //   2.1 Select all of the reviews for the proposal
-  //   2.2 Create list of reviews for review column
-  //   2.3 Create actions for action column
-  //   2.3.1 Assign Reviewer
-  //   2.3.2 Set Status (etc)
-  //   3. Output
-
-  return theme('table', $header, $rows);
-}
-
 /**
  * Helper to turn content_profile fields into subst vars.
  */
@@ -692,6 +749,9 @@ function proposal_content_profile_vars($type, $uid) {
   $pattern = '/^field_' . $type . '_(?<name>.*)$/';
 
   $profile = content_profile_load($type, $uid);
+
+  if(!$profile)
+    $profile = content_profile_load($type, 0);
 
   foreach($profile as $key => $val) {
     $r = preg_match($pattern, $key, $matches);
