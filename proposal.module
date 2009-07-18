@@ -12,6 +12,18 @@ function proposal_init() {
  */
 function proposal_menu() {
   $items = array();
+  
+  // Review tab
+/*  $items['node/%node/reviews'] = array(
+    'title' => 'Reviews',
+    'page callback' => 'proposal_view_reviews',
+    'page arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'), // FIXME!
+  );*/
+
+  
   // Admin page.
   $items['admin/settings/proposal'] = array(
     'title' => 'CCC Proposal Settings',
@@ -43,6 +55,29 @@ function proposal_menu() {
   );
   return $items;
 }
+
+/*
+function proposal_theme($existing, $type, $theme, $path) {
+  return array(
+    'reviews_overview' => array(
+      'arguments' => array('node' => NULL, 'reviews' => NULL),
+      'template' => 'reviews_overview'
+    ),
+  );
+
+}
+
+function proposal_view_reviews($node) {
+  // Get review nodes out of db
+  $query = "SELECT nid FROM {content_type_paper_review} WHERE field_paper_nid = %d";
+  $result = db_query($query, $node->nid);
+  $reviews = array();
+  while ( $review = db_fetch_object($result) ) {
+    $reviews[$review->nid] = node_load($review->nid);
+  }
+  return theme('reviews_overview', $node, $reviews);
+}
+*/
 
 function review_admin_settings() {
 
@@ -77,7 +112,7 @@ function review_admin_settings() {
   );
   $form['reviewer_add_notify']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !reviewer, !revieweremail, !author, !authoremail, !title, !abstract, !review_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'),
   );
 
 
@@ -111,7 +146,7 @@ function review_admin_settings() {
   );
   $form['reviewer_remove_notify']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !reviewer, !revieweremail, !author, !authoremail, !title, !abstract, !review_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'),
   );
 
   return system_settings_form($form);
@@ -453,6 +488,40 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
       }
     }
   }
+  
+  if ( $form_id == 'proposal_node_form' && isset($_GET['assign_reviewers']) && $_GET['assign_reviewers'] == True ) {
+    $js = "
+    $(document).ready(function() {
+      $('#content .node-form .standard').children().each(function() {
+        if ( $(this).attr('id') != 'field-proposal-reviewers-items' ) {
+          $(this).hide()
+        }
+      });
+      $('#content .help p').hide();
+      $('#edit-preview').hide();
+      $('#edit-delete').hide();
+    });
+    ";
+    
+    drupal_add_js($js, 'inline');
+  }
+  else if ( $form_id == 'proposal_node_form' && isset($_GET['change_status']) && $_GET['change_status'] == True ) {
+    $js = "
+    $(document).ready(function() {
+      $('#content .node-form .standard').children().each(function() {
+        if ( $(this).attr('id') != 'edit-field-proposal-status-value-wrapper' ) {
+          $(this).hide()
+        }
+      });
+      $('#content .help p').hide();
+      $('#edit-preview').hide();
+      $('#edit-delete').hide();
+    });
+    ";
+    
+    drupal_add_js($js, 'inline');
+  }
+
 
 }
 
@@ -572,11 +641,85 @@ function proposal_node_form_submit($form, &$form_state) {
   } // endif uid
 }
 
+// Dodgy second nodeapi since I've put reviews with proposals
+// hmm, this function is very poorly written, but it's finally working...
+function review_nodeapi(&$node, $op, $a1) {
+  global $user;
+  switch($op) {
+    case 'prepare':
+      if ( arg(0) == 'node' && !($node->nid > 0) && $node->type == 'paper_review' && !isset($_GET['nid']) ) {
+        // no id set... take them back...
+        drupal_set_message("You must use the Reviewers menu too review an item.");
+        drupal_goto();
+      }
+      if ( !($node->nid > 0) && $node->type == 'paper_review' && isset($_GET['nid']) && is_numeric($_GET['nid']) ) {
+        // Check to see if a user has already reviewed this 
+        $query = "SELECT nid FROM {node} WHERE type='paper_review' AND uid = %s";
+        $result = db_query($query, $user->uid);
+        while ( $n = db_fetch_object($result) ) {
+          $review_node = node_load($n->nid);
+          if ( $review_node->field_paper[0]['nid'] == $_GET['nid'] ) {
+            drupal_set_message("You have already reviewed this proposal. You may edit and update your review below.");
+            drupal_goto('node/' . $review_node->nid . '/edit');
+          }
+        }
+        $proposal_node = node_load($_GET['nid']);
+        $assigned = false;
+        foreach ( $proposal_node->field_proposal_reviewers as $u ) {
+          if ( $u['uid'] == $user->uid ) {
+            $assigned = true;
+          }
+        }
+        if ( !$assigned ) {
+          drupal_set_message("You are not assigned to review this proposal.");
+          drupal_goto();
+        }
+      }
+      
+      $js = "
+      $(document).ready(function() {
+        $('#edit-field-paper-0-nid-nid-wrapper').hide();
+        $('#content .title').text('Reviewing " . $proposal_node->title . "');
+      });
+      ";
+      
+      drupal_add_js($js, 'inline');
+      break;
+    case 'presave':     
+      if ( $node->type == 'paper_review' ) {
+        // Check to see if a user has already reviewed this 
+        $query = "SELECT nid FROM {node} WHERE type='paper_review' AND uid = %s";
+        $result = db_query($query, $user->uid);
+        while ( $n = db_fetch_object($result) ) {
+          $review_node = node_load($n->nid);
+          if ( $review_node->field_paper[0]['nid'] == $node->field_paper[0]['nid'] ) {
+            drupal_set_message("You have already reviewed this proposal. You may edit and update your review below.");
+            drupal_goto('node/' . $review_node->nid . '/edit');
+          }
+        }
+        $proposal_node = node_load($node->field_paper[0]['nid']);
+        $assigned = false;
+        foreach ( $proposal_node->field_proposal_reviewers as $u ) {
+          if ( $u['uid'] == $user->uid ) {
+            $assigned = true;
+          }
+        }
+        if ( !$assigned ) {
+          drupal_set_message("You are not assigned to review this proposal.");
+          drupal_goto();
+        }
+      }
+  }
+}
+
 /**
  * Implementation of hook_nodeapi().
  * Send emails when new proposals are created.
  */
 function proposal_nodeapi(&$node, $op, $a1) {
+  if($node->type == 'paper_review') {
+    review_nodeapi($node, $op, $a1);
+  }
 
   if($node->type != 'proposal')
     return;
@@ -634,9 +777,19 @@ function proposal_nodeapi(&$node, $op, $a1) {
       }
       break;
     case 'presave':
-
-      //!reviewer, !revieweremail, !author, !authoremail, !title, !abstract, !review_url, !site, !site_url, !site_mail'
-      //$params['!reviewer'] = $node->field_
+      // clear the "munged" params
+      $params = array();
+      //!reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'
+      
+      $author = content_profile_load('profile', $node->uid);
+      $author_user = user_load(array('uid' => $node->uid));
+      $params['!author_firstname'] = $author->field_profile_firstname[0]['value'];
+      $params['!author_surname'] = $author->field_profile_surname[0]['value'];
+      $params['!author_email'] = $author_user->mail;
+      $params['!title'] = $node->title;
+      $params['!abstract'] = $node->body;
+      $params['!proposal_url'] = url('node/' . $node->nid, array('absolute' => true));
+      $params['!review_url'] = url('node/add/paper-review', array('absolute' => true, 'query' => array('nid' => $node->nid)));
       
       // Load in the already existing reviewers
       $new_reviewers = $node->field_proposal_reviewers;
@@ -653,16 +806,33 @@ function proposal_nodeapi(&$node, $op, $a1) {
         }
         // loop through the remaining old reviewers who have not been kept on and email them about being removed
         if (variable_get('review_mail_reviewer_remove_notify_send', 0)) {
-          print_r($old_reviewers);
+          foreach ( $old_reviewers as $reviewer ) {
+            if ( $reviewer['uid'] > 0 ) {
+              $reviewer_profile = content_profile_load('profile', $reviewer['uid']);
+              $reviewer_user = user_load(array('uid' => $reviewer['uid']));
+              $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
+              $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
+              $params['!reviewer_email'] = $reviewer_user->mail;
+              drupal_mail('proposal', 'reviewer_remove_notify', $reviewer_user->mail, $language, $params);
+              drupal_set_message(t('A notification of removal from reviewing has been sent to ' . $reviewer_user->mail . '.'));
+            }
+          }
         }
       }
       // email new reviewers
       if (variable_get('review_mail_reviewer_add_notify_send', 0)) {
-        print_r($new_reviewers);
+        foreach ( $new_reviewers as $index => $reviewer ) {
+          if ( $reviewer['uid'] > 0 ) {
+            $reviewer_profile = content_profile_load('profile', $reviewer['uid']);
+            $reviewer_user = user_load(array('uid' => $reviewer['uid']));
+            $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
+            $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
+            $params['!reviewer_email'] = $reviewer_user->mail;
+            drupal_mail('proposal', 'reviewer_add_notify', $reviewer_user->mail, $language, $params);
+            drupal_set_message(t('An invite to review has been sent to ' . $reviewer_user->mail . '.'));
+          }
+        }
       }
-      print_r($node); print_r($old_node);
-      die();
-
       break;
   }
 }
@@ -702,6 +872,10 @@ function proposal_mail($key, &$message, $params) {
     case 'reviewer_add_notify':
       $message['subject'] = strtr(variable_get('review_mail_reviewer_add_notify_subject'), $params);
       $message['body'][] = strtr(variable_get('review_mail_reviewer_add_notify_body'), $params);
+      break;
+    case 'reviewer_remove_notify':
+      $message['subject'] = strtr(variable_get('review_mail_reviewer_remove_notify_subject'), $params);
+      $message['body'][] = strtr(variable_get('review_mail_reviewer_remove_notify_body'), $params);
       break;
     default:
       $message['subject'] = strtr(variable_get('proposal_mail_'. $key .'_subject'), $params);
