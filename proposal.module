@@ -664,10 +664,14 @@ function review_nodeapi(&$node, $op, $a1) {
           }
         }
         $proposal_node = node_load($_GET['nid']);
-        $assigned = false;
+        $assigned = true;
         foreach ( $proposal_node->field_proposal_reviewers as $u ) {
+          if ( is_numeric($u['uid']) ) {
+            $assigned = false;
+          }
           if ( $u['uid'] == $user->uid ) {
             $assigned = true;
+            break;
           }
         }
         if ( !$assigned ) {
@@ -686,7 +690,7 @@ function review_nodeapi(&$node, $op, $a1) {
       drupal_add_js($js, 'inline');
       break;
     case 'presave':     
-      if ( $node->type == 'paper_review' ) {
+      if ( $node->type == 'paper_review' && arg(2) != 'edit' ) {
         // Check to see if a user has already reviewed this 
         $query = "SELECT nid FROM {node} WHERE type='paper_review' AND uid = %s";
         $result = db_query($query, $user->uid);
@@ -698,10 +702,14 @@ function review_nodeapi(&$node, $op, $a1) {
           }
         }
         $proposal_node = node_load($node->field_paper[0]['nid']);
-        $assigned = false;
+        $assigned = true;
         foreach ( $proposal_node->field_proposal_reviewers as $u ) {
+          if ( is_numeric($u['uid']) ) {
+            $assigned = false;
+          }
           if ( $u['uid'] == $user->uid ) {
             $assigned = true;
+            break;
           }
         }
         if ( !$assigned ) {
@@ -725,20 +733,42 @@ function proposal_nodeapi(&$node, $op, $a1) {
     return;
 
   global $user;
+  global $transpose_author;
   global $language;
 
+  // If the node is created by the admin user via the transpose handler, the $user is wrong.
+  // This allows us to set an override in transpose.module. It's ugly, but it works.
+  if($transpose_author) {
+    $author = $transpose_author;
+  } else {
+    $author = $user;
+  }
+
   // Munge the user profile into the params array (win!)
-  $params = proposal_content_profile_vars('profile', $user->uid);
+  $params = proposal_content_profile_vars('profile', $author->uid);
 
   switch ($op) {
+    case 'view':
+      // Check to see if there are reviewers. If there are, hide the presenters.
+      $reviewers = false;
+      foreach ( $node->field_proposal_reviewers as $reviewer ) {
+        if ( $reviewer['uid'] > 0 ) {
+          $reviewers = true;
+          break;
+        }
+      }
+      if ( $reviewers ) {
+        unset($node->field_proposal_presenters);
+      }
+    break;
     case 'insert':
       // Give the new node a uuid, if there isn't one yet.
       if(empty($node->uuid))
         $node->uuid = uuid_uuid();
 
       // Prepare and send e-mail to user.
-      $params['!username'] = $user->name;
-      $params['!email'] = $user->mail;
+      $params['!username'] = $author->name;
+      $params['!email'] = $author->mail;
 
       $params['!url'] = url('node/' . $node->nid, array('absolute' => TRUE, 'alias' => TRUE));
       $params['!url-alias'] = url('node/' . $node->nid, array('absolute' => TRUE));
@@ -768,8 +798,8 @@ function proposal_nodeapi(&$node, $op, $a1) {
       $params['!add_url'] = url('manage/proposal/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
       if (variable_get('proposal_mail_proposal_notify_user_send', 0)) {
-        drupal_mail('proposal', 'notify_user', $user->mail, $language, $params);
-        drupal_set_message(t('A confirmation e-mail with your proposal details has been sent to your e-mail address.'));
+        drupal_mail('proposal', 'notify_user', $author->mail, $language, $params);
+        drupal_set_message(t('A confirmation e-mail with the proposal details has been sent to @email.', array('@email' => $author->mail)));
       }
       if (variable_get('proposal_mail_proposal_notify_admin_send', 0)) {
         // drupal_mail('proposal', 'notify_admin', variable_get('site_mail'), $language, $params);
@@ -843,7 +873,9 @@ function proposal_nodeapi(&$node, $op, $a1) {
 function proposal_mail($key, &$message, $params) {
 
   if(empty($params['!login_url']))
-      $params['!login_url'] = url('user', array('absolute' => TRUE, 'alias' => TRUE));
+     $params['!login_url'] = url('user', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!edit_url']))
+     $params['!edit_url'] = url('user-profile', array('absolute' => TRUE, 'alias' => TRUE));
   if(empty($params['!site_url']))
      $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
   if(empty($params['!site']))
