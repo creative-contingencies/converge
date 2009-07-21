@@ -329,6 +329,40 @@ function proposal_admin_settings() {
     '#value' => t('The following substitution variables are available in this email: !username, !email, !author, !authoremail, !title, !abstract, !remove_url, !login_url, !site, !site_url, !site_mail'),
   );
 
+  // Configure email: add presenter via magic url -> submitter
+  $form['copresenter_add_notify'] = array(
+    '#type' => 'fieldset',
+    '#title' => ' Co-Presenter Add Notification',
+    '#description' => t('Choose whether or not a proposal co-presenter is notified when a they are added to the proposal.'),
+  );
+  $form['copresenter_add_notify']['proposal_mail_copresenter_add_notify_send'] = array(
+    '#title' => t('Send notification to proposal co-presenter'),
+    '#description' => t(''),
+    '#type' => 'radios',
+    '#options' => array(
+      t('Do not send notification email.'),
+      t('Send notification email.')
+    ),
+    '#default_value' => variable_get('proposal_mail_copresenter_add_notify_send', 1),
+  );
+  $form['copresenter_add_notify']['proposal_mail_copresenter_add_notify_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('proposal_mail_copresenter_add_notify_subject', ''),
+  );
+  $form['copresenter_add_notify']['proposal_mail_copresenter_add_notify_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('proposal_mail_copresenter_add_notify_body', ''),
+    '#rows' => 16,
+  );
+  $form['copresenter_add_notify']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !author, !authoremail, !title, !abstract, !remove_url, !login_url, !site, !site_url, !site_mail'),
+  );
+
   return system_settings_form($form);
 }
 
@@ -901,6 +935,10 @@ function proposal_mail($key, &$message, $params) {
       $message['subject'] = strtr(variable_get('proposal_mail_presenter_add_notify_subject'), $params);
       $message['body'][] = strtr(variable_get('proposal_mail_presenter_add_notify_body'), $params);
       break;
+    case 'copresenter_add_notify':
+      $message['subject'] = strtr(variable_get('proposal_mail_copresenter_add_notify_subject'), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_copresenter_add_notify_body'), $params);
+      break;
     case 'reviewer_add_notify':
       $message['subject'] = strtr(variable_get('review_mail_reviewer_add_notify_subject'), $params);
       $message['body'][] = strtr(variable_get('review_mail_reviewer_add_notify_body'), $params);
@@ -926,7 +964,8 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
   $proposal_is_mine = FALSE;
 
   if(!in_array('authenticated user', $user->roles)) {
-    print drupal_get_form('user_login');
+    drupal_goto('user', drupal_get_destination());
+    return;
   }
 
   $proposal = node_load($pid);
@@ -942,8 +981,9 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
     return;
   }
 
-  // Is the calling user the submitter?
-  if($proposal->uid == $user->uid) {
+  // Is the calling user the submitter? Or Admin!
+  if($proposal->uid == $user->uid || $user->uid == 1) {
+    if($user->uid == 1) drupal_set_message(t('Administrator override is in effect.'), 'warning');
     $proposal_is_mine = TRUE;
   }
 
@@ -979,7 +1019,6 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
           drupal_mail('proposal', 'presenter_add_notify', $author->mail, $language, $params);
           drupal_set_message(t('A notification email has been sent to ' . $author->mail . '.'));
         }
-
         drupal_set_message(t('You were added as a presenter to "' . $proposal->title . '"'));
       }
       break;
