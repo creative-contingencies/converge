@@ -141,7 +141,7 @@ function proposal_admin_settings() {
   );
   $form['proposal_notify_user']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !username, !email, !firstname, !surname, !organisation, !phone, !address, !city, !state, !postcode, !country, !title, !abstract, !kind, !category, !keywords, !add_url, !login_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !firstname, !surname, !organisation, !position, !phone, !address, !city, !state, !postcode, !country, !title, !abstract, !kind, !category, !keywords, !add_url, !login_url, !site, !site_url, !site_mail'),
   );
 
   // Configure email: new proposal -> admin
@@ -325,6 +325,13 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
       '#description' => t(''),
     );
 
+    $form['personal']['position'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Position'),
+      '#required' => TRUE,
+      '#description' => t(''),
+    );
+
     $form['personal']['phone'] = array(
       '#type' => 'textfield',
       '#title' => t('Phone'),
@@ -488,6 +495,7 @@ function proposal_node_form_submit($form, &$form_state) {
       'field_profile_firstname' => array(array('value' => $form_state['values']['personal']['firstname'])),
       'field_profile_surname' => array(array('value' => $form_state['values']['personal']['surname'])),
       'field_profile_organisation' => array(array('value' => $form_state['values']['personal']['organisation'])),
+      'field_profile_position' => array(array('value' => $form_state['values']['personal']['position'])),
       'field_profile_phone' => array(array('value' => $form_state['values']['personal']['phone'])),
       'field_profile_address' => array(array('value' => $form_state['values']['personal']['address'])),
       'field_profile_city' => array(array('value' => $form_state['values']['personal']['city'])),

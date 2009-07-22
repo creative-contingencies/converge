@@ -16,7 +16,7 @@
  */
 function register_menu() {
   $items['admin/settings/register'] = array(
-    'title' => 'Registration settings',
+    'title' => 'CCC Registration settings',
     'page callback' => 'register_settings',
     'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
@@ -31,7 +31,32 @@ function register_menu() {
     'access arguments' => array('view own orders'),
     'type' => MENU_LOCAL_TASK,
   );
+  $items['user-profile'] = array(
+    'title' => 'Edit profile redirect',
+    'page callback' => 'user_profile_redirect',
+    'access callback' => 'user_access',
+    'access arguments' => array('view own orders'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['register-thank-you'] = array(
+    'title' => 'Thank you',
+    'page callback' => 'register_thankyou',
+    'access callback' => 'user_access',
+    'access arguments' => array('view own orders'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
+}
+
+function user_profile_redirect($path1, $path2) {
+  global $user;
+  if ($user->uid) {
+    drupal_goto('user/' . $user->uid . '/' . $path1 . '/' . $path2 );
+  }
+  else {
+    return drupal_access_denied();
+  }
 }
 
 /**
@@ -91,6 +116,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
  * This is the bit of information on the /user/% page.
  */
 function theme_user_overview_registrations($account, $orders) {
+  $output = '';
   foreach ($orders AS $order) {
     $info = array();
     $title = check_plain($order->title);
@@ -112,6 +138,12 @@ function theme_user_overview_registrations($account, $orders) {
     }
     $output .= '<h2>' . $title . '</h2><p>' . implode(' ', $info) . '</p>';
   }
+  if (!$output) {
+    $output = t("<p>You are not registered. !registration.</p>", array('!registration' => l('Buy a ticket', 'register')));
+
+	$output .= "<p>TODO: Dinner status";
+	$output .= "<p>TODO: Add-ons status";
+  }
   return $output;
 }
 
@@ -131,6 +163,7 @@ function register_get_orders($uid) {
     LEFT JOIN {ccc_ticket_allocation} cccta
     ON ucop.order_product_id = cccta.order_product_id
     WHERE (uco.uid = %d OR cccta.uid = %d)
+    AND uco.order_status IN ('pending', 'completed', 'payment_received', 'processing')
     AND ucop.nid IN ( " . implode(', ' , register_ticketable_products()) . " )";
   $results = db_query($sql, $uid, $uid); 
   $orders = array();
@@ -254,21 +287,50 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
       $start = $order->this_user_allocated ? 2 : 1;
       for ($count = $start; $count <= $order->qty; $count++) {
         $form['items'][$key]['allocations']['rows']['#theme'] = 'register_allocations_form_table';
+
         $user = array_shift($allocations);
+        // Load the user profile, so we can show first name and surname.
+        if($user->uid > 0)
+          $profile = content_profile_load('profile', $user->uid);
+        else
+          unset($profile);
+
         $form['items'][$key]['allocations']['rows'][$count] = array();
         $form['items'][$key]['allocations']['rows'][$count]['remove'] = array(
           '#type' => 'checkbox',
           '#default_value' => FALSE,
           '#disabled' => $user ? FALSE : TRUE,
         );
+
+        $form['items'][$key]['allocations']['rows'][$count]['firstname'] = array(
+          '#type' => $user ? 'markup' : 'textfield',
+          '#size' => 16,
+          '#default_value' => $profile ? $profile->field_profile_firstname[0]['value'] : '',
+          '#disabled' => $profile ? TRUE : FALSE,
+        );
+        if($profile)
+          $form['items'][$key]['allocations']['rows'][$count]['firstname']['#value'] = $profile->field_profile_firstname[0]['value'];
+
+        $form['items'][$key]['allocations']['rows'][$count]['surname'] = array(
+          '#type' => $user ? 'markup' : 'textfield',
+          '#size' => 16,
+          '#default_value' => $profile ? $profile->field_profile_surname[0]['value'] : '',
+          '#disabled' => $profile ? TRUE : FALSE,
+        );
+        if($profile)
+          $form['items'][$key]['allocations']['rows'][$count]['surname']['#value'] = $profile->field_profile_surname[0]['value'];
+
         $form['items'][$key]['allocations']['rows'][$count]['mail'] = array(
           '#type' => $user ? 'hidden' : 'textfield',
+          '#size' => 24,
           '#default_value' => $user ? $user->mail : '',
           '#disabled' => $user ? TRUE : FALSE,
         );
+
         $form['items'][$key]['allocations']['rows'][$count]['info'] = array(
-          '#value' => $user ? l(check_plain($user->title) . ' (' . $user->mail . ')', 'user/' . $user->uid) : '',
+          '#value' => $user ? l($user->mail, 'user/' . $user->uid) : '',
         );
+
         // Extra info
         $form['items'][$key]['allocations']['rows'][$count]['uid'] = array('#type' => 'hidden', '#value' => $user->uid);
       }
@@ -286,9 +348,14 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
  * Theme a table that is part of register_tickets_form
  */
 function theme_register_allocations_form_table(&$element) {
-  $titles = array('Remove', 'Attendee');
+  $titles = array('Remove', 'First name', 'Surname', 'Email');
   foreach (element_children($element) AS $cnt) {
-    $data[$cnt] = array(drupal_render($element[$cnt]['remove']), drupal_render($element[$cnt]));
+    $data[$cnt] = array(
+      drupal_render($element[$cnt]['remove']),
+      drupal_render($element[$cnt]['firstname']),
+      drupal_render($element[$cnt]['surname']),
+      // drupal_render($element[$cnt]['mail']),
+      drupal_render($element[$cnt]) );
   }
   $output = theme('table', $titles, $data);
   return $output;
@@ -301,7 +368,7 @@ function register_tickets_form_validate($form, &$form_state) {
         // New allocation, shouldn't double up.
         $uid = db_result(db_query("SELECT uid FROM users WHERE LCASE(mail) = '%s'", strtolower(trim($allocated['mail']))));
         $order_id = register_check_user_allocated_nid($order->order_product_id, $uid);
-        dpm($uid); dpm($order_id);
+        // dpm($uid); dpm($order_id);
         if ($order_id) {
           form_set_error('items][' . $oi . '][allocations][rows][' . $ri . '][mail',  $allocated['mail'] . ' already has a ticket on order #' . $order_id);
         }
@@ -326,6 +393,10 @@ function register_tickets_form_submit($form, &$form_state) {
         $uid = $allocated['uid'] ? $allocated['uid'] : db_result(db_query("SELECT uid FROM users WHERE LCASE(mail) = '%s'", strtolower(trim($allocated['mail']))));
         if ($uid > 0) {
           register_allocate_ticket($order['order_product_id'], $uid);
+        } else {
+          $new_user = transpose_copresenter_create(check_plain($allocated['mail']), check_plain($allocated['firstname'] . ' ' . $allocated['surname']));
+          $allocated[$uid] = $new_user->uid;
+          register_allocate_ticket($order['order_product_id'], $new_user->uid);
         }
       }
     }
@@ -389,4 +460,76 @@ function register_ticketable_products() {
   return $nids;
 }
 
+/**
+ * Implementation of hook_order() in Übercart.
+ *
+ * @op		string
+ *   operation type.
+ * @order	object
+ *   containing order info.
+ * @a		var
+ */
+function register_order($op, $order, $a) {
+  switch($op) {
+    // When saving, store the order id in a session variable.
+    // On the thankyou landing page, use this to retrieve the information
+    // that is to be stored in the profile.
+    // See register_thankyou().
+    case 'save':
+      $_SESSION['order_id'] = $order->order_id;
+      break;
+    default:
+      break;
+  }
+}
 
+/**
+ * Do some magic to create a user profile if required, then load and display node content from
+ * the thankyou story.
+ */
+function register_thankyou() {
+  if(isset($_SESSION['order_id'])) {
+
+    global $user;
+
+    $profile = content_profile_load('profile', $user->uid);
+    if(!$profile) {
+
+      // Load orders for this user.
+      $order = uc_order_load($_SESSION['order_id']);
+
+      $location = db_fetch_object(db_query("SELECT ucc.country_name AS country, ucz.zone_name AS state FROM {uc_zones} AS ucz LEFT JOIN {ucc_countries} AS ucc ON(ucc.country_id=ucz.zone_country_id) WHERE ucz.zone_id=%d", $order->billing_zone));
+
+      // Create a profile for the user.
+      $profile_attributes = array(
+        'nid' => NULL, // NULL creates a new node.
+        // 'title' => $new_user->name .'\'s Profile',
+        'body' => NULL, // Defaults to no body.
+        'type' => 'profile',
+        'teaser' => NULL,
+        'log' => '',
+        'created' => '',
+        'format' => FILTER_FORMAT_DEFAULT,
+        'uid' => $user->uid,
+        'field_profile_firstname' => array(array('value' => $order->billing_first_name)),
+        'field_profile_surname' => array(array('value' => $order->billing_last_name)),
+        'field_profile_organisation' => array(array('value' => $order->billing_company)),
+        'field_profile_phone' => array(array('value' => $order->billing_phone)),
+        'field_profile_address' => array(array('value' => $order->billing_street1)),
+        'field_profile_city' => array(array('value' => $order->billing_city)),
+        'field_profile_postcode' => array(array('value' => $order->billing_postal_code)),
+        'field_profile_state' => array(array('value' => $location->state)),
+        'field_profile_country' => array(array('value' => $location->country)),
+      );
+
+      // Save the profile.
+      $new_profile = (object) $profile_attributes;
+      node_save($new_profile);
+
+      // Remove the session variable.
+      unset($_SESSION['order_id']);
+    }
+  }
+
+  drupal_goto('thank-you');
+}
