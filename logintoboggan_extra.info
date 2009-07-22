@@ -1,6 +1,0 @@
-name = Logintoboggan Overrides
-description = This module provides overrides that allow users to register without entering a username. Instead, the email address is automatically transposed to the username field.
-package = " Creative Contingencies Conference"
-core = 6.x
-
-dependencies[] = logintoboggan
