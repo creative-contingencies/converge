@@ -32,7 +32,6 @@ function overrides_user($type, &$edit, &$account, $category = NULL) {
     unset($account->content['summary']);
   }
 }
-?>
 
 /**
  * Titlecase function.
