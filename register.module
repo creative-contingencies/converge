@@ -15,13 +15,17 @@
  * Implementation of hook_menu().
  */
 function register_menu() {
+  $items = array();
+
   $items['admin/settings/register'] = array(
-    'title' => 'CCC Registration settings',
-    'page callback' => 'register_settings',
-    'access callback' => 'user_access',
-    'access arguments' => array('view all orders'),
+    'title' => 'CCC Registration Settings',
+    'description' => 'Change configuration settings for Registration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('register_admin_settings'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
+
   $items['user/%user/tickets'] = array(
     'title' => 'Tickets',
     'description' => 'Conference ticket allocation',
@@ -47,6 +51,21 @@ function register_menu() {
   );
 
   return $items;
+}
+
+function register_admin_settings() {
+  $form = array();
+  $form['register_profile_blurb']['register_profile_nonreg_blurb'] = array(
+    '#title' => 'Blurb',
+    '#description' => 'The text to show on a user profile when a user has not yet registered.',
+    '#type' => 'textarea',
+    '#default_value' => variable_get('register_profile_nonreg_blurb', '<p>You are not registered. !register.</p>'),
+  );
+  $form['register_profile_blurb']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => 'Available subsitution variables are !register, !fullconf, !tuesday, !wednesday, !thursday, !friday, dinner, !leadership'
+  );
+  return system_settings_form($form);
 }
 
 function user_profile_redirect($path1, $path2) {
@@ -136,13 +155,20 @@ function theme_user_overview_registrations($account, $orders) {
       $purchaser = user_load(array('uid' => $order->uid));
       $info['status'] = t('Your ticket has been purchased by ') . l($purchaser->name, 'user/' . $purchaser->uid) . '. ' . t('The status of the order is') . ' \'' . $order->order_status . '\'. ';
     }
-    $output .= '<h2>' . $title . '</h2><p>' . implode(' ', $info) . '</p>';
+    $output .= '<h4>' . $title . '</h4><p>' . implode(' ', $info) . '</p>';
   }
   if (!$output) {
-    $output = t("<p>You are not registered. !registration.</p>", array('!registration' => l('Buy a ticket', 'register')));
+    $params = array();
+    $params['!register'] = l('Buy a ticket', 'register');
+    $params['!fullconf'] = l('full conference', 'fullconf');
+    $params['!tuesday'] = l('Tuesday', 'tuesday');
+    $params['!wednesday'] = l('Wednesday', 'wednesday');
+    $params['!thursday'] = l('Thursday', 'thursday');
+    $params['!friday'] = l('Friday', 'friday');
+    $params['!dinner'] = l('conference dinner', 'dinner');
+    $params['!leadership'] = l('leadership forum', 'leadership');
 
-	$output .= "<p>TODO: Dinner status";
-	$output .= "<p>TODO: Add-ons status";
+    $output = strtr(variable_get('register_profile_nonreg_blurb', $params));
   }
   return $output;
 }
