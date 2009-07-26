@@ -1,7 +1,8 @@
 name = Reviews workflow
-description = Roles create reviews for users.
+description = Manage proposals and reviewers along with scoring.
 package = " Creative Contingencies Conference"
 core = 6.x
 
 dependencies[] = nodereference
 dependencies[] = fivestar
+dependencies[] = proposal

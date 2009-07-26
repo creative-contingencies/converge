@@ -14,9 +14,235 @@ function review_menu() {
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
+  
+  $items['review/remind_reviewers'] = array(
+    'title' => 'Send reminder email to reviewers',
+    'description' => 'Change configuration and email templates for Reviews',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('review_remind_reviewers'),
+    'access arguments' => array('send reviewers reminders'),
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['review/email_authors'] = array(
+    'title' => 'Send status emails to authors',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('review_email_authors'),
+    'access arguments' => array('send authors their status'),
+    'type' => MENU_CALLBACK,
+  );
+  
   return $items;
 }
 
+function review_email_authors() {
+
+  $query = "SELECT global_settings FROM {content_node_field} WHERE field_name = '%s'";
+  $result = db_query($query, 'field_proposal_status');
+  $settings = db_fetch_object($result);
+  $to_options_serialized = unserialize($settings->global_settings);
+  $to_options_serialized = explode("\n", $to_options_serialized['allowed_values']);
+  $to_options = array();
+  foreach ( $to_options_serialized as $option ) {
+    $option = explode('|', $option);
+    $to_options[$option[0]] = $option[1];
+  }
+  $form['reviewer_email_authors'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'E-mail Authors',
+  );
+  $form['reviewer_email_authors']['review_email_authors_to'] = array(
+    '#title' => t('Send To'),
+    '#description' => t("Select which proposal status' to e-mail authors."),
+    '#type' => 'select',
+    '#options' => $to_options,
+    '#multiple' => true
+  ); 
+  $form['reviewer_email_authors']['review_email_authors_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('review_email_authors_subject', ''),
+  );
+  $form['reviewer_email_authors']['review_email_authors_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('review_email_authors_body', ''),
+    '#rows' => 16,
+  );
+  $form['reviewer_email_authors']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send E-Mails'),
+  );
+
+  return $form;
+}
+
+function review_email_authors_submit($form, &$form_state) {
+  $params = array();
+  if(empty($params['!site_url']))
+     $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!site']))
+     $params['!site'] = variable_get('site_name', '');
+  $params['!site_name'] = $params['!site'];
+  if(empty($params['!site_mail']))
+     $params['!site_mail'] = variable_get('site_mail', '');
+
+  $sent_to = array();
+
+  $query = "SELECT nid FROM {content_type_proposal} WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
+  $result = db_query($query);
+  while ( $n = db_fetch_object($result) ) {
+    $proposal_node = node_load($n->nid);
+    $params['!proposal_title'] = $proposal_node->title;
+    $params['!proposal_abstract'] = $proposal_node->body;
+    $params['!proposal_url'] = url('node/' . $proposal_node->nid, array('absolute' => TRUE));
+    $params['!proposal_feedback_url'] = url('node/' . $proposal_node->nid . '/feedback', array('absolute' => TRUE));
+    $params['!proposal_status'] = $proposal_node->field_proposal_status[0]['value'];
+    
+    $author_user = user_load(array('uid' => $proposal_node->uid));
+    $author_profile = content_profile_load('profile', $author_user->uid);
+    $params['!author_firstname'] = $author_profile->field_profile_firstname[0]['value'];
+    $params['!author_surname'] = $author_profile->field_profile_surname[0]['value'];
+    $params['!author_email'] = $author_user->mail;
+    
+    $message = array();
+    $message['id'] = 'email_author';
+    // $message['to'] = 'josh@opentechnologysolutions.com.au'; //testing mail
+    $message['to'] = $reviewer_user->mail;
+    $message['subject'] = strtr($form_state['values']['review_email_authors_subject'], $params);
+    $message['body'] = drupal_wrap_mail(strtr($form_state['values']['review_email_authors_body'], $params));
+    $message['headers']['From'] = $message['headers']['Sender'] = $message['headers']['Return-Path'] = $message['headers']['Errors-To'] = variable_get('site_mail', '');
+    //dpm($message);
+    if ( drupal_mail_send($message) ) {
+      //dpm("Successfully sent to " . $message['to']);
+      $sent_to[] = $author_profile->field_profile_firstname[0]['value'] . ' ' . $author_profile->field_profile_surname[0]['value'] . ' &lt;' . $author_user->mail . '&gt;';
+    }
+    else {
+      drupal_set_message("Failed to send to " . $author_profile->field_profile_firstname[0]['value'] . ' ' . $author_profile->field_profile_surname[0]['value'] . ' &lt;' . $author_user->mail . '&gt;', 'error');
+    }
+  }
+
+  if ( count($sent_to) ) {
+    drupal_set_message("E-mails sent to: " . implode(', ', $sent_to));
+  }
+  else {
+    drupal_set_message("No emails were sent to any authors in the selected categories.");
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function review_perm() {
+  return array('send reviewers reminders', 'send authors their status');
+}
+
+
+function review_remind_reviewers() {
+  $form['reviewer_remind_reviewers'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Remind Reviewers',
+  );
+  $form['reviewer_remind_reviewers']['reviewer_remind_to'] = array(
+    '#title' => t('Send To'),
+    '#description' => t('Who to send the bulk email to.'),
+    '#type' => 'select',
+    '#options' => array(
+      'peer' => t('reviewers with assigned papers only'),
+      'nonpeer' => t('all users with review role')
+    )
+  ); 
+  $form['reviewer_remind_reviewers']['reviewer_remind_reviewers_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('reviewer_remind_reviewers_subject', ''),
+  );
+  $form['reviewer_remind_reviewers']['reviewer_remind_reviewers_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('reviewer_remind_reviewers_body', ''),
+    '#rows' => 16,
+  );
+  $form['reviewer_remind_reviewers']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !review_assigned_list_url, !review_nonpeer_list_url, !site, !site_url, !site_mail'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send E-Mails'),
+  );
+
+  return $form;
+}
+
+function review_remind_reviewers_submit($form, &$form_state) {
+  $params = array();
+  if(empty($params['!site_url']))
+     $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!site']))
+     $params['!site'] = variable_get('site_name', '');
+  $params['!site_name'] = $params['!site'];
+  if(empty($params['!site_mail']))
+     $params['!site_mail'] = variable_get('site_mail', '');
+  if(empty($params['!review_assigned_list_url']))
+     $params['!review_assigned_list_url'] = url('review/peer_proposals', array('absolute' => true));
+  if(empty($params['!review_nonpeer_list_url']))
+     $params['!review_nonpeer_list_url'] = url('review/nonpeer_proposals', array('absolute' => true));
+
+  if ( $form_state['values']['reviewer_remind_to'] == 'peer' ) {
+    $query = "SELECT DISTINCT field_proposal_reviewers_uid AS uid FROM {content_field_proposal_reviewers}";
+  }
+  else {
+    $rid_query = "SELECT rid FROM {role} WHERE name = '%s'";
+    $rid_result = db_query($rid_query, 'reviewer');
+    $rid = db_fetch_object($rid_result)->rid;
+    $query = "SELECT DISTINCT uid FROM {users_roles} WHERE rid = " . $rid;
+  }
+
+  $result = db_query($query);
+  $sent_to = array();
+  while ( $u = db_fetch_object($result) ) {
+    //dpm($u);
+    if ( $u->uid != NULL ) {
+      $reviewer_user = user_load(array('uid' => $u->uid));
+      $reviewer_profile = content_profile_load('profile', $reviewer_user->uid);
+      $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
+      $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
+      $params['!reviewer_email'] = $reviewer_user->mail;
+      
+      $message = array();
+      $message['id'] = 'remind_reviewer';
+      // $message['to'] = 'josh@opentechnologysolutions.com.au'; //testing mail
+      $message['to'] = $reviewer_user->mail;
+      $message['subject'] = strtr($form_state['values']['reviewer_remind_reviewers_subject'], $params);
+      $message['body'] = drupal_wrap_mail(strtr($form_state['values']['reviewer_remind_reviewers_body'], $params));
+      $message['headers']['From'] = $message['headers']['Sender'] = $message['headers']['Return-Path'] = $message['headers']['Errors-To'] = variable_get('site_mail', '');
+      //dpm($message);
+      if ( drupal_mail_send($message) ) {
+        //dpm("Successfully sent to " . $message['to']);
+        $sent_to[] = $reviewer_profile->field_profile_firstname[0]['value'] . ' ' . $reviewer_profile->field_profile_surname[0]['value'] . ' &lt;' . $reviewer_user->mail . '&gt;';
+      }
+      else {
+        drupal_set_message("Failed to send to " . $reviewer_profile->field_profile_firstname[0]['value'] . ' ' . $reviewer_profile->field_profile_surname[0]['value'] . ' &lt;' . $reviewer_user->mail . '&gt;', 'error');
+      }
+    }
+  }
+
+  if ( count($sent_to) ) {
+    drupal_set_message("E-mails sent to: " . implode(', ', $sent_to));
+  }
+  else {
+    drupal_set_message("No emails sent. Please check that you have added reviewers.");
+  }
+}
 
 /*
 function review_theme($existing, $type, $theme, $path) {
@@ -112,6 +338,52 @@ function review_admin_settings() {
     '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'),
   );
 
+  $form['review_email_authors'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'E-mail Authors Template',
+    '#description' => t('The default template for sending the authors their status\'.'),
+  );
+  $form['review_email_authors']['review_email_authors_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('review_email_authors_subject', ''),
+  );
+  $form['review_email_authors']['review_email_authors_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('review_email_authors_body', ''),
+    '#rows' => 16,
+  );
+  $form['review_email_authors']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail'),
+  );
+
+  $form['reviewer_remind_reviewers'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Remind Reviewers Template',
+    '#description' => t('The default template for sending reminders to reviewers.'),
+  );
+  $form['reviewer_remind_reviewers']['reviewer_remind_reviewers_subject'] = array(
+    '#title' => t('Subject'),
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('reviewer_remind_reviewers_subject', ''),
+  );
+  $form['reviewer_remind_reviewers']['reviewer_remind_reviewers_body'] = array(
+    '#title' => t('Body'),
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('reviewer_remind_reviewers_body', ''),
+    '#rows' => 16,
+  );
+  $form['reviewer_remind_reviewers']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !review_assigned_list_url, !review_nonpeer_list_url, !site, !site_url, !site_mail'),
+  );
+
   return system_settings_form($form);  
 }
 
@@ -129,7 +401,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
     $(document).ready(function() {
       $('#content .node-form .standard').children().each(function() {
         if ( $(this).attr('id') != 'field-proposal-reviewers-items' ) {
-          $(this).hide()
+          $(this).hide();
         }
       });
       $('#content .help p').hide();
@@ -146,7 +418,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
     $(document).ready(function() {
       $('#content .node-form .standard').children().each(function() {
         if ( $(this).attr('id') != 'edit-field-proposal-status-value-wrapper' ) {
-          $(this).hide()
+          $(this).hide();
         }
       });
       $('#content .help p').hide();
@@ -216,14 +488,17 @@ function review_nodeapi(&$node, $op, $a1) {
         }
       }
       
-      $js = "
-      $(document).ready(function() {
-        $('#edit-field-paper-0-nid-nid-wrapper').hide();
-        $('#content .title').text('Reviewing " . $proposal_node->title . "');
-      });
-      ";
+      // Add another if, or it'll show "Reviewing" as title everywhere.
+      if ( $node->type == 'paper_review' && isset($_GET['nid']) && is_numeric($_GET['nid']) ) {
+        $js = "
+        $(document).ready(function() {
+          $('#edit-field-paper-0-nid-nid-wrapper').hide();
+          $('#content .title').text('Reviewing " . $proposal_node->title . "');
+        });
+        ";
       
-      drupal_add_js($js, 'inline');
+        drupal_add_js($js, 'inline');
+      }
     break;
       
     case 'presave':     
