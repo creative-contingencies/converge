@@ -303,7 +303,6 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
       '#description' => t('Please re-enter the password for verification'),
     );
 
-
     $form['personal']['firstname'] = array(
       '#type' => 'textfield',
       '#title' => t('First Name'),
@@ -560,6 +559,11 @@ function proposal_nodeapi(&$node, $op, $a1) {
       if(empty($node->uuid))
         $node->uuid = uuid_uuid();
 
+      // If this is a transpose of a REJECTED proposal, don't send the emails.
+      //
+      if($node->field_proposal_status[0]['value'] == 'rejected')
+        break;
+
       // Prepare and send e-mail to user.
       $params['!username'] = $author->name;
       $params['!email'] = $author->mail;
@@ -590,6 +594,7 @@ function proposal_nodeapi(&$node, $op, $a1) {
 
       // Magic URL any registered user can hit to be added as a presenter.
       $params['!add_url'] = url('manage/proposal/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
+
 
       if (variable_get('proposal_mail_proposal_notify_user_send', 0)) {
         drupal_mail('proposal', 'notify_user', $author->mail, $language, $params);
@@ -769,4 +774,15 @@ function proposal_content_profile_vars($type, $uid) {
   return $params;
 }
 
+/**
+ * Helper to return a list of proposal NIDs for a given user.
+ */
+function proposal_user_list($author) {
+  $list = array();
+  $result = db_query("SELECT nid FROM {node} WHERE uid=%d AND type='%s'", $author, 'proposal');
+  while($o = db_fetch_object($result)) {
+    $list[] = $o->nid;
+  }
+  return $list;
+}
 # vim: set ft=php
