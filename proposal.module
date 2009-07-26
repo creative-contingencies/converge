@@ -251,7 +251,7 @@ function proposal_admin_settings() {
   );
   $form['copresenter_add_notify']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !username, !email, !author, !authoremail, !title, !abstract, !remove_url, !login_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !username, !email, !author, !authoremail, !url, !title, !abstract, !remove_url, !login_url, !site, !site_url, !site_mail'),
   );
 
   return system_settings_form($form);
