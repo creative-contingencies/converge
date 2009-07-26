@@ -45,7 +45,7 @@ function proposal_admin_settings() {
     '#description' => t('Define which vocabularies are used by the proposal content type.'),
   );
 
-  // Grab list of taxonomies, so we can display pull-downs.
+  // Grab list of roles.
   $vocabularies = taxonomy_get_vocabularies('proposal');
 
   $options = array();
@@ -75,6 +75,14 @@ function proposal_admin_settings() {
     '#type' => 'select',
     '#options' => $options,
     '#default_value' => variable_get('proposal_vocabulary_keywords', 0),
+  );
+
+  $form['proposal_chair']['proposal_chair_rid'] = array(
+    '#title' => t('Chair'),
+    '#description' => t('The user role that defines the paper committee chairperson(s).'),
+    '#type' => 'select',
+    '#options' => user_roles(TRUE),
+    '#default_value' => variable_get('proposal_chair_rid', 0),
   );
 
   $form['proposal_new_user_notify'] = array(
@@ -151,7 +159,7 @@ function proposal_admin_settings() {
     '#description' => t('Choose whether or not a user is notified of an account that is created via the proposal submission form.'),
   );
   $form['proposal_notify_admin']['proposal_mail_proposal_notify_admin_send'] = array(
-    '#title' => t('Send notification to site administrator'),
+    '#title' => t('Send notification to paper chairperson(s)'),
     '#description' => t(''),
     '#type' => 'radios',
     '#options' => array(
@@ -601,7 +609,11 @@ function proposal_nodeapi(&$node, $op, $a1) {
         drupal_set_message(t('A confirmation e-mail with the proposal details has been sent to @email.', array('@email' => $author->mail)));
       }
       if (variable_get('proposal_mail_proposal_notify_admin_send', 0)) {
-        // drupal_mail('proposal', 'notify_admin', variable_get('site_mail'), $language, $params);
+        // Send mail to all 'chair' role users.
+        $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
+        while($o = db_fetch_object($result)) {
+          drupal_mail('proposal', 'notify_admin', $o->mail, $language, $params);
+        }
         drupal_mail('proposal', 'notify_admin', 'me@cafuego.net', $language, $params);
       }
       break;
