@@ -63,8 +63,17 @@ function register_admin_settings() {
   );
   $form['register_profile_blurb']['vars'] = array(
     '#type' => 'markup',
-    '#value' => 'Available subsitution variables are !register, !fullconf, !tuesday, !wednesday, !thursday, !friday, dinner, !leadership'
+    '#description' => 'Available subsitution variables are !register, !fullconf, !tuesday, !wednesday, !thursday, !friday, dinner, !leadership',
   );
+
+  // What does the 'Continue shopping' button say?
+  $form['register_continue_shopping']['register_continue_shopping'] = array(
+    '#title' => 'Continue Shopping',
+    '#description' => 'The label to display on the Continue shopping button on a product page.',
+    '#type' => 'textfield',
+    '#default_value' => variable_get('register_continue_shopping', 'Continue shopping'),
+  );
+
   return system_settings_form($form);
 }
 
@@ -148,7 +157,7 @@ function theme_user_overview_registrations($account, $orders) {
       else {
         $info['attendees'] = count($order->ticket_links) ? t('Current attendees are ') . implode(', ', $order->ticket_links) . '. ' : t("No tickets have been allocated.");
       }
-      $info['manage'] = t('Click here to change ') . l(t('ticket holders'), $order->manage_path) . '.';
+      $info['manage'] = t('Click here to change ') . l(t('ticket allocations'), $order->manage_path) . '.';
     }
     elseif ($order->this_user_allocated) {
       // User is just allocated to a ticket.
@@ -168,7 +177,7 @@ function theme_user_overview_registrations($account, $orders) {
     $params['!dinner'] = l('conference dinner', 'dinner');
     $params['!leadership'] = l('leadership forum', 'leadership');
 
-    $output = strtr(variable_get('register_profile_nonreg_blurb', $params));
+    $output = strtr(variable_get('register_profile_nonreg_blurb', ''), $params);
   }
   return $output;
 }
@@ -330,7 +339,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
 
         $form['items'][$key]['allocations']['rows'][$count]['firstname'] = array(
           '#type' => $user ? 'markup' : 'textfield',
-          '#size' => 16,
+          '#size' => 10,
           '#default_value' => $profile ? $profile->field_profile_firstname[0]['value'] : '',
           '#disabled' => $profile ? TRUE : FALSE,
         );
@@ -339,16 +348,25 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
 
         $form['items'][$key]['allocations']['rows'][$count]['surname'] = array(
           '#type' => $user ? 'markup' : 'textfield',
-          '#size' => 16,
+          '#size' => 10,
           '#default_value' => $profile ? $profile->field_profile_surname[0]['value'] : '',
           '#disabled' => $profile ? TRUE : FALSE,
         );
         if($profile)
           $form['items'][$key]['allocations']['rows'][$count]['surname']['#value'] = $profile->field_profile_surname[0]['value'];
 
+        $form['items'][$key]['allocations']['rows'][$count]['position'] = array(
+          '#type' => $user ? 'markup' : 'textfield',
+          '#size' => 10,
+          '#default_value' => $profile ? $profile->field_profile_position[0]['value'] : '',
+          '#disabled' => $profile ? TRUE : FALSE,
+        );
+        if($profile)
+          $form['items'][$key]['allocations']['rows'][$count]['position']['#value'] = $profile->field_profile_position[0]['value'];
+
         $form['items'][$key]['allocations']['rows'][$count]['mail'] = array(
           '#type' => $user ? 'hidden' : 'textfield',
-          '#size' => 24,
+          '#size' => 28,
           '#default_value' => $user ? $user->mail : '',
           '#disabled' => $user ? TRUE : FALSE,
         );
@@ -374,12 +392,13 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
  * Theme a table that is part of register_tickets_form
  */
 function theme_register_allocations_form_table(&$element) {
-  $titles = array('Remove', 'First name', 'Surname', 'Email');
+  $titles = array('Remove', 'First name', 'Surname', 'Position', 'Email');
   foreach (element_children($element) AS $cnt) {
     $data[$cnt] = array(
       drupal_render($element[$cnt]['remove']),
       drupal_render($element[$cnt]['firstname']),
       drupal_render($element[$cnt]['surname']),
+      drupal_render($element[$cnt]['position']),
       // drupal_render($element[$cnt]['mail']),
       drupal_render($element[$cnt]) );
   }
@@ -420,9 +439,18 @@ function register_tickets_form_submit($form, &$form_state) {
         if ($uid > 0) {
           register_allocate_ticket($order['order_product_id'], $uid);
         } else {
-          $new_user = transpose_copresenter_create(check_plain($allocated['mail']), check_plain($allocated['firstname'] . ' ' . $allocated['surname']));
-          $allocated[$uid] = $new_user->uid;
-          register_allocate_ticket($order['order_product_id'], $new_user->uid);
+          if(valid_email_address($allocated['mail'])) {
+            $new_user = transpose_copresenter_create(array(
+              'mail' => check_plain($allocated['mail']),
+              'firstname' => check_plain($allocated['firstname']),
+              'surname' => check_plain($allocated['surname']),
+              'position' => check_plain($allocated['position'])
+            ));
+            $allocated[$uid] = $new_user->uid;
+            register_allocate_ticket($order['order_product_id'], $new_user->uid);
+          } else {
+            drupal_set_message(t('@email is not a valid email address', array('@email' => $allocated['mail'])), 'error');
+          }
         }
       }
     }
@@ -514,6 +542,7 @@ function register_order($op, $order, $a) {
  * the thankyou story.
  */
 function register_thankyou() {
+
   if(isset($_SESSION['order_id'])) {
 
     global $user;
@@ -524,7 +553,8 @@ function register_thankyou() {
       // Load orders for this user.
       $order = uc_order_load($_SESSION['order_id']);
 
-      $location = db_fetch_object(db_query("SELECT ucc.country_name AS country, ucz.zone_name AS state FROM {uc_zones} AS ucz LEFT JOIN {ucc_countries} AS ucc ON(ucc.country_id=ucz.zone_country_id) WHERE ucz.zone_id=%d", $order->billing_zone));
+      $state = db_result(db_query("SELECT zone_code FROM {uc_zones} WHERE zone_id=%d AND zone_country_id=%d", $order->billing_zone, $order->billing_country));
+      $country = db_result(db_query("SELECT country_name country FROM {uc_countries} WHERE country_id=%d", $order->billing_country));
 
       // Create a profile for the user.
       $profile_attributes = array(
@@ -537,15 +567,16 @@ function register_thankyou() {
         'created' => '',
         'format' => FILTER_FORMAT_DEFAULT,
         'uid' => $user->uid,
-        'field_profile_firstname' => array(array('value' => $order->billing_first_name)),
-        'field_profile_surname' => array(array('value' => $order->billing_last_name)),
-        'field_profile_organisation' => array(array('value' => $order->billing_company)),
+        'field_profile_firstname' => array(array('value' => ccc_strtot($order->billing_first_name, TRUE))),
+        'field_profile_surname' => array(array('value' => ccc_strtot($order->billing_last_name, TRUE))),
+        'field_profile_organisation' => array(array('value' => ccc_strtot($order->billing_company, TRUE))),
         'field_profile_phone' => array(array('value' => $order->billing_phone)),
         'field_profile_address' => array(array('value' => $order->billing_street1)),
-        'field_profile_city' => array(array('value' => $order->billing_city)),
+        'field_profile_city' => array(array('value' => ccc_strtot($order->billing_city))),
         'field_profile_postcode' => array(array('value' => $order->billing_postal_code)),
-        'field_profile_state' => array(array('value' => $location->state)),
-        'field_profile_country' => array(array('value' => $location->country)),
+
+        'field_profile_state' => array(array('value' => $state)),
+        'field_profile_country' => array(array('value' => $country)),
       );
 
       // Save the profile.
