@@ -440,14 +440,14 @@ function register_tickets_form_submit($form, &$form_state) {
           register_allocate_ticket($order['order_product_id'], $uid);
         } else {
           if(valid_email_address($allocated['mail'])) {
-            $new_user = transpose_copresenter_create(array(
+            $new_uid = transpose_copresenter_create(array(
               'mail' => check_plain($allocated['mail']),
               'firstname' => check_plain($allocated['firstname']),
               'surname' => check_plain($allocated['surname']),
               'position' => check_plain($allocated['position'])
             ));
-            $allocated[$uid] = $new_user->uid;
-            register_allocate_ticket($order['order_product_id'], $new_user->uid);
+            $allocated[$uid] = $new_uid;
+            register_allocate_ticket($order['order_product_id'], $new_uid);
           } else {
             drupal_set_message(t('@email is not a valid email address', array('@email' => $allocated['mail'])), 'error');
           }
