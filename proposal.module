@@ -572,6 +572,10 @@ function proposal_nodeapi(&$node, $op, $a1) {
       if($node->field_proposal_status[0]['value'] == 'rejected')
         break;
 
+      // Put the owner uid in the first presenters field.
+      //
+      $node->field_proposal_presenters[0]['uid'] = $author->uid;
+
       // Prepare and send e-mail to user.
       $params['!username'] = $author->name;
       $params['!email'] = $author->mail;
