@@ -1,0 +1,15 @@
+<?php
+/**
+ * @file
+ * The install file for the overrides module.
+ */
+
+/**
+ * Implementation of hook_install()
+ */
+function overrides_install() {
+  // Make sure we run *AFTER* the uc_order module, so we can remove its blurb from
+  // the user profile page.
+  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'uc_order'")));
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'overrides'", $weight + 1);
+}

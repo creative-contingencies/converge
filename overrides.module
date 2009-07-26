@@ -1,15 +1,48 @@
 <?php
 
 /**
- * Form alter for the logintoboggan signup form.
- *
- * Because we login via the email address only, hide the username field.
+ * Form alter overrides for the conference system.
  */
 function overrides_form_alter(&$form, $form_state, $form_id) {
+
+  // Because we login via the email address only, hide the username field
+  // on the signup form and do a pre-validate call so we can transpose the
+  // email address into the name field.
   if($form_id == 'user_register') {
     $form['name']['#type'] = 'hidden';
-    $form['name']['#required'] = FALSE;
-    $form['#validate'][] = 'register_user_register_validate';
+    unset($form['name']['#required']);
+    array_unshift($form['#validate'], 'overrides_user_register_validate');
+  }
+
+  // Turn the cheque description into a 4-line field with preset labels.
+  //
+  if($form_id == 'uc_payment_pack_receive_check_form') {
+    $form['comment']['#type'] = 'textarea';
+    $form['comment']['#rows'] = 4;
+    $form['comment']['#cols'] = 64;
+    $form['comment']['#default_value'] = "Cheque No: \nDrawer: \nBank: \nBranch: ";
+    $form['comment']['#description'] = "Enter all required cheque details such as the number, drawer and bank information on the appropriate line.";
+  }
+
+  // Resize the dietary / mobility needs fields on the profile.
+  if($form_id == 'profile_node_form') {
+    $form['field_profile_dietary']['#cols'] = 12;
+    $form['field_profile_dietary']['#rows'] = 2;
+
+    $form['field_profile_mobility']['#cols'] = 12;
+    $form['field_profile_mobility']['#rows'] = 2;
+  }
+
+  if(strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE) {
+    $form['continue_shopping'] = array(
+      '#type' => 'submit',
+      '#value' => variable_get('register_continue_shopping', 'Continue shopping'),
+    );
+    array_unshift($form['#validate'], 'overrides_uc_product_add_to_cart_form_validate');
+  }
+
+  if($form_id == 'uc_order_view_update_form') {
+    dpm($form);
   }
 }
 
@@ -24,20 +57,35 @@ function overrides_user_register_validate($form, &$form_state) {
 }
 
 /**
+ * Handle a user clicking 'Continue shopping' on a product page.
+ */
+function overrides_uc_product_add_to_cart_form_validate($form, &$form_state) {
+  if($form_state['values']['op'] == variable_get('register_continue_shopping', 'Continue shopping')) {
+    drupal_goto('register');
+  }
+}
+
+/**
  * Remove history section from the user profile.
  */
 function overrides_user($type, &$edit, &$account, $category = NULL) {
-  // remove history from user profile view
+  // remove history and orders from user profile view
   if ($type == 'view') {
     unset($account->content['summary']);
+    unset($account->content['orders']);
   }
 }
 
 /**
  * Titlecase function.
  */
-function ccc_strtot($s) {
+function ccc_strtot($s, $only_if_single_case = FALSE) {
   $smallwordsarray = array( 'of','a','the','and','an','or','nor','but','is','if','then','else','when', 'at','from','by','on','off','for','in','out','over','to','into','with' );
+
+  if($only_if_single_case) {
+    if(strtolower($s) != $s && strtoupper($s) != $s)
+      return $s;
+  }
 
   $words = explode(' ', $s);
 
