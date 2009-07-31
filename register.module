@@ -440,7 +440,7 @@ function register_tickets_form_submit($form, &$form_state) {
           register_allocate_ticket($order['order_product_id'], $uid);
         } else {
           if(valid_email_address($allocated['mail'])) {
-            $new_uid = transpose_copresenter_create(array(
+            $new_uid = proposal_copresenter_create(array(
               'mail' => check_plain($allocated['mail']),
               'firstname' => check_plain($allocated['firstname']),
               'surname' => check_plain($allocated['surname']),

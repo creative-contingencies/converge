@@ -801,4 +801,72 @@ function proposal_user_list($author) {
   }
   return $list;
 }
-# vim: set ft=php
+
+/**
+ * Helper to create a new account based on only an email address and an optional name.
+ */
+function proposal_copresenter_create($params) {
+
+  // Generate a new random password.
+  $password = user_password();
+
+  $names = split(' ', $name);
+
+  // Create the new user.
+  $user_attributes = array(
+    'name' => $params['mail'],
+    'pass' => $password,
+    'mail' => $params['mail'],
+    'roles' => array(DRUPAL_AUTHENTICATED_RID),
+    'status' => TRUE,
+  );
+
+  // Save the user.
+  $new_user = user_save(
+    new stdClass(),
+    $user_attributes
+  );
+
+  drupal_set_message(t('Created a new account for @firstname @surname <@email>',
+    array(
+      '@firstname' => trim($params['firstname']),
+      '@surname' => trim($params['surname']),
+      '@email' => strtolower($new_user->mail)
+    )
+  ));
+
+  // Create a profile for the user.
+  $profile_attributes = array(
+    'nid' => NULL, // NULL creates a new node.
+    // 'title' => $new_user->name .'\'s Profile',
+    'body' => NULL, // Defaults to no body.
+    'type' => 'profile',
+    'teaser' => NULL,
+    'log' => '',
+    'created' => '',
+    'format' => FILTER_FORMAT_DEFAULT,
+    'uid' => $new_user->uid,
+  );
+  foreach($params as $key => $value) {
+    $profile_attributes['field_profile_' . $key] = array(array('value' => trim($value)));
+  }
+
+  // Save the profile.
+  $new_profile = (object) $profile_attributes;
+  node_save($new_profile);
+
+  // Send an email to the user and tell them about the new account.
+  if (variable_get('proposal_mail_proposal_new_user_notify_send', 1)) {
+
+    $params = proposal_content_profile_vars('profile', $new_user->uid);
+
+    $params['!username'] = $new_user->name;
+    $params['!email'] = $new_user->mail;
+    $params['!password'] = $password;
+
+    // Prepare and send e-mail.
+    drupal_mail('proposal', 'new_user_notify', $new_user->mail, $language, $params);
+  }
+
+  return $new_user->uid;
+}
