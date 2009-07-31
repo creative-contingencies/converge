@@ -3,3 +3,4 @@ description = Helps checkout processes and registration
 package = " Creative Contingencies Conference"
 core = 6.x
 dependencies[] = uc_order
+dependencies[] = proposal
