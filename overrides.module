@@ -77,6 +77,14 @@ function overrides_user($type, &$edit, &$account, $category = NULL) {
 }
 
 /**
+ * Return a user's full name, titlecased.
+ */
+function overrides_fullname($uid) {
+  $profile = content_profile_load('profile', $uid);
+  return ccc_strtot($profile->field_profile_firstname[0]['value'] . ' ' . $profile->field_profile_surname[0]['value']);
+}
+
+/**
  * Titlecase function.
  */
 function ccc_strtot($s, $only_if_single_case = FALSE) {
@@ -95,3 +103,4 @@ function ccc_strtot($s, $only_if_single_case = FALSE) {
   }
   return implode(' ', $words);
 }
+

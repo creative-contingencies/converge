@@ -102,6 +102,59 @@ function register_theme() {
 }
 
 /**
+ * Implementation of hook_form_alter()
+ */
+function register_form_alter(&$form, $form_state, $form_id) {
+  if($form_id == 'uc_order_view_update_form') {
+    $form['order_assignee_listing'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Ticket assignments for this order',
+      '#description' => 'List all users who have been assigned tickets from this order.',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['order_assignee_listing']['info'] = register_list_ticket_assignees($form['order_id']['#value']);
+  }
+}
+
+/**
+ * Helper that lists ticket assignees for a specific order id.
+ * This order may contain multiple products, each with multiple assignees.
+ */
+function register_list_ticket_assignees($order_id) {
+  $form = array();
+
+  $order = uc_order_load($order_id);
+  foreach($order->products as $product) {
+    $form['order_product_' . $product->order_product_id] = array(
+      '#type' => 'fieldset',
+      '#title' => 'ID ' . $product->order_product_id . ' ' . $product->title,
+      '#collapsible' => FALSE,
+    );
+
+    $data = array();
+    $titles = array('First name', 'Surname', 'Position', 'Organisation', 'Email');
+    $assignees = register_get_ticketholders($product);
+    foreach($assignees as $assignee) {
+      $profile = content_profile_load('profile', $assignee->uid);
+      $data[] = array(
+        $profile->field_profile_firstname[0]['value'],
+        $profile->field_profile_surname[0]['value'],
+        $profile->field_profile_position[0]['value'],
+        $profile->field_profile_organisation[0]['value'],
+        l($assignee->mail, 'user/' . $assignee->uid),
+      );
+    }
+
+    $form['order_product_' . $product->order_product_id]['assignees'] = array(
+      '#type' => 'markup',
+      '#value' => theme('table', $titles, $data)
+    );
+  }
+  return $form;
+}
+
+/**
  * Implementation of hook_user().
  */
 function register_user($op, &$edit, &$account, $category = NULL) {
@@ -112,7 +165,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
 
         // Get a big list of event purchases and stuff.
         $orders = register_get_orders($account->uid);
-        
+
         foreach ($orders AS $key => $order) {
           if (!$order->some_user_allocated && $order->qty == 1) {
             // No-one is allocated to this ticket, we could allocate them here.
