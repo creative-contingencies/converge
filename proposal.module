@@ -618,7 +618,6 @@ function proposal_nodeapi(&$node, $op, $a1) {
         while($o = db_fetch_object($result)) {
           drupal_mail('proposal', 'notify_admin', $o->mail, $language, $params);
         }
-        drupal_mail('proposal', 'notify_admin', 'me@cafuego.net', $language, $params);
       }
       break;
   }
