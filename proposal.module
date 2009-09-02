@@ -38,6 +38,36 @@ function proposal_menu() {
 
 function proposal_admin_settings() {
 
+  $form['proposal_c4p'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Call for Proposals',
+    '#description' => t('General call for proposals settings.'),
+  );
+
+  // Is the call for proposals open or not.
+  $form['proposal_c4p']['proposal_c4p_open'] = array(
+    '#type' => 'select',
+    '#title' => 'Call for Proposals',
+    '#options' => array(
+      0 => 'Closed',
+      1 => 'Open',
+    ),
+    '#description' => t('Is the call for proposals open or closed?'),
+    '#default_value' => variable_get('proposal_c4p_open', 0),
+  );
+
+  // If not open, is the form enabled to accept backup proposals?
+  $form['proposal_c4p']['proposal_c4p_backup'] = array(
+    '#type' => 'select',
+    '#title' => 'Call for Proposals Form',
+    '#options' => array(
+      0 => 'Disabled',
+      1 => 'Open to accept waiting list proposals',
+    ),
+    '#description' => t('Should the proposal submission form remain accessible and accept submissions to be wait-listed.'),
+    '#default_value' => variable_get('proposal_c4p_backup', 0),
+  );
+
   // Taxonomy settings.
   $form['proposal_taxonomy'] = array(
     '#type' => 'fieldset',
@@ -45,9 +75,9 @@ function proposal_admin_settings() {
     '#description' => t('Define which vocabularies are used by the proposal content type.'),
   );
 
-  // Grab list of roles.
+  // Grab list of vocabularies.
   $vocabularies = taxonomy_get_vocabularies('proposal');
-
+  // And munge them into an option list.
   $options = array();
   foreach($vocabularies as $i => $v) {
     $options[$i] = $v->name;
@@ -268,14 +298,29 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'user_login') {
     $form['name']['#title'] = t('Email address');
     $form['name']['#description'] = t('Enter your email address.');
-
   }
 
   // Do not display the teaser break check box.
   unset($form['body_field']['teaser_js']);
   unset($form['body_field']['teaser_include']);
 
+  if ($form_id == 'proposal_node_form') {
+    if (variable_get('proposal_c4p_open', 0) == 0) {
+      // closed
+      if (variable_get('proposal_c4p_backup', 0) == 0) {
+        // no backup
+        drupal_set_message(t('The call for proposals has closed.'), 'error');
+        unset($form);
+        return;
+      } else {
+        drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
+        // backup
+      }
+    }
+  }
+
   if ($form_id == 'proposal_node_form' && empty($form['#node']->nid) && $user->uid < 1) {
+
     $form['personal'] = array(
       '#type' => 'fieldset',
       '#title' => t('Your details'),

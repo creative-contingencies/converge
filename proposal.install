@@ -1,0 +1,18 @@
+<?php
+/**
+ * @file
+ * The install file for the proposals module.
+ */
+
+/**
+ * Implementation of hook_install()
+ */
+function proposal_install() {
+  return;
+}
+
+function proposal_update_6001() {
+  // Make sure we run *AFTER* the form module, so we can disable
+  // the proposal submission form if we need to.
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'proposal'");
+}
