@@ -11,8 +11,12 @@ function proposal_install() {
   return;
 }
 
+/**
+ * Make sure we run after the form module.
+ */
 function proposal_update_6001() {
   // Make sure we run *AFTER* the form module, so we can disable
   // the proposal submission form if we need to.
-  db_query("UPDATE {system} SET weight = 1 WHERE name = 'proposal'");
+  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'form'")));
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'proposal'", $weight + 1);
 }
