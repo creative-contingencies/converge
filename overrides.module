@@ -15,6 +15,7 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
   }
 
   // Turn the cheque description into a 4-line field with preset labels.
+  // Do NOT clear the comment area when check already received is clicked.
   //
   if($form_id == 'uc_payment_pack_receive_check_form') {
     $form['comment']['#type'] = 'textarea';
@@ -22,6 +23,8 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     $form['comment']['#cols'] = 64;
     $form['comment']['#default_value'] = "Cheque No: \nDrawer: \nBank: \nBranch: ";
     $form['comment']['#description'] = "Enter all required cheque details such as the number, drawer and bank information on the appropriate line.";
+
+    unset($form['check_exists']['#attributes']);
   }
 
   // Resize the dietary / mobility needs fields on the profile.
