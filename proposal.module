@@ -569,7 +569,7 @@ function proposal_node_form_submit($form, &$form_state) {
 
       // Prepare and send e-mail.
       drupal_mail('proposal', 'new_user_notify', $new_user->mail, $language, $params);
-      drupal_set_message(t('An e-mail with your login details has been sent to !email.'), array('!email' => $new_user->mail));
+      drupal_set_message(t('An e-mail with your login details has been sent to !email.', array('!email' => $new_user->mail)));
     }
 
     // Set the new user as owner of this proposal.

@@ -41,8 +41,14 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     array_unshift($form['#validate'], 'overrides_uc_product_add_to_cart_form_validate');
   }
 
-  if($form_id == 'uc_order_view_update_form') {
+  if ($form_id == 'uc_order_view_update_form') {
     dpm($form);
+  }
+
+  if ($form_id == 'profile_node_form') {
+    $form['taxonomy'][4]['#title'] = 'Your Interests';
+    $form['taxonomy'][4]['#description'] = 'Please tell us which topic areas are of interest to you. We can use this information to suggest sessions you may want to attend.';
+    // dpm($form);
   }
 }
 

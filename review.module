@@ -37,8 +37,19 @@ function review_menu() {
   $items['manage/review/%/%/%/%'] = array(
     'title' => 'Modify a review',
     'description' => 'Modify a review',
-    'page callback' => 'review_manage',
+    'page callback' => 'review_manage_review',
     'page arguments' => array(2, 3, 4, 5),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Handler for the magic URL to accept or decline reviewer status.
+  // Needs to be hit by any user.
+  $items['manage/reviewer/%/%'] = array(
+    'title' => 'Modify a review',
+    'description' => 'Modify a review',
+    'page callback' => 'review_manage_review',
+    'page arguments' => array(3, 4),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -112,7 +123,7 @@ function review_email_authors() {
     '#description' => t('The body for the email.'),
     '#type' => 'textarea',
     '#default_value' => variable_get('review_email_authors_body', ''),
-    '#rows' => 16,
+    '#rows' => 12,
   );
   $form['reviewer_email_authors']['vars'] = array(
     '#type' => 'markup',
@@ -212,7 +223,7 @@ function review_remind_reviewers() {
     '#description' => t('The body for the email.'),
     '#type' => 'textarea',
     '#default_value' => variable_get('reviewer_remind_reviewers_body', ''),
-    '#rows' => 16,
+    '#rows' => 12,
   );
   $form['reviewer_remind_reviewers']['vars'] = array(
     '#type' => 'markup',
@@ -319,6 +330,56 @@ function review_admin_settings() {
     '#type' => 'textarea',
     '#description' => t('The editorial policy that is displayed at the top of each review.'),
     '#default_value' => variable_get('review_editorial_policy', ''),
+    '#rows' => 12,
+  );
+
+  // Reviewer invitations.
+  $form['reviewer_invitation'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Reviewer Invitations',
+    '#description' => t('Configure the invitation email that is sent to potential reviewers.'),
+  );
+  $form['reviewer_invitation']['review_mail_reviewer_invite_subject'] = array(
+    '#title' => 'Subject',
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('review_mail_reviewer_invite_subject', ''),
+  );
+  $form['reviewer_invitation']['review_mail_reviewer_invite_body'] = array(
+    '#title' => 'Body',
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('review_mail_reviewer_invite_body', ''),
+    '#rows' => 12,
+  );
+  $form['reviewer_invitation']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !accept_url, !decline_url, !site, !site_url, !site_mail'),
+  );
+
+  // Action response mail.
+
+  $form['reviewer_action'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Chair Notification',
+    '#description' => t('The email that is sent to the paper chairs when an invitee clicks their ACCEPT or REJECT link.'),
+  );
+  $form['reviewer_action']['review_mail_reviewer_invite_action_subject'] = array(
+    '#title' => 'Subject',
+    '#description' => t('The subject for the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('review_mail_reviewer_invite_action_subject', ''),
+  );
+  $form['reviewer_action']['review_mail_reviewer_invite_action_body'] = array(
+    '#title' => 'Body',
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('review_mail_reviewer_invite_action_body', ''),
+    '#rows' => 12,
+  );
+  $form['reviewer_action']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in these emails: !reviewer_firstname, !reviewer_surname, !reviewer_email, !action, !site, !site_url, !site_mail'),
   );
 
   // Reviewer settings.
@@ -348,7 +409,7 @@ function review_admin_settings() {
     '#description' => t('The body for the email.'),
     '#type' => 'textarea',
     '#default_value' => variable_get('review_mail_reviewer_add_notify_body', ''),
-    '#rows' => 16,
+    '#rows' => 12,
   );
   $form['reviewer_add_notify']['vars'] = array(
     '#type' => 'markup',
@@ -382,7 +443,7 @@ function review_admin_settings() {
     '#description' => t('The body for the email.'),
     '#type' => 'textarea',
     '#default_value' => variable_get('review_mail_reviewer_remove_notify_body', ''),
-    '#rows' => 16,
+    '#rows' => 12,
   );
   $form['reviewer_remove_notify']['vars'] = array(
     '#type' => 'markup',
@@ -415,7 +476,7 @@ function review_admin_settings() {
     '#description' => t('The body for the email.'),
     '#type' => 'textarea',
     '#default_value' => variable_get('review_mail_reviewer_decline_chair_notify_body', ''),
-    '#rows' => 16,
+    '#rows' => 12,
   );
   $form['reviewer_decline_notify']['vars'] = array(
     '#type' => 'markup',
@@ -439,7 +500,7 @@ function review_admin_settings() {
     '#description' => t('The body for the email.'),
     '#type' => 'textarea',
     '#default_value' => variable_get('review_email_authors_body', ''),
-    '#rows' => 16,
+    '#rows' => 12,
   );
   $form['review_email_authors']['vars'] = array(
     '#type' => 'markup',
@@ -462,7 +523,7 @@ function review_admin_settings() {
     '#description' => t('The body for the email.'),
     '#type' => 'textarea',
     '#default_value' => variable_get('reviewer_remind_reviewers_body', ''),
-    '#rows' => 16,
+    '#rows' => 12,
   );
   $form['reviewer_remind_reviewers']['vars'] = array(
     '#type' => 'markup',
@@ -479,6 +540,18 @@ function review_admin_settings() {
  */
 function review_form_alter(&$form, $form_state, $form_id) {
   global $user;
+
+  if ($form_id == 'paper_review_node_form') {
+    // Remove the Preview button.
+    unset($form['buttons']['preview']);
+
+    // Insert edit message.
+/*
+    if (arg(2) == 'edit') {
+      drupal_set_message(t('You are editing a review'), 'warning');
+    }
+*/
+  }
 
   if ( $form_id == 'proposal_node_form' && isset($_GET['assign_reviewers']) && $_GET['assign_reviewers'] == True ) {
     $form['field_proposal_reviewers']['#size'] = 12;
@@ -748,9 +821,78 @@ function review_link($type, $object, $teaser = FALSE) {
 }
 
 /**
+ * Function to manage reviewer invitation acceptance and rejections.
+ * This needs to handle accept and decline magic URLs.
+ */
+function review_manage_reviewer($op, $uuid) {
+
+  global $user;
+
+  // Load a user by UUID.
+  $victim = user_get_by_uuid($uuid);
+  if ($victim === FALSE) {
+    drupal_set_message('The link you clicked is invalid.', 'error');
+    drupal_goto('<front>');
+    return;
+  }
+
+  // User is already a reviewer?
+  if (in_array('reviewer', $victim->roles)) {
+    drupal_set_message('You are aready a reviewer', 'error');
+    drupal_goto('<front>');
+  }
+
+  $profile = profile_node_load('profile', $victim->uid);
+
+  $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
+  $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
+  $params['!reviewer_email'] = $victim->mail;
+  $params['!action'] = $op;
+
+  switch($op) {
+    case 'accept':
+      // Set reviewer role.
+      array_push($victim->roles, 'reviewer');
+      user_save($victim);
+
+      // Log the user in.
+      if ($user->uid == 0) {
+        $user = $victim;
+      }
+
+      // Send email to chairs.
+      $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
+      while($o = db_fetch_object($result)) {
+        drupal_mail('review', 'reviewer_invite_action', $o->mail, $language, $params);
+      }
+
+      // Tell the $user what we did.
+      drupal_set_message(t('Thank you. The paper committee chairs have been notified of your acceptance.'));
+      break;
+
+    case 'decline':
+      // Send email to chairs.
+      $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
+      while($o = db_fetch_object($result)) {
+        drupal_mail('review', 'reviewer_invite_action', $o->mail, $language, $params);
+      }
+
+      // Tell $user what we did.
+      drupal_set_message(t('Thank you. The paper committee chairs have been notified of your decision to decline the invitation.'));
+      break;
+
+    default:
+      drupal_set_message('I have no idea what to do, sorry. Please use the contact page and let us know what happened and which link you clicked.', 'error');
+      break;
+
+  }
+  drupal_goto('<front>');
+}
+
+/**
  * Function to handle the adding and removing of reviews to and from proposals.
  */
-function review_manage($op, $pid, $uuid, $vuid) {
+function review_manage_review($op, $pid, $uuid, $vuid) {
 
   global $user;
 
