@@ -32,6 +32,14 @@ function review_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['review/invite_reviewers'] = array(
+    'title' => 'Invite potental reviewers',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('review_reviewer_csv'),
+    'access arguments' => array('send authors their status'),
+    'type' => MENU_CALLBACK,
+  );
+
   // Handler for the magic URL to add a reviewer to a proposal.
   // Needs to be hit by an authenticated user.
   $items['manage/review/%/%/%/%'] = array(
@@ -45,11 +53,11 @@ function review_menu() {
 
   // Handler for the magic URL to accept or decline reviewer status.
   // Needs to be hit by any user.
-  $items['manage/reviewer/%/%'] = array(
+  $items['manage/reviewer/%/%/%'] = array(
     'title' => 'Modify a review',
     'description' => 'Modify a review',
-    'page callback' => 'review_manage_review',
-    'page arguments' => array(3, 4),
+    'page callback' => 'review_manage_reviewer',
+    'page arguments' => array(2, 3, 4),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -821,39 +829,215 @@ function review_link($type, $object, $teaser = FALSE) {
 }
 
 /**
+ * Form to read a CVS file.
+ */
+function review_reviewer_csv() {
+  $form['invite'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Invite Reviewers',
+    '#description' => 'Upload a file with reviewer contact details and automatically invite them to take part in the review process.',
+  );
+  $form['invite']['explanation'] = array(
+    '#type' => 'markup',
+    '#value' => '<p>The CSV file must contain exactly 5 columns and the first row must not be headers.<p>The structure of the file is:<pre>Firstname,Surname,"Organisation",Position,Email</pre><p>If an email address is not valid, that reviewer will not be added.',
+  );
+  $form['invite']['file'] = array(
+    '#type' => 'file',
+    '#title' => 'Select CSV File',
+    '#description' => 'Please select the properly formatted CSV file with invitee details.',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Upload and Invite',
+  );
+
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+  return $form;
+}
+
+function review_reviewer_csv_validate($form, &$form_state) {
+  $file = file_save_upload('file');
+  if (!$file) {
+    drupal_set_message('You must select a CSV file to upload.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  $fp = fopen($file->filepath, 'r');
+  if ($fp) {
+    $line = fgetcsv($fp);
+    fclose($fp);
+  } else {
+    drupal_set_message('Unable to access uploaded file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  if (count($line) != 5) {
+    drupal_set_message('The uploaded file is not a valid CSV file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+}
+
+function review_reviewer_csv_submit($form, &$form_state) {
+
+  global $language;
+
+  $file = file_save_upload('file');
+  if (!$file) {
+    drupal_set_message('Unable to access uploaded file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  $fp = fopen($file->filepath, 'r');
+  if (!$fp) {
+    drupal_set_message('Unable to access uploaded file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  $i = 0;
+  while (!feof($fp)) {
+    $i++;
+
+    $data = array();
+    $line = fgetcsv($fp);
+
+    if (!count($line)) {
+      // Last line will be empty...
+      continue;
+    }
+
+    // User with this email?
+    if (!valid_email_address($line[4])) {
+      drupal_set_message(t('Invalid email adress "@mail" on line !num.', array('!num' => $i, '@mail' => $line[4])), 'error');
+      continue;
+    }
+
+    $params = array();
+
+    $uid = db_result(db_query("SELECT uid FROM users WHERE LCASE(mail) = '%s'", strtolower(trim($line[4]))));
+    if ($uid > 0) {
+      $reviewer = user_load($uid);
+      $profile = content_profile_load('profile', $reviewer->uid);
+    } else {
+      $data['firstname'] = $line[0];
+      $data['surname'] = $line[1];
+      $data['organisation'] = $line[2];
+      $data['position'] = $line[3];
+      $data['mail'] = $line[4];
+
+      $new_uid = proposal_copresenter_create($data);
+      $reviewer = user_load($new_uid);
+      $profile = content_profile_load('profile', $reviewer->uid);
+    }
+
+    // make email vars.
+    $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
+    $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
+    $params['!reviewer_user'] = $reviewer->mail;
+    $params['!reviewer_email'] = $reviewer->mail;
+    $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+    $params['!decline_url'] = url('manage/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+
+    // Email this user.
+    drupal_mail('review', 'reviewer_invite', $reviewer->mail, $language, $params);
+
+    // Message on screen.
+    drupal_set_message(t('Sent invitation to @firstname @surname <@mail>.', array('@firstname' => $profile->field_profile_firstname[0]['value'], '@surname' => $profile->field_profile_surname[0]['value'], '@mail' => $reviewer->mail)));
+
+  }
+  fclose($fp);
+
+}
+
+/**
+ * Function to create users.
+ */
+function review_reviewer_create($data) {
+
+  /*
+   * Create a new user with submitted information.
+   */
+  $user_attributes = array(
+    'name' => $data['email'],
+    'pass' => $data['password'],
+    'mail' => $data['email'],
+    'roles' => array(DRUPAL_AUTHENTICATED_RID),
+    'status' => TRUE,
+  );
+  $new_user = user_save(
+    new stdClass(),
+    $user_attributes
+  );
+
+  /*
+   * And create a new profile, which will be associated with this user.
+   */
+  $profile_attributes = array(
+    'nid' => NULL, // NULL creates a new node.
+    'title' => $data['firstname'] .'\'s Profile',
+    'body' => NULL, // Defaults to no body.
+    'type' => 'profile',
+    'teaser' => NULL,
+    'log' => '',
+    'created' => '',
+    'format' => FILTER_FORMAT_DEFAULT,
+    'uid' => $new_user->uid,
+    'field_profile_firstname' => array(array('value' => $data['firstname'])),
+    'field_profile_surname' => array(array('value' => $data['surname'])),
+    'field_profile_organisation' => array(array('value' => $data['organisation'])),
+    'field_profile_position' => array(array('value' => $data['position'])),
+  );
+  $new_profile = (object) $profile_attributes;
+  node_save($new_profile);
+
+  drupal_set_message(t('Created new user @mail.', array('@mail' => $new_user->mail)));
+
+  return $new_user;
+}
+
+/**
  * Function to manage reviewer invitation acceptance and rejections.
  * This needs to handle accept and decline magic URLs.
  */
-function review_manage_reviewer($op, $uuid) {
+function review_manage_reviewer($op, $uuid, $vuid) {
 
   global $user;
 
   // Load a user by UUID.
-  $victim = user_get_by_uuid($uuid);
-  if ($victim === FALSE) {
+  $victim = user_load($vuid);
+  if ($victim->uid == 0 || $victim->uuid != $uuid) {
     drupal_set_message('The link you clicked is invalid.', 'error');
     drupal_goto('<front>');
     return;
   }
 
-  // User is already a reviewer?
-  if (in_array('reviewer', $victim->roles)) {
-    drupal_set_message('You are aready a reviewer', 'error');
-    drupal_goto('<front>');
-  }
-
-  $profile = profile_node_load('profile', $victim->uid);
+  $profile = content_profile_load('profile', $victim->uid);
 
   $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
   $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
   $params['!reviewer_email'] = $victim->mail;
   $params['!action'] = $op;
 
+  // Reviewer rid.
+  $rid = db_result(db_query("SELECT rid FROM {role} WHERE name = '%s'", 'reviewer'));
+
   switch($op) {
     case 'accept':
+
+      if (in_array('reviewer', $victim->roles)) {
+        drupal_set_message('You are aready a reviewer.', 'warning');
+        drupal_goto('user/' . $user->uid . '/edit/profile');
+        return;
+      }
+
       // Set reviewer role.
-      array_push($victim->roles, 'reviewer');
-      user_save($victim);
+      $roles = $victim->roles + array($rid => 'reviewer');
+      user_save($victim, array('roles' => $roles));
 
       // Log the user in.
       if ($user->uid == 0) {
@@ -868,17 +1052,31 @@ function review_manage_reviewer($op, $uuid) {
 
       // Tell the $user what we did.
       drupal_set_message(t('Thank you. The paper committee chairs have been notified of your acceptance.'));
+      drupal_goto('user/' . $user->uid . '/edit/profile');
+      return;
       break;
 
     case 'decline':
+
       // Send email to chairs.
       $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
       while($o = db_fetch_object($result)) {
         drupal_mail('review', 'reviewer_invite_action', $o->mail, $language, $params);
       }
 
-      // Tell $user what we did.
-      drupal_set_message(t('Thank you. The paper committee chairs have been notified of your decision to decline the invitation.'));
+      // User is already a reviewer?
+      if (in_array('reviewer', $victim->roles)) {
+        drupal_set_message('You had previously accepted. The paper committee chairs have been notified of your decision to decline the invitation.', 'warning');
+
+        $roles = array_diff($victim->roles, array($rid => 'reviewer'));
+        user_save($victim, array('roles' => $roles));
+
+        // If logged in, reload the perms.
+        if ($user->uid > 0)
+          $user = $victim;
+      } else {
+        drupal_set_message(t('Thank you. The paper committee chairs have been notified of your decision to decline the invitation.'));
+      }
       break;
 
     default:
