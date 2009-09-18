@@ -50,8 +50,12 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
 
   if ($form_id == 'profile_node_form') {
     $form['taxonomy'][4]['#title'] = 'Your Interests';
-    $form['taxonomy'][4]['#description'] = 'Please tell us which topic areas are of interest to you. We can use this information to suggest sessions you may want to attend.';
-    // dpm($form);
+    $form['taxonomy'][4]['#description'] = 'Please tell us which topic areas are of interest to you. We can use this information to suggest sessions you may want to attend. Hold down the control key when clicking to select multiple items.';
+    for ($i = 0; $i < count($form['taxonomy'][4]['#options']); $i++) {
+      if ($form['taxonomy'][4]['#options'][$i]->option[42]) {
+        unset($form['taxonomy'][4]['#options'][$i]);
+      }
+    }
   }
 }
 
