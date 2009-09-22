@@ -871,7 +871,7 @@ function proposal_copresenter_create($params) {
     $user_attributes
   );
 
-  drupal_set_message(t('Created a new account for @firstname @surname <@email>',
+  drupal_set_message(t('Created a new account for @firstname @surname &lt;@email&gt;',
     array(
       '@firstname' => trim($params['firstname']),
       '@surname' => trim($params['surname']),
