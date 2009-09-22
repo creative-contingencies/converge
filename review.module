@@ -959,52 +959,6 @@ function review_reviewer_csv_submit($form, &$form_state) {
 }
 
 /**
- * Function to create users.
- */
-function review_reviewer_create($data) {
-
-  /*
-   * Create a new user with submitted information.
-   */
-  $user_attributes = array(
-    'name' => $data['email'],
-    'pass' => $data['password'],
-    'mail' => $data['email'],
-    'roles' => array(DRUPAL_AUTHENTICATED_RID),
-    'status' => TRUE,
-  );
-  $new_user = user_save(
-    new stdClass(),
-    $user_attributes
-  );
-
-  /*
-   * And create a new profile, which will be associated with this user.
-   */
-  $profile_attributes = array(
-    'nid' => NULL, // NULL creates a new node.
-    'title' => $data['firstname'] .'\'s Profile',
-    'body' => NULL, // Defaults to no body.
-    'type' => 'profile',
-    'teaser' => NULL,
-    'log' => '',
-    'created' => '',
-    'format' => FILTER_FORMAT_DEFAULT,
-    'uid' => $new_user->uid,
-    'field_profile_firstname' => array(array('value' => $data['firstname'])),
-    'field_profile_surname' => array(array('value' => $data['surname'])),
-    'field_profile_organisation' => array(array('value' => $data['organisation'])),
-    'field_profile_position' => array(array('value' => $data['position'])),
-  );
-  $new_profile = (object) $profile_attributes;
-  node_save($new_profile);
-
-  drupal_set_message(t('Created new user @mail.', array('@mail' => $new_user->mail)));
-
-  return $new_user;
-}
-
-/**
  * Function to manage reviewer invitation acceptance and rejections.
  * This needs to handle accept and decline magic URLs.
  */
@@ -1033,11 +987,12 @@ function review_manage_reviewer($op, $uuid, $vuid) {
   switch($op) {
     case 'accept':
 
+      // Log the user in.
+      if ($user->uid == 0) {
+        $user = $victim;
+      }
+
       if (in_array('reviewer', $victim->roles)) {
-        // Log the user in.
-        if ($user->uid == 0) {
-          $user = $victim;
-        }
         drupal_set_message('You are aready a reviewer.', 'warning');
         drupal_goto('user/' . $user->uid . '/edit/profile');
         return;
@@ -1047,10 +1002,8 @@ function review_manage_reviewer($op, $uuid, $vuid) {
       $roles = $victim->roles + array($rid => 'reviewer');
       user_save($victim, array('roles' => $roles));
 
-      // Log the user in.
-      if ($user->uid == 0) {
-        $user = $victim;
-      }
+      // Update logged-in user!
+      $user = $victim;
 
       // Send email to chairs.
       $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
@@ -1059,7 +1012,9 @@ function review_manage_reviewer($op, $uuid, $vuid) {
       }
 
       // Tell the $user what we did.
-      drupal_set_message(t('Thank you for agreeing to review papers. Please complete this profile and indicate your interest areas below, so we can assign relevant papers.'));
+      drupal_set_message(t('Thank you for agreeing to review papers.'));
+      drupal_set_message(t('Please complete this profile and indicate your interest areas below, so we can assign relevant papers.'));
+      drupal_set_message(t('You will receive an email with instructions once a paper has been assigned for you to review.'));
       drupal_goto('user/' . $user->uid . '/edit/profile');
       return;
       break;
