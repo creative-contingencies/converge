@@ -33,7 +33,7 @@ function review_menu() {
   );
 
   $items['review/invite_reviewers'] = array(
-    'title' => 'Invite potental reviewers',
+    'title' => 'Invite potential reviewers',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_reviewer_csv'),
     'access arguments' => array('send authors their status'),
