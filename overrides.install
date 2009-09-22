@@ -10,6 +10,14 @@
 function overrides_install() {
   // Make sure we run *AFTER* the uc_order module, so we can remove its blurb from
   // the user profile page.
-  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'uc_order'")));
+  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'taxonomy_super_select'")));
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'overrides'", $weight + 1);
+}
+
+/**
+ * Adjust weight, so the module runs after taxonomy_super_select.
+ */
+function overrides_update_6004() {
+  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'taxonomy_super_select'")));
   db_query("UPDATE {system} SET weight = %d WHERE name = 'overrides'", $weight + 1);
 }
