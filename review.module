@@ -832,6 +832,7 @@ function review_link($type, $object, $teaser = FALSE) {
  * Form to read a CVS file.
  */
 function review_reviewer_csv() {
+  drupal_set_message('TODO: Data verification step.');
   $form['invite'] = array(
     '#type' => 'fieldset',
     '#title' => 'Invite Reviewers',
@@ -856,6 +857,9 @@ function review_reviewer_csv() {
 }
 
 function review_reviewer_csv_validate($form, &$form_state) {
+
+  // dpm($form_state);
+
   $file = file_save_upload('file');
   if (!$file) {
     drupal_set_message('You must select a CSV file to upload.', 'error');
@@ -913,7 +917,7 @@ function review_reviewer_csv_submit($form, &$form_state) {
 
     // User with this email?
     if (!valid_email_address($line[4])) {
-      drupal_set_message(t('Invalid email adress "@mail" on line !num.', array('!num' => $i, '@mail' => $line[4])), 'error');
+      drupal_set_message(t('Invalid email adress "@mail" on line !num. Line skipped.', array('!num' => $i, '@mail' => $line[4])), 'warning');
       continue;
     }
 
@@ -947,7 +951,7 @@ function review_reviewer_csv_submit($form, &$form_state) {
     drupal_mail('review', 'reviewer_invite', $reviewer->mail, $language, $params);
 
     // Message on screen.
-    drupal_set_message(t('Sent invitation to @firstname @surname <@mail>.', array('@firstname' => $profile->field_profile_firstname[0]['value'], '@surname' => $profile->field_profile_surname[0]['value'], '@mail' => $reviewer->mail)));
+    drupal_set_message(t('Sent invitation to @firstname @surname &lt;@mail&gt;.', array('@firstname' => $profile->field_profile_firstname[0]['value'], '@surname' => $profile->field_profile_surname[0]['value'], '@mail' => $reviewer->mail)));
 
   }
   fclose($fp);
@@ -1030,6 +1034,10 @@ function review_manage_reviewer($op, $uuid, $vuid) {
     case 'accept':
 
       if (in_array('reviewer', $victim->roles)) {
+        // Log the user in.
+        if ($user->uid == 0) {
+          $user = $victim;
+        }
         drupal_set_message('You are aready a reviewer.', 'warning');
         drupal_goto('user/' . $user->uid . '/edit/profile');
         return;
@@ -1051,7 +1059,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
       }
 
       // Tell the $user what we did.
-      drupal_set_message(t('Thank you. The paper committee chairs have been notified of your acceptance.'));
+      drupal_set_message(t('Thank you for agreeing to review papers. Please complete this profile and indicate your interest areas below, so we can assign relevant papers.'));
       drupal_goto('user/' . $user->uid . '/edit/profile');
       return;
       break;
