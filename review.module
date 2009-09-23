@@ -567,7 +567,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
     $js = "
     $(document).ready(function() {
       $('#content .node-form .standard').children().each(function() {
-        if ( $(this).attr('id') != 'field-proposal-reviewers-items' && $(this).attr('id') != 'edit-field-proposal-reviewers-uid-uid-wrapper') {
+        if ( $(this).attr('id') != 'field-proposal-reviewers-items' && $(this).attr('id') != 'edit-field-proposal-reviewers-uid-uid-wrapper' && $(this).attr('class') != 'not-hidden' ) {
           $(this).hide();
         }
       });
@@ -578,6 +578,55 @@ function review_form_alter(&$form, $form_state, $form_id) {
     ";
     
     drupal_add_js($js, 'inline');
+
+    // Show a list of reviewers with interests that match the categories on this node.
+
+    // Get category vid.
+    $vid = variable_get('proposal_vocabulary_category', 0);
+    if ($vid) {
+
+      $rid = db_result(db_query("SELECT rid FROM {role} WHERE name='reviewer'"));
+
+      // Select tids for nid in vid.
+      $query = "SELECT tn.tid FROM {term_node} AS tn LEFT JOIN {term_data} AS td ON (tn.tid=td.tid) WHERE tn.nid=%d AND td.vid=%d";
+      $result = db_query($query, $form['nid']['#value'], $vid);
+      while ($o = db_fetch_object($result)) {
+        $tid[] = $o->tid;
+      }
+
+      // Select profiles whose vid contains one or more of these tids.
+      $query = "SELECT n.uid AS uid, COUNT(tn.tid) AS matches, ctp.field_profile_firstname_value AS firstname, ctp.field_profile_surname_value AS surname FROM {term_node} AS tn LEFT JOIN node AS n ON (tn.nid=n.nid) LEFT JOIN {users_roles} AS ur ON (ur.uid=n.uid) LEFT JOIN {content_type_profile} AS ctp ON(n.nid=ctp.nid) WHERE n.type='%s' AND ur.rid=%d AND tn.tid IN (" . implode(',', $tid) . ") GROUP BY n.uid ORDER BY matches DESC";
+      $result = db_query($query, 'profile', $rid);
+
+      while ($o = db_fetch_object($result)) {
+        $data[] = array(
+          l($o->firstname, 'user/' . $o->uid),
+          l($o->surname, 'user/' . $o->uid),
+          $o->matches
+        );
+      }
+
+      $form['matches'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'Suggested reviewers',
+        '#description' => 'Based on selected interests, these reviewers should be preferentially assigned to review this proposal.',
+        '#attributes' => array('class' => 'not-hidden'),
+      );
+      if (count($data)) {
+        $titles = array('Firstname', 'Surname', 'Matches');
+        $form['matches']['list'] = array(
+          '#type' => 'markup',
+          '#value' => theme('table', $titles, $data),
+          '#attributes' => array('class' => 'not-hidden'),
+        );
+      } else {
+        $form['matches']['list'] = array(
+          '#type' => 'markup',
+          '#value' => 'No reviewers with matching interests were found.',
+          '#attributes' => array('class' => 'not-hidden'),
+        );
+      } // !count
+    } // !vid
   }
   else if ( $form_id == 'proposal_node_form' && isset($_GET['change_status']) && $_GET['change_status'] == True ) {
     // Show only status field for updating proposals.
@@ -596,6 +645,8 @@ function review_form_alter(&$form, $form_state, $form_id) {
     
     drupal_add_js($js, 'inline');
   }
+
+
 }
 
 
