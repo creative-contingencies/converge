@@ -862,7 +862,7 @@ function review_link($type, $object, $teaser = FALSE) {
   if ( $type == 'node' && $object->type == 'proposal' ) {
     $can_review = False;
     foreach ( $object->field_proposal_reviewers as $reviewer ) {
-        if ( $reviewer['uid'] == $user->uid ) {
+        if ($reviewer['uid'] == $user->uid && $user->uid != 0) {
             $can_review = True;
             break;
         }
