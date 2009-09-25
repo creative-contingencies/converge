@@ -858,11 +858,14 @@ function review_mail($key, &$message, $params) {
 function review_link($type, $object, $teaser = FALSE) {
   $links = array();
   global $user;
+
+  if($user->uid == 0)
+    return $links;
   
   if ( $type == 'node' && $object->type == 'proposal' ) {
     $can_review = False;
     foreach ( $object->field_proposal_reviewers as $reviewer ) {
-        if ($reviewer['uid'] == $user->uid && $user->uid != 0) {
+        if ($reviewer['uid'] == $user->uid) {
             $can_review = True;
             break;
         }
