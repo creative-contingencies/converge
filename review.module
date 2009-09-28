@@ -107,19 +107,31 @@ function review_email_authors() {
     $to_options[$option[0]] = $option[1];
   }
 
-  // TODO: Optional filter by proposal kind vocabulary.
+  $query = "SELECT tid,name FROM {term_data} WHERE vid = %d";
+  $result = db_query($query, variable_get('proposal_vocabulary_kind'));
+  $type_options = array();
+  while ($o = db_fetch_object($result)) {
+    $type_options[$o->tid] = $o->name;
+  }
 
   $form['reviewer_email_authors'] = array(
     '#type' => 'fieldset',
     '#title' => 'E-mail Authors',
   );
   $form['reviewer_email_authors']['review_email_authors_to'] = array(
-    '#title' => t('Send To'),
+    '#title' => t('Filter by proposal status status'),
     '#description' => t("Select which proposal status' to e-mail authors."),
     '#type' => 'select',
     '#options' => $to_options,
     '#multiple' => true
-  ); 
+  );
+  $form['reviewer_email_authors']['review_email_authors_kind'] = array(
+    '#title' => t('Filter by proposal type.'),
+    '#description' => t("Select which proposal types to e-mail authors. If you select none, this filter will be ignored."),
+    '#type' => 'select',
+    '#options' => $type_options,
+    '#multiple' => true
+  );
   $form['reviewer_email_authors']['review_email_authors_subject'] = array(
     '#title' => t('Subject'),
     '#description' => t('The subject line to appear on the email.'),
@@ -157,8 +169,15 @@ function review_email_authors_submit($form, &$form_state) {
 
   $sent_to = array();
 
-  $query = "SELECT nid FROM {content_type_proposal} WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
-  $result = db_query($query);
+  // $query = "SELECT nid FROM {content_type_proposal} WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
+  $query = "SELECT ctp.nid FROM {content_type_proposal} AS ctp JOIN {term_node} AS tn ON (ctp.nid=tn.nid) WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
+
+  // If we filter by proposal type...
+  if( $form_state['values']['review_email_authors_kind']) {
+    $query .= " AND tn.tid IN (" . implode(',', $form_state['values']['review_email_authors_kind']) .")";
+  }
+
+  $result = db_queryd($query);
   while ( $n = db_fetch_object($result) ) {
     $proposal_node = node_load($n->nid);
     $params['!proposal_title'] = $proposal_node->title;
@@ -181,6 +200,7 @@ function review_email_authors_submit($form, &$form_state) {
     $message['body'] = drupal_wrap_mail(strtr($form_state['values']['review_email_authors_body'], $params));
     $message['headers']['From'] = $message['headers']['Sender'] = $message['headers']['Return-Path'] = $message['headers']['Errors-To'] = variable_get('site_mail', '');
     //dpm($message);
+
     if ( drupal_mail_send($message) ) {
       //dpm("Successfully sent to " . $message['to']);
       $sent_to[] = $author_profile->field_profile_firstname[0]['value'] . ' ' . $author_profile->field_profile_surname[0]['value'] . ' &lt;' . $author_user->mail . '&gt;';
@@ -191,7 +211,9 @@ function review_email_authors_submit($form, &$form_state) {
   }
 
   if ( count($sent_to) ) {
-    drupal_set_message("E-mails sent to: " . implode(', ', $sent_to));
+    foreach ($sent_to as $recipient) {
+      drupal_set_message(t('E-mail sent to !author', array('!author' => $recipient)));
+    }
   }
   else {
     drupal_set_message("No emails were sent to any authors in the selected categories.");
