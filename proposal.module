@@ -986,7 +986,7 @@ function proposal_export_csv($type) {
   while ($o = db_fetch_array($result)) {
     $row = array();
     foreach ($o as $field) {
-      $row[] = '"' . $field . '"';
+      $row[] = '"' . str_replace('"', '\'', $field) . '"';
     }
     $lines[] = implode(',', $row);
   }
