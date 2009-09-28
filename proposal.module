@@ -25,11 +25,41 @@ function proposal_menu() {
 
   // Handler for the magic URL to add a user to a proposal.
   // Needs to be hit by an authenticated user.
+  $items['proposal/manage/%/%/%/%'] = array(
+    'title' => 'Modify a proposal',
+    'description' => 'Modify a proposal',
+    'page callback' => 'proposal_manage',
+    'page arguments' => array(2, 3, 4, 5),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Legacy URL format.
   $items['manage/proposal/%/%/%/%'] = array(
     'title' => 'Modify a proposal',
     'description' => 'Modify a proposal',
     'page callback' => 'proposal_manage',
     'page arguments' => array(2, 3, 4, 5),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Handlers to export proposals as CSV.
+  $items['proposal/export/csv/all'] = array(
+    'title' => 'All proposals',
+    'description' => 'Export all proposals',
+    'page callback' => 'proposal_export_csv',
+    'page arguments' => array(3),
+    'access arguments' => array('export proposals'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['proposal/export/csv/refereed'] = array(
+    'title' => 'All proposals',
+    'description' => 'Export all proposals',
+    'page callback' => 'proposal_export_csv',
+    'page arguments' => array(3),
+    'access arguments' => array('export proposals'),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -650,7 +680,7 @@ function proposal_nodeapi(&$node, $op, $a1) {
       $params['!keywords'] = implode(', ', $keywords);
 
       // Magic URL any registered user can hit to be added as a presenter.
-      $params['!add_url'] = url('manage/proposal/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
+      $params['!add_url'] = url('proposal/manage/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
 
       if (variable_get('proposal_mail_proposal_notify_user_send', 0)) {
@@ -713,6 +743,13 @@ function proposal_mail($key, &$message, $params) {
 }
 
 /**
+ * Implementation of hook_perm()
+ */
+function proposal_perm() {
+  return array("export proposals");
+}
+
+/**
  * Add the current user as a presenter on this proposal.
  */
 function proposal_manage($op, $pid, $uuid, $vuid) {
@@ -772,7 +809,7 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
           $params['!title'] = $proposal->title;
           $params['!author'] = $author->name;
           $params['!authoremail'] = $author->mail;
-          $params['!remove_url'] = url('manage/proposal/remove/' . $proposal->nid . '/' . $proposal->uuid . '/' . $user->uid, array('absolute' => TRUE, 'alias' => TRUE));
+          $params['!remove_url'] = url('proposal/manage/remove/' . $proposal->nid . '/' . $proposal->uuid . '/' . $user->uid, array('absolute' => TRUE, 'alias' => TRUE));
 
           // Prepare and send e-mail.
           drupal_mail('proposal', 'presenter_add_notify', $author->mail, $language, $params);
@@ -913,4 +950,49 @@ function proposal_copresenter_create($params) {
   }
 
   return $new_user->uid;
+}
+
+/**
+ * Function to export proposals in CSV format. This depends on the exports being available
+ * as views in MySQL. Basically, we select * from view.
+ */
+function proposal_export_csv($type) {
+
+  switch($type) {
+
+    case 'all':
+      $view = 'view_export_proposals';
+      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status');
+      break;
+
+    case 'refereed':
+      $view = 'view_export_accepted_refereed';
+      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status');
+      break;
+
+    default:
+      drupal_set_message(t('The CSV export you tried to access does not exist.'), 'error');
+      return;
+  }
+
+  // Add a pretty CSV attachment header.
+  header('Content-type: application/vnd.ms-excel; charset=utf-8');
+  header('Content-disposition: attachment; filename=export-' . $type . '-' . date("Y-m-d") . '.csv');
+
+  $query = 'SELECT * FROM ' . $view;
+  $result = db_query($query);
+
+  $lines = array( implode(',', $header));
+  while ($o = db_fetch_array($result)) {
+    $row = array();
+    foreach ($o as $field) {
+      $row[] = '"' . $field . '"';
+    }
+    $lines[] = implode(',', $row);
+  }
+
+  print implode("\n\r", $lines);
+
+  // Importantly, do not print anything else, just quit, exit and die.
+  die();
 }
