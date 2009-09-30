@@ -63,6 +63,15 @@ function proposal_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
+
+  $items['proposal/users'] = array(
+    'title' => 'Search and list users.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('proposal_list_users'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -336,16 +345,7 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
 
   if ($form_id == 'proposal_node_form') {
     if (variable_get('proposal_c4p_open', 0) == 0) {
-      // closed
-      if (variable_get('proposal_c4p_backup', 0) == 0) {
-        // no backup
-        drupal_set_message(t('The call for proposals has closed.'), 'error');
-        unset($form);
-        return;
-      } else {
-        drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
-        // backup
-      }
+      drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
     }
   }
 
@@ -995,4 +995,107 @@ function proposal_export_csv($type) {
 
   // Importantly, do not print anything else, just quit, exit and die.
   die();
+}
+
+/**
+ * Helper for custom user search.
+ */
+function proposal_list_users_fields($keys_only = FALSE) {
+  $query = "SELECT cnf.field_name, cnfi.label FROM {content_node_field} AS cnf LEFT JOIN {content_node_field_instance} AS cnfi USING(field_name) WHERE cnf.field_name LIKE 'field_profile_%' AND cnf.type='text' ORDER BY cnfi.label ASC";
+  $result = db_query($query);
+  $fields = array();
+  while ($object = db_fetch_object($result)) {
+    if ($keys_only)
+      $fields[] = $object->field_name;
+    else
+      $fields[$object->field_name] = $object->label;
+  }
+  return $fields;
+}
+
+/**
+ * Custom user search.
+ */
+function proposal_list_users() {
+
+  $form['proposal_list_users']['string'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Search',
+    '#description' => 'Enter arbitrary text to search for.',
+  );
+  $form['proposal_list_users']['filters'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Filters',
+    '#description' => '',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['proposal_list_users']['filters']['fields'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Search fields',
+    '#description' => 'Check all the fields that you wish to search. The email address field is always searched.',
+    '#options' => proposal_list_users_fields(),
+    '#default_value' => array('field_profile_firstname', 'field_profile_surname', 'field_profile_organisation'),
+  );
+  $form['proposal_list_users']['filters']['roles'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'User roles',
+    '#description' => 'Check any roles you wish to limit results by.',
+    '#options' => user_roles(TRUE),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('List Users'),
+  );
+
+  return $form;
+}
+
+function proposal_list_users_submit($form, &$form_state) {
+
+  // Parse fields.
+  $fields = array();
+  foreach ($form_state['values']['fields'] as $key => $val) {
+    if ($val) {
+      $fields[] = $key;
+    }
+  }
+
+  // Parse roles.
+  $roles = array();
+  foreach ($form_state['values']['roles'] as $key => $val) {
+    if ($val) {
+      $roles[] = $key;
+    }
+  }
+
+  // Only retrieve checked fields.
+  // $query = "SELECT n.uid, u.mail, ctp." . implode('_value, ctp.', proposal_list_users_fields(TRUE) ) . "_value FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE u.mail LIKE '%%%s%%'";
+  $query = "SELECT DISTINCT(n.uid), u.mail, ctp." . implode('_value, ctp.', $fields) . "_value FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE u.mail LIKE '%%%s%%'";
+  $args = array($form_state['values']['string']);
+
+  // foreach $field add an OR.
+  foreach ($fields as $f) {
+    $query .= " OR ctp." . $f . "_value LIKE '%%%s%%'";
+    $args[] = $form_state['values']['string'];
+  }
+
+  if (count($roles)) {
+    $query .= " AND ur.rid IN(" . implode(',', $roles);
+  }
+  $result = db_query($query, $args);
+
+  $data = array();
+  while ($row = db_fetch_array($result)) {
+    $data[] = $row;
+  }
+
+  // Make a pretty table header.
+  $header = array('ID', 'Email');
+  $all_fields = proposal_list_users_fields();
+  foreach ($fields as $f) {
+    $header[] = $all_fields[$f];
+  }
+
+  print theme('table', $header, $data);
 }
