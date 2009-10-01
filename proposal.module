@@ -993,6 +993,7 @@ function proposal_export_csv($type) {
     // Now I should really grab the taxonomies as well.
     // Doing it via node->load is very very easy, if dirty.
     $node = node_load($o['ID']);
+    $tax = array();
     foreach ($node->taxonomy as $t) {
       $tax[$t->vid][] = $t->name;
     }
