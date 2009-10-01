@@ -962,12 +962,12 @@ function proposal_export_csv($type) {
 
     case 'all':
       $view = 'view_export_proposals';
-      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes');
+      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
       break;
 
     case 'refereed':
       $view = 'view_export_accepted_refereed';
-      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes');
+      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
       break;
 
     default:
@@ -985,9 +985,22 @@ function proposal_export_csv($type) {
   $lines = array( implode(',', $header));
   while ($o = db_fetch_array($result)) {
     $row = array();
+
     foreach ($o as $field) {
       $row[] = '"' . str_replace('"', '\'', $field) . '"';
     }
+
+    // Now I should really grab the taxonomies as well.
+    // Doing it via node->load is very very easy, if dirty.
+    $node = node_load($o['ID']);
+    foreach ($node->taxonomy as $t) {
+      $tax[$t->vid][] = $t->name;
+    }
+
+    $row[] = '"' . implode(', ', $tax[2]) . '"';
+    $row[] = '"' . implode(', ', $tax[4]) . '"';
+    $row[] = '"' . implode(', ', $tax[6]) . '"';
+
     $lines[] = implode(',', $row);
   }
 
