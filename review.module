@@ -177,7 +177,7 @@ function review_email_authors_submit($form, &$form_state) {
     $query .= " AND tn.tid IN (" . implode(',', $form_state['values']['review_email_authors_kind']) .")";
   }
 
-  $result = db_queryd($query);
+  $result = db_query($query);
   while ( $n = db_fetch_object($result) ) {
     $proposal_node = node_load($n->nid);
     $params['!proposal_title'] = $proposal_node->title;
