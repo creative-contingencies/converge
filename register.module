@@ -56,14 +56,20 @@ function register_menu() {
 function register_admin_settings() {
   $form = array();
   $form['register_profile_blurb']['register_profile_nonreg_blurb'] = array(
-    '#title' => 'Blurb',
+    '#title' => 'Profile Blurb',
     '#description' => 'The text to show on a user profile when a user has not yet registered.',
     '#type' => 'textarea',
     '#default_value' => variable_get('register_profile_nonreg_blurb', '<p>You are not registered. !register.</p>'),
   );
+  $form['register_profile_blurb']['register_no_allocations_blurb'] = array(
+    '#title' => 'Allocations Blurb',
+    '#description' => 'The text to show on the ticket allocations tab when a user has no tickets allocated to themselves.',
+    '#type' => 'textarea',
+    '#default_value' => variable_get('register_no_allocations_blurb', '<p>No tickets have been allocated to you. !register.</p>'),
+  );
   $form['register_profile_blurb']['vars'] = array(
     '#type' => 'markup',
-    '#description' => 'Available subsitution variables are !register, !fullconf, !tuesday, !wednesday, !thursday, !friday, dinner, !leadership',
+    '#value' => 'Available subsitution variables are !register, !fullconf, !tuesday, !wednesday, !thursday, !friday, dinner, !leadership',
   );
 
   // What does the 'Continue shopping' button say?
@@ -436,6 +442,23 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
   
   if (count($orders)) {
     $form['submit'] = array('#type' => 'submit', '#value' => t('Save ticket allocations'));
+  } else {
+    $params = array();
+    $params['!register'] = l('Buy a ticket', 'register');
+    $params['!fullconf'] = l('full conference', 'fullconf');
+    $params['!tuesday'] = l('Tuesday', 'tuesday');
+    $params['!wednesday'] = l('Wednesday', 'wednesday');
+    $params['!thursday'] = l('Thursday', 'thursday');
+    $params['!friday'] = l('Friday', 'friday');
+    $params['!dinner'] = l('conference dinner', 'dinner');
+    $params['!leadership'] = l('leadership forum', 'leadership');
+
+    $output = strtr(variable_get('register_no_allocations_blurb', ''), $params);
+
+    $form['items']['none'] = array(
+      '#type' => 'markup',
+      '#value' => $output,
+    );
   }
   
   return $form;

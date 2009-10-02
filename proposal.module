@@ -976,7 +976,8 @@ function proposal_export_csv($type) {
   }
 
   // Add a pretty CSV attachment header.
-  header('Content-type: application/vnd.ms-excel; charset=utf-8');
+  // header('Content-type: application/vnd.ms-excel; charset=utf-8');
+  header('Content-type: text/csv; charset=utf-8');
   header('Content-disposition: attachment; filename=export-' . $type . '-' . date("Y-m-d") . '.csv');
 
   $query = 'SELECT * FROM ' . $view;
@@ -1005,7 +1006,7 @@ function proposal_export_csv($type) {
     $lines[] = implode(',', $row);
   }
 
-  print implode("\n\r", $lines);
+  print implode("\n", $lines);
 
   // Importantly, do not print anything else, just quit, exit and die.
   die();
