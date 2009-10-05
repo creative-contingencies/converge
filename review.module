@@ -744,7 +744,7 @@ function review_nodeapi(&$node, $op, $a1) {
       }
     break;
       
-    case 'presave':     
+    case 'presave':
       if ( $node->type == 'paper_review' && arg(2) != 'edit' ) {
         // Check to see if a user has already reviewed this 
         $query = "SELECT nid FROM {node} WHERE type='paper_review' AND uid = %s";
@@ -777,6 +777,11 @@ function review_nodeapi(&$node, $op, $a1) {
         // clear the "munged" params
         $params = array();
         //!reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'
+
+        if (!$node->uuid) {
+          drupal_set_message(t('Node !nid has no uuid!', array('!nid' => $node->nid)), 'error');
+          return;
+        }
         
         $author = content_profile_load('profile', $node->uid);
         $author_user = user_load(array('uid' => $node->uid));
