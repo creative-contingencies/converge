@@ -343,11 +343,12 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
   unset($form['body_field']['teaser_js']);
   unset($form['body_field']['teaser_include']);
 
-  // if ($form_id == 'proposal_node_form') {
+  if ($form_id == 'proposal_node_form') {
+dpm($form);
   //   if (variable_get('proposal_c4p_open', 0) == 0) {
   //     drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
   //   }
-  // }
+  }
 
   if ($form_id == 'proposal_node_form' && empty($form['#node']->nid) && $user->uid < 1) {
 
