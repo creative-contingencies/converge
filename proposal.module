@@ -344,7 +344,7 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
   unset($form['body_field']['teaser_include']);
 
   if ($form_id == 'proposal_node_form') {
-    if ((variable_get('proposal_c4p_open', 0) == 0) && !$form['title']['#value']) {
+    if ((variable_get('proposal_c4p_open', 0) == 0) && !$form['title']['#default_value']) {
       drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
     }
   }
