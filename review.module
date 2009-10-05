@@ -778,11 +778,16 @@ function review_nodeapi(&$node, $op, $a1) {
         $params = array();
         //!reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'
 
+        // The UUID is not available in hook_presave, so we need to load it explicitly!
         if (!$node->uuid) {
-          drupal_set_message(t('Node !nid has no uuid!', array('!nid' => $node->nid)), 'error');
-          return;
+          $uuid = db_result(db_query("SELECT uuid FROM {node_uuid} WHERE nid=%d", $node->nid));
+          if (!$uuid) {
+            drupal_set_message(t('Node !nid has no uuid!', array('!nid' => $node->nid)), 'error');
+            return;
+          }
+          $node->uuid = $uuid;
         }
-        
+
         $author = content_profile_load('profile', $node->uid);
         $author_user = user_load(array('uid' => $node->uid));
         $params['!author_firstname'] = $author->field_profile_firstname[0]['value'];
