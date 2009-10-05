@@ -1015,6 +1015,11 @@ function review_reviewer_csv_submit($form, &$form_state) {
       $profile = content_profile_load('profile', $reviewer->uid);
     }
 
+    if (!$reviewer->uuid) {
+      drupal_set_message(t('Reviewer !mail does not have a UUID', array('!mail' => $reviewer->mail)), 'error');
+      return;
+    }
+
     // make email vars.
     $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
     $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
