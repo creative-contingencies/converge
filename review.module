@@ -11,7 +11,7 @@ function review_menu() {
     'description' => 'Change configuration and email templates for Reviews',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_admin_settings'),
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer review settings'),
     'type' => MENU_LOCAL_TASK,
   );
   
@@ -224,7 +224,7 @@ function review_email_authors_submit($form, &$form_state) {
  * Implementation of hook_perm().
  */
 function review_perm() {
-  return array('send reviewers reminders', 'send authors their status');
+  return array('administer review settings', 'send reviewers reminders', 'send authors their status');
 }
 
 

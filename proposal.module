@@ -66,8 +66,8 @@ function proposal_menu() {
 
   $items['proposal/users'] = array(
     'title' => 'Search and list users.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('proposal_list_users'),
+    'description' => 'List users',
+    'page callback' => 'proposal_list_users',
     'access arguments' => array('administer users'),
     'type' => MENU_CALLBACK,
   );
@@ -1013,6 +1013,13 @@ function proposal_export_csv($type) {
 }
 
 /**
+ * User search form render helper.
+ */
+function proposal_list_users() {
+  return drupal_get_form('proposal_list_users_form');
+}
+
+/**
  * Helper for custom user search.
  */
 function proposal_list_users_fields($keys_only = FALSE) {
@@ -1031,12 +1038,15 @@ function proposal_list_users_fields($keys_only = FALSE) {
 /**
  * Custom user search.
  */
-function proposal_list_users() {
+function proposal_list_users_form($form_state) {
+
+  $form['#redirect'] = FALSE;
 
   $form['proposal_list_users']['string'] = array(
     '#type' => 'textfield',
     '#title' => 'Search',
     '#description' => 'Enter arbitrary text to search for.',
+    '#default_value' => $form_state['values']['string'],
   );
   $form['proposal_list_users']['filters'] = array(
     '#type' => 'fieldset',
@@ -1050,14 +1060,23 @@ function proposal_list_users() {
     '#title' => 'Search fields',
     '#description' => 'Check all the fields that you wish to search. The email address field is always searched.',
     '#options' => proposal_list_users_fields(),
-    '#default_value' => array('field_profile_firstname', 'field_profile_surname', 'field_profile_organisation'),
+    '#default_value' => proposal_list_users_defaults($form_state, 'fields'),
   );
   $form['proposal_list_users']['filters']['roles'] = array(
     '#type' => 'checkboxes',
     '#title' => 'User roles',
     '#description' => 'Check any roles you wish to limit results by.',
     '#options' => user_roles(TRUE),
+    '#default_value' => proposal_list_users_defaults($form_state, 'roles'),
   );
+
+  if ($form_state['submitted'] == TRUE) {
+    $form['proposal_list_users']['result'] = array(
+      '#type' => 'markup',
+      '#value' => proposal_list_users_form_process($form_state),
+    );
+  }
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('List Users'),
@@ -1066,7 +1085,36 @@ function proposal_list_users() {
   return $form;
 }
 
-function proposal_list_users_submit($form, &$form_state) {
+/**
+ * Helper to regenerate selections for the form.
+ */
+function proposal_list_users_defaults($data, $field) {
+  $ret = array();
+  foreach ($data[$field] as $key => $val) {
+    if ($val) {
+      $ret[] = $val;
+    }
+  }
+
+  // For fields, default to name and organisation.
+  if ($field == 'fields' && !count($ret)) {
+    $ret = array('field_profile_firstname', 'field_profile_surname', 'field_profile_organisation');
+  }
+
+  return $ret;
+}
+
+/**
+ * Rebuild the form on submission.
+ */
+function proposal_list_users_form_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+}
+
+/*(
+ * Do the actual work, then retyurn a themed string.
+ */
+function proposal_list_users_form_process($form_state) {
 
   // Parse fields.
   $fields = array();
@@ -1112,5 +1160,5 @@ function proposal_list_users_submit($form, &$form_state) {
     $header[] = $all_fields[$f];
   }
 
-  print theme('table', $header, $data);
+  return theme('table', $header, $data);
 }
