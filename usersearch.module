@@ -9,7 +9,7 @@ function usersearch_menu() {
     'description' => 'Search users',
     'page callback' => 'usersearch_search',
     'access arguments' => array('administer users'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
@@ -26,7 +26,7 @@ function usersearch_search() {
  * Helper for custom user search.
  */
 function usersearch_search_fields($keys_only = FALSE) {
-  $query = "SELECT cnf.field_name, cnfi.label FROM {content_node_field} AS cnf LEFT JOIN {content_node_field_instance} AS cnfi USING(field_name) WHERE cnf.field_name LIKE 'field_profile_%' AND cnf.type='text' ORDER BY cnfi.label ASC";
+  $query = "SELECT cnf.field_name, cnfi.label FROM {content_node_field} AS cnf LEFT JOIN {content_node_field_instance} AS cnfi USING(field_name) WHERE cnf.field_name LIKE 'field_profile_%' AND cnf.type='text' ORDER BY cnfi.weight ASC";
   $result = db_query($query);
   $fields = array();
   while ($object = db_fetch_object($result)) {
@@ -93,7 +93,7 @@ function usersearch_search_form($form_state) {
  */
 function usersearch_search_defaults($data, $field) {
   $ret = array();
-  foreach ($data[$field] as $key => $val) {
+  foreach ($data['values'][$field] as $key => $val) {
     if ($val) {
       $ret[] = $val;
     }
@@ -137,7 +137,7 @@ function usersearch_search_form_process($form_state) {
 
   // Only retrieve checked fields.
   // $query = "SELECT n.uid, u.mail, ctp." . implode('_value, ctp.', proposal_list_users_fields(TRUE) ) . "_value FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE u.mail LIKE '%%%s%%'";
-  $query = "SELECT DISTINCT(n.uid), u.mail, ctp." . implode('_value, ctp.', $fields) . "_value FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE u.mail LIKE '%%%s%%'";
+  $query = "SELECT DISTINCT(n.uid), u.mail, ctp." . implode('_value, ctp.', $fields) . "_value FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE (u.mail LIKE '%%%s%%'";
   $args = array($form_state['values']['string']);
 
   // foreach $field add an OR.
@@ -147,12 +147,15 @@ function usersearch_search_form_process($form_state) {
   }
 
   if (count($roles)) {
-    $query .= " AND ur.rid IN(" . implode(',', $roles);
+    $query .= ') AND ur.rid IN(' . implode(',', $roles) . ')';
+  } else {
+    $query .= ')';
   }
   $result = db_query($query, $args);
 
   $data = array();
   while ($row = db_fetch_array($result)) {
+    $row['mail'] = l($row['mail'], 'user/' . $row['uid']);
     $data[] = $row;
   }
 
