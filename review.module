@@ -5,16 +5,16 @@
  */
 function review_menu() {
   $items = array();
-  
-  $items['admin/settings/review'] = array(
+
+  $items['conference/settings/review'] = array(
     'title' => 'CCC Review Settings',
     'description' => 'Change configuration and email templates for Reviews',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_admin_settings'),
-    'access arguments' => array('administer review settings'),
+    'access arguments' => array('administer mollom'),
     'type' => MENU_LOCAL_TASK,
   );
-  
+
   $items['review/remind_reviewers'] = array(
     'title' => 'Send reminder email to reviewers',
     'description' => 'Change configuration and email templates for Reviews',
@@ -23,7 +23,7 @@ function review_menu() {
     'access arguments' => array('send reviewers reminders'),
     'type' => MENU_CALLBACK,
   );
-  
+
   $items['review/email_authors'] = array(
     'title' => 'Send status emails to authors',
     'page callback' => 'drupal_get_form',
@@ -132,6 +132,14 @@ function review_email_authors() {
     '#options' => $type_options,
     '#multiple' => true
   );
+  $form['reviewer_email_authors']['review_email_authors_attachments'] = array(
+    '#title' => t('Filter by attachments.'),
+    '#description' => t("Select which attachment status to e-mail authors. If you select none, this filter will be ignored."),
+    '#type' => 'select',
+    '#options' => array('none' => '----------',
+                        'attachments' => 'Has attached paper',
+                        'no_attachments' => "Doesn't have attached paper"),
+  );
   $form['reviewer_email_authors']['review_email_authors_subject'] = array(
     '#title' => t('Subject'),
     '#description' => t('The subject line to appear on the email.'),
@@ -168,9 +176,18 @@ function review_email_authors_submit($form, &$form_state) {
      $params['!site_mail'] = variable_get('site_mail', '');
 
   $sent_to = array();
+  $extra_join = '';
+  if ( $form_state['values']['review_email_authors_attachments'] == 'attachments' ) {
+    $extra_join .= " JOIN {content_field_proposal_files} AS f ON (ctp.nid=f.nid)";
+    $extra_where .= " AND f.field_proposal_files_fid IS NOT null";
+  }
+  if ( $form_state['values']['review_email_authors_attachments'] == 'no_attachments' ) {
+    $extra_join .= " JOIN {content_field_proposal_files} AS f ON (ctp.nid=f.nid)";
+    $extra_where .= " AND f.field_proposal_files_fid IS null";
+  }
 
   // $query = "SELECT nid FROM {content_type_proposal} WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
-  $query = "SELECT ctp.nid FROM {content_type_proposal} AS ctp JOIN {term_node} AS tn ON (ctp.nid=tn.nid) WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
+  $query = "SELECT DISTINCT ctp.nid FROM {content_type_proposal} AS ctp JOIN {term_node} AS tn ON (ctp.nid=tn.nid)" . $extra_join . " WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')" . $extra_where;
 
   // If we filter by proposal type...
   if( $form_state['values']['review_email_authors_kind']) {
@@ -199,7 +216,7 @@ function review_email_authors_submit($form, &$form_state) {
     $message['subject'] = strtr($form_state['values']['review_email_authors_subject'], $params);
     $message['body'] = drupal_wrap_mail(strtr($form_state['values']['review_email_authors_body'], $params));
     $message['headers']['From'] = $message['headers']['Sender'] = $message['headers']['Return-Path'] = $message['headers']['Errors-To'] = variable_get('site_mail', '');
-    //dpm($message);
+    dpm($message);
 
     if ( drupal_mail_send($message) ) {
       //dpm("Successfully sent to " . $message['to']);
@@ -570,6 +587,64 @@ function review_admin_settings() {
  */
 function review_form_alter(&$form, $form_state, $form_id) {
   global $user;
+
+  if ( $form_id == 'contact_mail_user' && isset($_GET['contact_author']) && $_GET['contact_author'] == "true" && in_array('papers chair', $user->roles) ) {
+    // Allow substitution on contact form
+
+    $form['message']['#description'] = t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail');
+
+    $query = "SELECT nid, title FROM {node} WHERE uid = %d AND type = '%s'";
+    $result = db_query($query, arg(1), 'proposal');
+    $papers = array();
+    while ( $n = db_fetch_object($result) ) {
+      $papers[$n->nid] = $n->title;
+    }
+    $form['paper'] = array(
+        '#title' => t('Paper'),
+        '#description' => t('Select the paper this e-mail is in reference to.'),
+        '#type' => 'select',
+        '#options' => $papers,
+        '#weight' => -10
+    );
+    
+    // we have to do basic validation here or else if the form wasn't completed properly the substitution would still take place
+    if ( isset($form_state['post']['paper']) && (int) $form_state['post']['paper'] > 0 
+         && isset($form_state['post']['subject']) && !empty($form_state['post']['subject']) 
+         && isset($form_state['post']['message']) && !empty($form_state['post']['message']) )
+          {
+      $params = array();
+      if(empty($params['!site_url']))
+         $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
+      if(empty($params['!site']))
+         $params['!site'] = variable_get('site_name', '');
+      $params['!site_name'] = $params['!site'];
+      if(empty($params['!site_mail']))
+         $params['!site_mail'] = variable_get('site_mail', '');
+         
+        $proposal_node = node_load($form_state['post']['paper']);
+        $params['!proposal_title'] = $proposal_node->title;
+        $params['!proposal_abstract'] = $proposal_node->body;
+        $params['!proposal_url'] = url('node/' . $proposal_node->nid, array('absolute' => TRUE));
+        $params['!proposal_feedback_url'] = url('node/' . $proposal_node->nid . '/feedback', array('absolute' => TRUE));
+        $params['!proposal_status'] = $proposal_node->field_proposal_status[0]['value'];
+        
+        $author_user = user_load(array('uid' => $proposal_node->uid));
+        $author_profile = content_profile_load('profile', $author_user->uid);
+        $params['!author_firstname'] = $author_profile->field_profile_firstname[0]['value'];
+        $params['!author_surname'] = $author_profile->field_profile_surname[0]['value'];
+        $params['!author_email'] = $author_user->mail;
+        
+        // If this module is ran too early manually copy across the values
+        if ( empty($form['subject']['#value']) && !empty($form_state['post']['subject']) ){
+          $form['subject']['#value'] = $form_state['post']['subject'];
+        }
+        if ( empty($form['message']['#value']) && !empty($form_state['post']['message']) ){
+          $form['message']['#value'] = $form_state['post']['message'];
+        }
+        $form['subject']['#value'] = strtr($form['subject']['#value'], $params);
+        $form['message']['#value'] = strtr($form['message']['#value'], $params);
+    }
+  }
 
   if ($form_id == 'paper_review_node_form') {
     // Remove the Preview button.
