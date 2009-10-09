@@ -195,6 +195,7 @@ function review_email_authors_submit($form, &$form_state) {
   }
 
   $result = db_query($query);
+
   while ( $n = db_fetch_object($result) ) {
     $proposal_node = node_load($n->nid);
     $params['!proposal_title'] = $proposal_node->title;
@@ -212,18 +213,16 @@ function review_email_authors_submit($form, &$form_state) {
     $message = array();
     $message['id'] = 'email_author';
     //$message['to'] = 'josh@opentechnologysolutions.com.au'; //testing mail
-    $message['to'] = $reviewer_user->mail;
+    $message['to'] = $author_user->mail;
     $message['subject'] = strtr($form_state['values']['review_email_authors_subject'], $params);
     $message['body'] = drupal_wrap_mail(strtr($form_state['values']['review_email_authors_body'], $params));
     $message['headers']['From'] = $message['headers']['Sender'] = $message['headers']['Return-Path'] = $message['headers']['Errors-To'] = variable_get('site_mail', '');
-    dpm($message);
 
     if ( drupal_mail_send($message) ) {
       //dpm("Successfully sent to " . $message['to']);
-      $sent_to[] = $author_profile->field_profile_firstname[0]['value'] . ' ' . $author_profile->field_profile_surname[0]['value'] . ' &lt;' . $author_user->mail . '&gt;';
-    }
-    else {
-      drupal_set_message("Failed to send to " . $author_profile->field_profile_firstname[0]['value'] . ' ' . $author_profile->field_profile_surname[0]['value'] . ' &lt;' . $author_user->mail . '&gt;', 'error');
+       $sent_to[] = $author_profile->field_profile_firstname[0]['value'] . ' ' . $author_profile->field_profile_surname[0]['value'] . ' &lt;' . $author_user->mail . '&gt;';
+    } else {
+       drupal_set_message("Failed to send to " . $author_profile->field_profile_firstname[0]['value'] . ' ' . $author_profile->field_profile_surname[0]['value'] . ' &lt;' . $author_user->mail . '&gt;', 'error');
     }
   }
 
@@ -704,7 +703,11 @@ function review_form_alter(&$form, $form_state, $form_id) {
   }
 
   if ( $form_id == 'proposal_node_form' && isset($_GET['assign_reviewers']) && $_GET['assign_reviewers'] == True ) {
-    $form['field_proposal_reviewers']['#size'] = 12;
+    //$form['field_proposal_reviewers']['#size'] = 12;
+    
+    // oddly field_proposal_reviewers doesn't exist so I commented out the above line
+    // jhesketh Sun 20 Sep 2009 16:29:45 EST 
+    
     // Show only reviewers field to allow reviewer assignment through standard node-edit and CCK.
     $js = "
     $(document).ready(function() {
