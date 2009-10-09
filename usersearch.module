@@ -12,7 +12,30 @@ function usersearch_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  $items['admin/user/user/loginas/%'] = array(
+    'title' => 'Login as...',
+    'description' => 'Login as a different user',
+    'page callback' => 'usersearch_loginas',
+    'page arguments' => array(4),
+    'access arguments' => array('change own username'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
+}
+
+/**
+ * Login as a different user.
+ */
+function usersearch_loginas($uid) {
+  global $user;
+  $new_user = user_load($uid);
+
+  if ($new_user->uid > 1) {
+    drupal_set_message(t('You are now logged in as !user', array('!user' => $new_user->name)));
+    $user = $new_user;
+    drupal_goto('<front>');
+  }
 }
 
 /**
@@ -118,6 +141,7 @@ function usersearch_search_form_submit($form, &$form_state) {
  * Do the actual work, then retyurn a themed string.
  */
 function usersearch_search_form_process($form_state) {
+  global $user;
 
   // Parse fields.
   $fields = array();
@@ -153,9 +177,18 @@ function usersearch_search_form_process($form_state) {
   }
   $result = db_query($query, $args);
 
+  // Turn some of the result fields into links.
   $data = array();
   while ($row = db_fetch_array($result)) {
     $row['mail'] = l($row['mail'], 'user/' . $row['uid']);
+    if (in_array('papers chair', $user->roles) || user_access('change own username')) {
+      $row[] = l('contact', 'user/' . $row[uid] . '/contact', array('query' => array('contact_author' => 'true')));
+      $row[] = l('invite', 'user/' . $row[uid] . '/contact', array('query' => array('invite_reviewer' => 'true')));
+    }
+    // This one last, as we may need it.
+    if (user_access('change own username')) {
+      $row['uid'] = l($row['uid'], 'admin/user/user/loginas/' . $row['uid']);
+    }
     $data[] = $row;
   }
 
@@ -164,6 +197,12 @@ function usersearch_search_form_process($form_state) {
   $all_fields = usersearch_search_fields();
   foreach ($fields as $f) {
     $header[] = $all_fields[$f];
+  }
+
+  // Adn add some extra links
+  if (in_array('papers chair', $user->roles) || user_access('change own username')) {
+    $header[] = 'Presenter';
+    $header[] = 'Reviewer';
   }
 
   return theme('table', $header, $data);

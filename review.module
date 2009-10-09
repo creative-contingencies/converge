@@ -6,7 +6,7 @@
 function review_menu() {
   $items = array();
 
-  $items['conference/settings/review'] = array(
+  $items['admin/settings/review'] = array(
     'title' => 'CCC Review Settings',
     'description' => 'Change configuration and email templates for Reviews',
     'page callback' => 'drupal_get_form',
@@ -645,6 +645,51 @@ function review_form_alter(&$form, $form_state, $form_id) {
         $form['message']['#value'] = strtr($form['message']['#value'], $params);
     }
   }
+
+  if ( $form_id == 'contact_mail_user' && isset($_GET['invite_reviewer']) && $_GET['invite_reviewer'] == "true" && in_array('papers chair', $user->roles) ) {
+    // Allow substitution on contact form
+
+    $form['message']['#description'] = t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_user, !reviewer_email, !accept_url, !decline_url');
+
+    if (isset($form_state['post']['subject']) && !empty($form_state['post']['subject']) 
+         && isset($form_state['post']['message']) && !empty($form_state['post']['message']))
+      {
+
+      $reviewer = user_load(arg(1));
+      $profile = content_profile_load('profile', $reviewer->uid);
+
+      $params = array();
+      if(empty($params['!site_url']))
+        $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
+      if(empty($params['!site']))
+        $params['!site'] = variable_get('site_name', '');
+      $params['!site_name'] = $params['!site'];
+      if(empty($params['!site_mail']))
+        $params['!site_mail'] = variable_get('site_mail', '');
+
+      $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
+      $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
+      $params['!reviewer_user'] = $reviewer->mail;
+      $params['!reviewer_email'] = $reviewer->mail;
+      $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+      $params['!decline_url'] = url('manage/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+
+
+      // If this module is ran too early manually copy across the values
+      if ( empty($form['subject']['#value']) && !empty($form_state['post']['subject']) ){
+        $form['subject']['#value'] = $form_state['post']['subject'];
+      }
+      if ( empty($form['message']['#value']) && !empty($form_state['post']['message']) ){
+        $form['message']['#value'] = $form_state['post']['message'];
+      }
+      $form['subject']['#value'] = strtr($form['subject']['#value'], $params);
+      $form['message']['#value'] = strtr($form['message']['#value'], $params);
+    } else {
+      $form['subject']['#value'] = variable_get('review_mail_reviewer_invite_subject', '');
+      $form['message']['#value'] = variable_get('review_mail_reviewer_invite_body', '');
+    }
+  }
+
 
   if ($form_id == 'paper_review_node_form') {
     // Remove the Preview button.
