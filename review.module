@@ -588,7 +588,7 @@ function review_admin_settings() {
 function review_form_alter(&$form, $form_state, $form_id) {
   global $user;
 
-  if ( $form_id == 'contact_mail_user' && isset($_GET['contact_author']) && $_GET['contact_author'] == "true" && in_array('papers chair', $user->roles) ) {
+  if ( $form_id == 'contact_mail_user' && isset($_GET['contact_author']) && $_GET['contact_author'] == "true" && (in_array('papers chair', $user->roles) || user_access('administer users')) ) {
     // Allow substitution on contact form
 
     $form['message']['#description'] = t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail');
@@ -646,7 +646,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
     }
   }
 
-  if ( $form_id == 'contact_mail_user' && isset($_GET['invite_reviewer']) && $_GET['invite_reviewer'] == "true" && in_array('papers chair', $user->roles) ) {
+  if ( $form_id == 'contact_mail_user' && isset($_GET['invite_reviewer']) && $_GET['invite_reviewer'] == "true" && (in_array('papers chair', $user->roles) || user_access('administer users')) ) {
     // Allow substitution on contact form
 
     $form['message']['#description'] = t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_user, !reviewer_email, !accept_url, !decline_url');
