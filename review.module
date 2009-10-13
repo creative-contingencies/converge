@@ -902,9 +902,9 @@ function review_nodeapi(&$node, $op, $a1) {
         //!reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'
 
         // The UUID is not available in hook_presave, so we need to load it explicitly!
-        if (!$node->uuid) {
+        if ($node->nid && !$node->uuid) {
           $uuid = db_result(db_query("SELECT uuid FROM {uuid_node} WHERE nid=%d", $node->nid));
-          if (!$uuid) {
+          if (!$uuid && $user->uid == 1) {
             drupal_set_message(t('Node !nid has no uuid!', array('!nid' => $node->nid)), 'error');
             return;
           }
