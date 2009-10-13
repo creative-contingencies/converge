@@ -674,7 +674,6 @@ function proposal_nodeapi(&$node, $op, $a1) {
       // Magic URL any registered user can hit to be added as a presenter.
       $params['!add_url'] = url('proposal/manage/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
-
       if (variable_get('proposal_mail_proposal_notify_user_send', 0)) {
         drupal_mail('proposal', 'notify_user', $author->mail, $language, $params);
         drupal_set_message(t('A confirmation e-mail with the proposal details has been sent to @email.', array('@email' => $author->mail)));
@@ -968,7 +967,6 @@ function proposal_export_csv($type) {
   }
 
   // Add a pretty CSV attachment header.
-  // header('Content-type: application/vnd.ms-excel; charset=utf-8');
   header('Content-type: text/csv; charset=utf-8');
   header('Content-disposition: attachment; filename=export-' . $type . '-' . date("Y-m-d") . '.csv');
 
