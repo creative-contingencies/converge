@@ -48,10 +48,6 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     array_unshift($form['#validate'], 'overrides_uc_product_add_to_cart_form_validate');
   }
 
-  if ($form_id == 'uc_order_view_update_form') {
-    dpm($form);
-  }
-
   /**
    * Override interests and make sure the "Other..." option is not listed.
    * This is now done directly in content_taxonomy.module. Ugly, but there you go.
