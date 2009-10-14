@@ -953,12 +953,12 @@ function proposal_export_csv($type) {
 
     case 'all':
       $view = 'view_export_proposals';
-      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
+      $header = array('id', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
       break;
 
     case 'refereed':
       $view = 'view_export_accepted_refereed';
-      $header = array('ID', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
+      $header = array('id', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
       break;
 
     default:
