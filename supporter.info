@@ -1,0 +1,7 @@
+name = Supporters Block
+description = Provide a block to display sponsor/supporter images and links.
+package = " Creative Contingencies Conference"
+core = 6.x
+
+dependencies[] = imagefield
+dependencies[] = link

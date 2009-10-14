@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * Implementation of hook_block()
+ */
+function supporter_block($op = 'list', $delta = 0, $edit = array()) {
+
+  if ($op == 'list') {
+    $block = array();
+    $block[0]["info"] = t('Random Sponsor Banner');
+    return $block;
+  }
+
+  if ($op == 'view') {
+    if ($delta == 0) {
+      $block = supporter_random_banner();
+    }
+    return $block;
+  }
+}
+
+/**
+ * Select a random supporter node and return it as a formatted block object.
+ * Use a session var to store the nid of the currently displayed banner, so
+ * the next one is *never* the same.
+ * Not truly random, but nice.
+ */
+function supporter_random_banner() {
+  $subject = '';
+  $content = '';
+
+  $node = node_load(db_result(db_query("SELECT SQL_NO_CACHE nid FROM {node} WHERE type = 'supporter' AND status <> 0 AND nid <> %d ORDER BY RAND() LIMIT 1", ($_SESSION['supporter_random_banner']) ? $_SESSION['supporter_random_banner'] : 0)));
+
+  $_SESSION['supporter_random_banner'] = $node->nid;
+
+  $content  = '<div class="views-field-field-supporter-image-fid">';
+  $content .= '<span class="field-content"><a href="' . $node->field_supporter_website[0]['url'] . '">';
+  $content .= theme('imagecache', 'supporter', 'supporters/' . $node->field_supporter_image[0]['filename'], check_plain($node->title) . ' proudly supports ACEC2010', check_plain($node->title) . ' proudly supports ACEC2010');
+  $content .= '</a></span></div>';
+
+  $block = array();
+  $block['subject'] = $subject;
+  $block['content'] = $content;
+
+  return $block;
+}
