@@ -62,8 +62,8 @@ function bcc_admin_settings_validate(&$form, $form_state) {
 /**
  * Implementation of hook_mail_alter()
  */
-function bcc_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
+function bcc_mail_alter(&$message) {
   if (variable_get('bcc_mail', 0)) {
-    $headers['Bcc'] = variable_get('bcc_mail_address', variable_get('site_mail', ''));
+    $message['headers']['Bcc'] = variable_get('bcc_mail_address', variable_get('site_mail', ''));
   }
 }
