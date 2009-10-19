@@ -3,4 +3,5 @@ description = Find and filter users by any content_profile field or role.
 package = " Creative Contingencies Conference"
 core = 6.x
 
-dependencies[] = proposal
+dependencies[] = content_profile
+datestamp = 1255134138

@@ -4,14 +4,23 @@
  * Implementation of hook_menu()
  */
 function usersearch_menu() {
-  $items['admin/user/user/search'] = array(
+  $items = array();
+
+  $items['admin/settings/usersearch'] = array(
+    'title' => 'Usersearch Settings',
+    'description' => 'Change settings for the usersearch module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('usersearch_admin_settings'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/user/user/usersearch'] = array(
     'title' => 'Search users and profiles',
     'description' => 'Search users',
     'page callback' => 'usersearch_search',
     'access arguments' => array('administer users'),
     'type' => MENU_LOCAL_TASK,
   );
-
   $items['admin/user/user/loginas/%'] = array(
     'title' => 'Login as...',
     'description' => 'Login as a different user',
@@ -22,6 +31,48 @@ function usersearch_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Display the settings form.
+ */
+function usersearch_admin_settings() {
+  $form = array();
+
+  $form['usersearch_defaults'] = array(
+    '#title' => 'Defaults',
+    '#description' => 'Set defaults for the user and profile search form.',
+    '#type' => 'fieldset',
+  );
+
+  $form['usersearch_defaults']['usersearch_filter_collapse'] = array(
+    '#title' => 'Collapse Filters',
+    '#description' => 'Should the filters field be collapsed on the search page.',
+    '#type' => 'radios',
+    '#options' => array(
+      0 => 'Not collapsed',
+      1 => 'Collapsed',
+    ),
+    '#default_value' => variable_get('usersearch_filter_collapse', 0),
+  );
+
+  $form['usersearch_defaults']['usersearch_default_fields'] = array(
+    '#title' => 'Default Fields',
+    '#description' => 'Select any fields that you want to search for by default. The login name and email address fields are always searched.',
+    '#type' => 'checkboxes',
+    '#options' => usersearch_search_fields(),
+    '#default_value' => variable_get('usersearch_default_fields', ''),
+  );
+
+  $form['usersearch_defaults']['roles'] = array(
+    '#title' => 'Default Roles',
+    '#description' => 'Select any roles you want limit results to.',
+    '#type' => 'checkboxes',
+    '#options' => user_roles(TRUE),
+    '#default_value' => variable_get('usersearch_default_roles', ''),
+  );
+
+  return system_settings_form($form);
 }
 
 /**
@@ -68,39 +119,42 @@ function usersearch_search_form($form_state) {
 
   $form['#redirect'] = FALSE;
 
-  $form['proposal_list_users']['string'] = array(
+  $form['usersearch']['string'] = array(
     '#type' => 'textfield',
     '#title' => 'Search',
     '#description' => 'Enter arbitrary text to search for.',
     '#default_value' => $form_state['values']['string'],
   );
-  $form['proposal_list_users']['filters'] = array(
+  $form['usersearch']['filters'] = array(
     '#type' => 'fieldset',
     '#title' => 'Filters',
     '#description' => '',
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#collapsed' => (variable_get('usersearch_filter_collapse', 0) == 1) ? TRUE : FALSE,
   );
-  $form['proposal_list_users']['filters']['fields'] = array(
+  $form['usersearch']['filters']['fields'] = array(
     '#type' => 'checkboxes',
     '#title' => 'Search fields',
     '#description' => 'Check all the fields that you wish to search. The email address field is always searched.',
     '#options' => usersearch_search_fields(),
-    '#default_value' => usersearch_search_defaults($form_state, 'fields'),
+    // '#default_value' => usersearch_search_defaults($form_state, 'fields'),
   );
-  $form['proposal_list_users']['filters']['roles'] = array(
+  $form['usersearch']['filters']['roles'] = array(
     '#type' => 'checkboxes',
     '#title' => 'User roles',
     '#description' => 'Check any roles you wish to limit results by.',
     '#options' => user_roles(TRUE),
-    '#default_value' => usersearch_search_defaults($form_state, 'roles'),
   );
 
+  // If the form was submitted, perform the search. Otherwise, enable default fields and roles.
   if ($form_state['submitted'] == TRUE) {
-    $form['proposal_list_users']['result'] = array(
+    $form['usersearch']['result'] = array(
       '#type' => 'markup',
       '#value' => usersearch_search_form_process($form_state),
     );
+  } else {
+    $form['usersearch']['filters']['fields']['#default_value'] = variable_get('usersearch_default_fields', '');
+    $form['usersearch']['filters']['roles']['#default_value'] = variable_get('usersearch_default_roles', '');
   }
 
   $form['submit'] = array(
@@ -114,17 +168,18 @@ function usersearch_search_form($form_state) {
 /**
  * Helper to regenerate selections for the form.
  */
-function usersearch_search_defaults($data, $field) {
+function usersearch_search_defaults($form_state, $field) {
   $ret = array();
-  foreach ($data['values'][$field] as $key => $val) {
-    if ($val) {
-      $ret[] = $val;
-    }
-  }
 
-  // For fields, default to name and organisation.
-  if ($field == 'fields' && !count($ret)) {
-    $ret = array('field_profile_firstname', 'field_profile_surname', 'field_profile_organisation');
+  // Loop through the submitted form data to see which fields need to be checked.
+  if (isset($form_state['submitted'])) {
+    foreach ($form_state['values'][$field] as $key => $val) {
+      if ($val) {
+        $ret[] = $val;
+      }
+    }
+  } else {
+    $ret = variable_get('usersearch_default_' . $field, '');
   }
 
   return $ret;

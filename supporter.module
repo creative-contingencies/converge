@@ -6,14 +6,23 @@
 function supporter_block($op = 'list', $delta = 0, $edit = array()) {
 
   if ($op == 'list') {
-    $block = array();
-    $block[0]["info"] = t('Random Sponsor Banner');
-    return $block;
+    $blocks = array();
+    $blocks[0] = array(
+      'info' => t('Random Sponsor Banner'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[1] = array(
+      'info' => t('A Chicken'),
+    );
+    return $blocks;
   }
 
   if ($op == 'view') {
     if ($delta == 0) {
       $block = supporter_random_banner();
+    }
+    if ($delta == 1) {
+      $block = array('subject' => '', 'content' => 'Chicken');
     }
     return $block;
   }
@@ -29,7 +38,8 @@ function supporter_random_banner() {
   $subject = '';
   $content = '';
 
-  $node = node_load(db_result(db_query("SELECT SQL_NO_CACHE nid FROM {node} WHERE type = 'supporter' AND status <> 0 AND nid <> %d ORDER BY RAND() LIMIT 1", ($_SESSION['supporter_random_banner']) ? $_SESSION['supporter_random_banner'] : 0)));
+  $query = sprintf("SELECT SQL_NO_CACHE nid FROM {node} WHERE type = 'supporter' AND status <> 0 AND nid <> %d ORDER BY RAND() LIMIT 1", ($_SESSION['supporter_random_banner']) ? $_SESSION['supporter_random_banner'] : 0);
+  $node = node_load(db_result(db_query($query)));
 
   $_SESSION['supporter_random_banner'] = $node->nid;
 
