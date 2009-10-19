@@ -953,12 +953,12 @@ function proposal_export_csv($type) {
 
     case 'all':
       $view = 'view_export_proposals';
-      $header = array('id', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
+      $header = array('id', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords', 'Internet', 'Tech_Requirements');
       break;
 
     case 'refereed':
       $view = 'view_export_accepted_refereed';
-      $header = array('id', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords');
+      $header = array('id', 'Firstname', 'Surname', 'Organisation', 'Email', 'Country', 'Title', 'Proposal', 'Type', 'Submitted', 'Status', 'Notes', 'Kind', 'Category', 'Keywords', 'Internet', 'Tech_Requirements');
       break;
 
     default:
@@ -969,6 +969,7 @@ function proposal_export_csv($type) {
   // Add a pretty CSV attachment header.
   header('Content-type: text/csv; charset=utf-8');
   header('Content-disposition: attachment; filename=export-' . $type . '-' . date("Y-m-d") . '.csv');
+  // header('Content-type: text/plain; charset=utf-8');
 
   $query = 'SELECT * FROM ' . $view;
   $result = db_query($query);
@@ -988,10 +989,11 @@ function proposal_export_csv($type) {
     foreach ($node->taxonomy as $t) {
       $tax[$t->vid][] = $t->name;
     }
-
     $row[] = '"' . implode(', ', $tax[2]) . '"';
     $row[] = '"' . implode(', ', $tax[4]) . '"';
     $row[] = '"' . implode(', ', $tax[6]) . '"';
+    $row[] = $node->field_proposal_tech_internet[0]['value'];
+    $row[] = $node->field_proposal_tech_equipment[0]['value'];
 
     $lines[] = implode(',', $row);
   }
@@ -1001,3 +1003,86 @@ function proposal_export_csv($type) {
   // Importantly, do not print anything else, just quit, exit and die.
   die();
 }
+
+/**
+ * Implementation of hook_block()
+ */
+function proposal_block($op = 'view', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks = array();
+    $blocks[0] = array(
+      'info' => t('Related keyword suggestions'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    return $blocks;
+  }
+
+  if ($op == 'view') {
+    if ($delta == 0) {
+      $block = proposal_block_suggestions_by_keyword( check_plain(arg(2)) );
+    }
+    return $block;
+  }
+}
+
+/**
+ * Helper to grab a list of keywords that are "also used".
+ */
+function proposal_block_suggestions_by_keyword($keyword) {
+
+  if (!$keyword)
+    return;
+
+  $term = taxonomy_get_term_by_name($keyword);
+  $vid = variable_get('proposal_vocabulary_keywords', 0);
+
+  if ($term[0]->vid != $vid)
+    return;
+
+
+  // Select nodes that contain the current keyword.
+  $result = db_query("SELECT tn.nid AS nid FROM {term_node} AS tn JOIN {term_data} AS td ON(tn.tid=td.tid) where td.vid = %d AND tn.tid = %d", $term[0]->vid, $term[0]->tid);
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
+  }
+
+  // Select and count all other keywords referenced by these nodes.
+  $result = db_query("SELECT COUNT(tn.tid), tn.tid AS tid, td.name AS name FROM {term_node} AS tn JOIN {term_data} AS td ON(tn.tid=td.tid) WHERE td.vid = %d AND tn.tid != %d AND tn.nid IN (" . implode(',', $nids) . ") GROUP BY tn.tid ORDER BY COUNT(tn.tid) DESC LIMIT 12", $term[0]->vid, $term[0]->tid);
+  while ($row = db_fetch_array($result)) {
+    $terms[] = l($row['name'], 'program/keyword/' . $row['name']);
+  }
+
+  // Output.
+  $block = array(
+    'subject' => 'Related keywords',
+    'content' => implode(', ', $terms),
+  );
+  return $block;
+}
+
+/*
+       Table: term_data
+Create Table: CREATE TABLE `term_data` (
+  `tid` int(10) unsigned NOT NULL auto_increment,
+  `vid` int(10) unsigned NOT NULL default '0',
+  `name` varchar(255) NOT NULL default '',
+  `description` longtext,
+  `weight` tinyint(4) NOT NULL default '0',
+  PRIMARY KEY  (`tid`),
+  KEY `taxonomy_tree` (`vid`,`weight`,`name`),
+  KEY `vid_name` (`vid`,`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=464 DEFAULT CHARSET=utf8
+1 row in set (0.00 sec)
+
+mysql> show create table term_node\G
+*************************** 1. row ***************************
+       Table: term_node
+Create Table: CREATE TABLE `term_node` (
+  `nid` int(10) unsigned NOT NULL default '0',
+  `vid` int(10) unsigned NOT NULL default '0',
+  `tid` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`tid`,`vid`),
+  KEY `vid` (`vid`),
+  KEY `nid` (`nid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+*/
