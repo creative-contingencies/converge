@@ -1,0 +1,178 @@
+<?php
+
+/**
+ * Implementation of hook_block()
+ */
+function program_block($op = 'view', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks = array();
+    $blocks[0] = array(
+      'info' => t('Related proposal suggestions by node'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[1] = array(
+      'info' => t('Related keyword suggestions by keyword'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[2] = array(
+      'info' => t('Related proposal suggestions by keyword'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    return $blocks;
+  }
+
+  if ($op == 'view') {
+    if ($delta == 0) {
+      $block = proposal_block_related_proposals_by_nid( check_plain(arg(1)) );
+    }
+    if ($delta == 1) {
+      $block = proposal_block_related_keywords_by_term( check_plain(arg(2)) );
+    }
+    if ($delta == 2) {
+      $block = proposal_block_related_proposals_by_term( check_plain(arg(2)) );
+    }
+    return $block;
+  }
+}
+
+/**
+ * Helper to grab a list of proposals with matching key words.
+ */
+function program_block_related_proposals_by_nid($nid) {
+  $block = array(
+    'subject' => 'Related sessions',
+    'content' => '',
+  );
+
+  return $block;
+}
+
+/**
+ * TODO: Grab (popular) sessions based on user category preferences.
+ */
+
+/**
+ * Helper to grab a list of keywords that are "also used".
+ */
+function program_block_related_keywords_by_term($raw_term) {
+
+  if (!$raw_term)
+    return;
+
+  $term = taxonomy_get_term_by_name($raw_term);
+
+  $vid = variable_get('proposal_vocabulary_keywords', 0);
+
+  if ($term[0]->vid != $vid)
+    return;
+
+  $result = db_query("
+    SELECT
+      tn.nid AS nid
+    FROM
+      {term_node} AS tn
+    JOIN
+      {term_data} AS td ON(tn.tid=td.tid)
+    JOIN
+      {node} AS n ON (tn.nid=n.nid)
+    JOIN
+      {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    WHERE
+      n.type='proposal' AND
+      n.status <> 0 AND
+      ctp.field_proposal_status_value IN ('pending', 'accepted', 'accepted_minor_changes') AND
+      td.vid = %d AND
+      tn.tid = %d", $term[0]->vid, $term[0]->tid);
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
+  }
+
+  // Select and count all other keywords referenced by these nodes.
+  $result = db_query("SELECT COUNT(tn.tid), tn.tid AS tid, td.name AS name FROM {term_node} AS tn JOIN {term_data} AS td ON(tn.tid=td.tid) WHERE td.vid = %d AND tn.tid != %d AND tn.tid != 42 AND tn.nid IN (" . implode(',', $nids) . ") GROUP BY tn.tid ORDER BY COUNT(tn.tid) DESC LIMIT 12", $term[0]->vid, $term[0]->tid);
+  while ($row = db_fetch_array($result)) {
+    $terms[] = l($row['name'], 'program/keyword/' . $row['name']);
+  }
+
+  // Output.
+  if (count($terms)) {
+    $block = array(
+      'subject' => 'Related keywords',
+      'content' => implode(', ', $terms),
+    );
+    return $block;
+  } else {
+    return;
+  }
+}
+
+/**
+ * Helper to grab a list of "related proposals" (ie: share keywords)
+ */
+function program_block_related_proposals_by_term($raw_term) {
+
+  if (!$raw_term)
+    return;
+
+  $term = taxonomy_get_term_by_name($raw_term);
+
+  $vid = variable_get('proposal_vocabulary_keywords', 0);
+
+  if ($term[0]->vid != $vid)
+    return;
+
+  $result = db_query("
+    SELECT
+      tn.nid AS nid,
+      n.title AS title
+    FROM
+      {term_node} AS tn
+    JOIN
+      {term_data} AS td ON(tn.tid=td.tid)
+    JOIN
+      {node} AS n ON (tn.nid=n.nid)
+    JOIN
+      {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    WHERE
+      n.type='proposal' AND
+      n.status <> 0 AND
+      ctp.field_proposal_status_value IN ('pending', 'accepted', 'accepted_minor_changes') AND
+      td.vid = %d AND
+      tn.tid = %d", $term[0]->vid, $term[0]->tid);
+  while ($row = db_fetch_array($result)) {
+    $nodes[] = l($row['title'], 'node/' . $row['nid']);
+  }
+
+  // Output.
+  $block = array(
+    'subject' => 'Related sessions',
+    'content' => '<ul><li>' . implode('</li><li> ', $nodes) . '</li></ul>',
+  );
+  return $block;
+}
+
+/*
+       Table: term_data
+Create Table: CREATE TABLE `term_data` (
+  `tid` int(10) unsigned NOT NULL auto_increment,
+  `vid` int(10) unsigned NOT NULL default '0',
+  `name` varchar(255) NOT NULL default '',
+  `description` longtext,
+  `weight` tinyint(4) NOT NULL default '0',
+  PRIMARY KEY  (`tid`),
+  KEY `taxonomy_tree` (`vid`,`weight`,`name`),
+  KEY `vid_name` (`vid`,`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=464 DEFAULT CHARSET=utf8
+1 row in set (0.00 sec)
+
+mysql> show create table term_node\G
+*************************** 1. row ***************************
+       Table: term_node
+Create Table: CREATE TABLE `term_node` (
+  `nid` int(10) unsigned NOT NULL default '0',
+  `vid` int(10) unsigned NOT NULL default '0',
+  `tid` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`tid`,`vid`),
+  KEY `vid` (`vid`),
+  KEY `nid` (`nid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+*/
