@@ -31,13 +31,22 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     unset($form['check_exists']['#attributes']);
   }
 
-  // Resize the dietary / mobility needs fields on the profile.
+  // User profile form.
   if($form_id == 'profile_node_form') {
+    // Resize the dietary / mobility needs fields on the profile.
     $form['field_profile_dietary']['#cols'] = 12;
     $form['field_profile_dietary']['#rows'] = 2;
 
     $form['field_profile_mobility']['#cols'] = 12;
     $form['field_profile_mobility']['#rows'] = 2;
+
+    /**
+     * Override interests and make sure the "Other..." option is not listed.
+     * This is now done directly in content_taxonomy.module. Ugly, but there you go.
+     */
+    $form['taxonomy'][4]['#title'] = 'Your Interests';
+    $form['taxonomy'][4]['#description'] = 'Please tell us which topic areas are of interest to you. We can use this information to suggest sessions you may want to attend.';
+    $form['taxonomy'][4]['#required'] = FALSE;
   }
 
   if(strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE) {
@@ -46,16 +55,6 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
       '#value' => variable_get('register_continue_shopping', 'Continue shopping'),
     );
     array_unshift($form['#validate'], 'overrides_uc_product_add_to_cart_form_validate');
-  }
-
-  /**
-   * Override interests and make sure the "Other..." option is not listed.
-   * This is now done directly in content_taxonomy.module. Ugly, but there you go.
-   */
-  if ($form_id == 'profile_node_form') {
-    $form['taxonomy'][4]['#title'] = 'Your Interests';
-    $form['taxonomy'][4]['#description'] = 'Please tell us which topic areas are of interest to you. We can use this information to suggest sessions you may want to attend.';
-    unset($form['taxonomy'][4][42]);
   }
 }
 
