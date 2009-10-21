@@ -4,8 +4,6 @@
  * Implementation of hook_form_alter()
  */
 function program_form_alter(&$form, $form_state, $form_id) {
-  dpm($form_id);
-
   if ($form_id == 'views_exposed_form') {
     if (strstr($form['#id'], 'views-exposed-form-Program-page') !== FALSE) {
       $form['submit']['#value'] = t('Search');
@@ -52,15 +50,16 @@ function program_block($op = 'view', $delta = 0, $edit = array()) {
     $form['limit'] = array(
       '#type' => 'select',
       '#title' => t('List Limit'),
-      '#description' => t('How many suggested sessions should be shown?'),
+      '#description' => t('How many suggested sessions should be shown? (0 = no limit)'),
       '#default_value' => variable_get('program_block_limit', 4),
-      '#options' => array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+      '#options' => array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
     );
     return $form;
   }
 
   if ($op == 'save' && $delta == 3) {
     variable_set('program_block_sort', $edit['sort']);
+    variable_set('program_block_limit', $edit['limit']);
   }
 
   if ($op == 'view') {
@@ -234,7 +233,12 @@ function program_block_suggested_sessions() {
     $order = 'RAND()';
   }
 
-  $limit = variable_get('program_block_limit', 4);
+  $limit = variable_get('program_block_limit', 0);
+  if ($limit) {
+    $limit = "LIMIT " . $limit;
+  } else {
+    $limit = '';
+  }
 
   // I can either sort the nodes randomly, OR list them by relevance (more matching terms)
   $result = db_query("
@@ -258,8 +262,7 @@ function program_block_suggested_sessions() {
       tn.tid IN (" . implode(',', $terms) . ")
     GROUP BY
       tn.nid
-    ORDER BY " . $order . "
-    LIMIT %d", $vid, $limit);
+    ORDER BY " . $order . " " . $limit, $vid);
   while ($row = db_fetch_array($result)) {
     $nodes[] = l($row['title'], 'node/' . $row['nid']);
   }
