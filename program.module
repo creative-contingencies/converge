@@ -1,6 +1,19 @@
 <?php
 
 /**
+ * Implementation of hook_form_alter()
+ */
+function program_form_alter(&$form, $form_state, $form_id) {
+  dpm($form_id);
+
+  if ($form_id == 'views_exposed_form') {
+    if (strstr($form['#id'], 'views-exposed-form-Program-page') !== FALSE) {
+      $form['submit']['#value'] = t('Search');
+    }
+  }
+}
+
+/**
  * Implementation of hook_block()
  */
 function program_block($op = 'view', $delta = 0, $edit = array()) {
@@ -18,18 +31,52 @@ function program_block($op = 'view', $delta = 0, $edit = array()) {
       'info' => t('Related proposal suggestions by keyword'),
       'cache' => BLOCK_NO_CACHE,
     );
+    $blocks[3] = array(
+      'info' => t('Proposal suggestions based on preferences'),
+      'cache' => BLOCK_NO_CACHE,
+    );
     return $blocks;
   }
 
+  if ($op == 'configure' && $delta == 3) {
+    $form['sort'] = array(
+      '#type' => 'radios',
+      '#title' => t('Sort Order'),
+      '#description' => t('How should suggested sessions be sorted?'),
+      '#default_value' => variable_get('program_block_sort', 'random'),
+      '#options' => array(
+        'random' => 'Sort randomly',
+        'relevance' => 'Sort by relevance',
+      ),
+    );
+    $form['limit'] = array(
+      '#type' => 'select',
+      '#title' => t('List Limit'),
+      '#description' => t('How many suggested sessions should be shown?'),
+      '#default_value' => variable_get('program_block_limit', 4),
+      '#options' => array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+    );
+    return $form;
+  }
+
+  if ($op == 'save' && $delta == 3) {
+    variable_set('program_block_sort', $edit['sort']);
+  }
+
   if ($op == 'view') {
-    if ($delta == 0) {
-      $block = proposal_block_related_proposals_by_nid( check_plain(arg(1)) );
-    }
-    if ($delta == 1) {
-      $block = proposal_block_related_keywords_by_term( check_plain(arg(2)) );
-    }
-    if ($delta == 2) {
-      $block = proposal_block_related_proposals_by_term( check_plain(arg(2)) );
+    switch ($delta) {
+      case 0:
+        $block = program_block_related_proposals_by_nid( check_plain(arg(1)) );
+        break;
+      case 1:
+        $block = program_block_related_keywords_by_term( check_plain(arg(2)) );
+        break;
+      case 2:
+        $block = program_block_related_proposals_by_term( check_plain(arg(2)) );
+        break;
+      case 3:
+        $block = program_block_suggested_sessions( variable_get('program_block_sort', 'random') );
+        break;
     }
     return $block;
   }
@@ -145,9 +192,85 @@ function program_block_related_proposals_by_term($raw_term) {
   // Output.
   $block = array(
     'subject' => 'Related sessions',
-    'content' => '<ul><li>' . implode('</li><li> ', $nodes) . '</li></ul>',
+    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul>',
   );
   return $block;
+}
+
+/**
+ * Return a list of suggested sessions based on the user's preferences.
+ *
+ * @param $type
+ *   Can be 'random' or 'relevance' to change sorting order.
+ */
+function program_block_suggested_sessions() {
+  global $user;
+
+  if ($user->uid == 0)
+    return;
+
+  $profile = content_profile_load('profile', $user->uid);
+
+  if (!count($profile->taxonomy)) {
+    return array(
+      'subject' => t('Suggestions'),
+      'content' => t('Please add your interests to your !profile_url, so we can suggest relevant sessions to you.',
+                      array('!profile_url' => l(t('profile'), 'user/' . $user->uid . '/edit/profile'))
+                    ),
+      );
+  }
+
+  $vid = variable_get('proposal_vocabulary_category', 0);
+
+  foreach ($profile->taxonomy as $term) {
+    if ($term->vid == $vid) {
+      $terms[] = $term->tid;
+    }
+  }
+
+  if (variable_get('program_block_sort', 'random') == 'relevance') {
+    $order = 'COUNT(tn.tid) DESC, RAND()';
+  } else {
+    $order = 'RAND()';
+  }
+
+  $limit = variable_get('program_block_limit', 4);
+
+  // I can either sort the nodes randomly, OR list them by relevance (more matching terms)
+  $result = db_query("
+    SELECT
+      tn.nid AS nid,
+      n.title AS title,
+      COUNT(tn.tid)
+    FROM
+      {term_node} AS tn
+    JOIN
+      {term_data} AS td ON(tn.tid=td.tid)
+    JOIN
+      {node} AS n ON (tn.nid=n.nid)
+    JOIN
+      {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    WHERE
+      n.type='proposal' AND
+      n.status <> 0 AND
+      ctp.field_proposal_status_value IN ('pending', 'accepted', 'accepted_minor_changes') AND
+      td.vid = %d AND
+      tn.tid IN (" . implode(',', $terms) . ")
+    GROUP BY
+      tn.nid
+    ORDER BY " . $order . "
+    LIMIT %d", $vid, $limit);
+  while ($row = db_fetch_array($result)) {
+    $nodes[] = l($row['title'], 'node/' . $row['nid']);
+  }
+
+  // Output.
+  $block = array(
+    'subject' => 'Suggested sessions',
+    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul>',
+  );
+  return $block;
+
 }
 
 /*
