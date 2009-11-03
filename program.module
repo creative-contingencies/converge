@@ -1,4 +1,9 @@
 <?php
+/**
+ * This module allows users to select session preferences and defines
+ * some helpers to assist them selection relevant sessions.
+ */
+
 
 /**
  * Implementation of hook_form_alter()
@@ -126,7 +131,7 @@ function program_block_related_keywords_by_term($raw_term) {
     WHERE
       n.type='proposal' AND
       n.status <> 0 AND
-      ctp.field_proposal_status_value IN ('pending', 'accepted', 'accepted_minor_changes') AND
+      ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
       td.vid = %d AND
       tn.tid = %d", $term[0]->vid, $term[0]->tid);
   while ($row = db_fetch_array($result)) {
@@ -181,7 +186,7 @@ function program_block_related_proposals_by_term($raw_term) {
     WHERE
       n.type='proposal' AND
       n.status <> 0 AND
-      ctp.field_proposal_status_value IN ('pending', 'accepted', 'accepted_minor_changes') AND
+      ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
       td.vid = %d AND
       tn.tid = %d", $term[0]->vid, $term[0]->tid);
   while ($row = db_fetch_array($result)) {
@@ -257,7 +262,7 @@ function program_block_suggested_sessions() {
     WHERE
       n.type='proposal' AND
       n.status <> 0 AND
-      ctp.field_proposal_status_value IN ('pending', 'accepted', 'accepted_minor_changes') AND
+      ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
       td.vid = %d AND
       tn.tid IN (" . implode(',', $terms) . ")
     GROUP BY

@@ -17,7 +17,7 @@ function usersearch_menu() {
   $items['admin/user/user/usersearch'] = array(
     'title' => 'Search users and profiles',
     'description' => 'Search users',
-    'page callback' => 'usersearch_search',
+    'page callback' => 'usersearch_search_render_form',
     'access arguments' => array('administer users'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -92,7 +92,7 @@ function usersearch_loginas($uid) {
 /**
  * User search form render helper.
  */
-function usersearch_search() {
+function usersearch_search_render_form() {
   return drupal_get_form('usersearch_search_form');
 }
 

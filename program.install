@@ -6,3 +6,8 @@ function program_uninstall() {
   variable_del('program_block_sort');
   variable_del('program_block_limit');
 }
+
+function program_schema() {
+  // Nothing.
+  return array();
+}
