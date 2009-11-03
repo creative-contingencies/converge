@@ -167,7 +167,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
   global $user;
   switch ($op) {
     case 'view':
-      if ($user->uid && (($user->uid == $account->uid && user_access('view own orders')) || user_access('view all orders'))) {
+      if($user->uid && (($user->uid == $account->uid && user_access('view own orders')) || user_access('view all orders'))) {
 
         // Get a big list of event purchases and stuff.
         $orders = register_get_orders($account->uid);
@@ -238,6 +238,7 @@ function theme_user_overview_registrations($account, $orders) {
 
     $output = strtr(variable_get('register_profile_nonreg_blurb', ''), $params);
   }
+
   return $output;
 }
 

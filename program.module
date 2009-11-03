@@ -23,7 +23,7 @@ function program_block($op = 'view', $delta = 0, $edit = array()) {
   if ($op == 'list') {
     $blocks = array();
     $blocks[0] = array(
-      'info' => t('Related proposal suggestions by node'),
+      'info' => t('INCOMPLETE: Related proposal suggestions by node'),
       'cache' => BLOCK_NO_CACHE,
     );
     $blocks[1] = array(
@@ -128,10 +128,13 @@ function program_block_related_keywords_by_term($raw_term) {
       {node} AS n ON (tn.nid=n.nid)
     JOIN
       {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    LEFT JOIN
+      {term_node} AS tnt ON n.vid = tnt.vid AND tnt.tid = 2
     WHERE
       n.type='proposal' AND
       n.status <> 0 AND
       ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
+      tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid = %d", $term[0]->vid, $term[0]->tid);
   while ($row = db_fetch_array($result)) {
@@ -183,10 +186,13 @@ function program_block_related_proposals_by_term($raw_term) {
       {node} AS n ON (tn.nid=n.nid)
     JOIN
       {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    LEFT JOIN
+      {term_node} AS tnt ON n.vid = tnt.vid AND tnt.tid = 2
     WHERE
       n.type='proposal' AND
       n.status <> 0 AND
       ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
+      tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid = %d", $term[0]->vid, $term[0]->tid);
   while ($row = db_fetch_array($result)) {
@@ -259,10 +265,13 @@ function program_block_suggested_sessions() {
       {node} AS n ON (tn.nid=n.nid)
     JOIN
       {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    LEFT JOIN
+      {term_node} AS tnt ON n.vid = tnt.vid AND tnt.tid = 2
     WHERE
       n.type='proposal' AND
       n.status <> 0 AND
       ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
+      tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid IN (" . implode(',', $terms) . ")
     GROUP BY
