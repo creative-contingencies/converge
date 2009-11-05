@@ -22,8 +22,17 @@ function register_menu() {
     'description' => 'Change configuration settings for Registration.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('register_admin_settings'),
+    'access arguments' => array('view all orders'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/store/reports/presenters'] = array(
+    'title' => 'Presenter Registration Status',
+    'description' => 'List the registration status for presenters with accepted proposals.',
+    'page callback' => 'register_list_presenter_payment_status',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
   );
 
   $items['user/%user/tickets'] = array(
@@ -196,6 +205,13 @@ function register_user($op, &$edit, &$account, $category = NULL) {
         );
       }
       break;
+
+    case 'load':
+      $orders = register_get_orders($account->uid);
+      if ($orders) {
+        $account->orders = $orders;
+      }
+      break;
   }
 }
 
@@ -308,7 +324,7 @@ function register_get_ticketholders($order_product) {
     INNER JOIN {users} u
     ON cccta.uid = u.uid
     LEFT JOIN node n
-    ON n.uid = cccta.uid
+    ON n.uid = cccta.uid AND n.type='profile'
     WHERE cccta.order_product_id = %d
     ", $order_product->order_product_id);
   $ticketholders = array();
@@ -666,4 +682,94 @@ function register_thankyou() {
   }
 
   drupal_goto('thank-you');
+}
+
+/**
+ * Create and display a table with presenters and whether or not these presenters
+ * have registered (and paid) for the day their sessions are scheduled.
+ */
+function register_list_presenter_payment_status() {
+
+  // Get all presenters (and co-presenters) for all proposals.
+  $query = "SELECT
+      cfpp.field_proposal_presenters_uid,
+      cfpp.delta,
+      cfpp.nid,
+      ctpr.field_profile_firstname_value,
+      ctpr.field_profile_surname_value,
+      uc_op.nid AS product_nid,
+      uc_op.title AS product_title,
+      uc_o.order_id AS order_id,
+      uc_os.title AS order_status
+    FROM
+      {content_field_proposal_presenters} AS cfpp
+    JOIN
+      {content_type_proposal} AS ctp ON (cfpp.nid = ctp.nid)
+    JOIN
+      {node} AS n ON (n.uid=cfpp.field_proposal_presenters_uid AND n.type='profile')
+    JOIN
+      {content_type_profile} AS ctpr ON (n.nid = ctpr.nid)
+    LEFT JOIN
+      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.uid = cfpp.field_proposal_presenters_uid)
+    LEFT JOIN
+      {uc_order_products} AS uc_op ON (ccc_ta.order_product_id = uc_op.order_product_id)
+    LEFT JOIN
+      {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+    LEFT JOIN
+      {uc_order_statuses} AS uc_os ON (uc_o.order_status = uc_os.order_status_id)
+    WHERE
+      ctp.field_proposal_status_value IN('accepted', 'accepted with minor changes')
+    ORDER BY
+      ctpr.field_profile_surname_value ASC, ctpr.field_profile_firstname_value ASC
+      ";
+
+  $result = db_query($query);
+
+  while ($o = db_fetch_object($result)) {
+    if (!count($tix)) {
+      $tix = array('Not registered yet.');
+    }
+
+    $tuple = array(
+      'nid' => l($o->nid, 'node/'. $o->nid),
+      'firstname' => $o->field_profile_firstname_value,
+      'surname' => $o->field_profile_surname_value,
+      'type' => ($o->delta == 0) ? 'Primary' : ordinalise($o->delta) . ' Co',
+      'status' => ($o->order_status) ? l($o->order_status, 'admin/store/orders/' . $o->order_id) : '',
+      'product' => $o->product_title,
+    );
+    $data[] = $tuple;
+  }
+
+  $output  = t('<h3>Found !num records</h3>', array('!num' => count($data)));
+  $output .= t('<p>Note that a presenter will be listed once for each product in their order and more often if they are both a primary presenter for one or more sessions and a co-presenter for one or more other sessions.</p>');
+  $output .= t('<p>Session schedule information is not yet available within the system.</p>');
+
+
+  $headers = array('Proposal','Firstname','Surname','Type','Status','Product');
+
+  $output .= theme('table', $headers, $data);
+  return $output;
+
+}
+
+function ordinalise($number) {
+  if (in_array(($number % 100),range(11,13))){
+    return $number.'th';
+  } else {
+    switch (($number % 10)) {
+     case 1:
+      return $number.'st';
+      break;
+    case 2:
+      return $number.'nd';
+      break;
+    case 3:
+      return $number.'rd';
+    break;
+    default:
+      return $number.'th';
+      break;
+    }
+  }
 }
