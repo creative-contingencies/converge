@@ -1,7 +1,7 @@
 <?php
 
 /**
- * 
+ *
  * Handle registration info
  *
  * We are coupling a bit with uc_order. Using it's permission and
@@ -27,12 +27,19 @@ function register_menu() {
   );
 
   $items['admin/store/reports/presenters'] = array(
-    'title' => 'Presenter Registration Status',
+    'title' => 'Presenter Registration Report',
     'description' => 'List the registration status for presenters with accepted proposals.',
     'page callback' => 'register_list_presenter_payment_status',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
+  );
+
+  $items['admin/store/reports/coupons'] = array(
+    'title' => 'Coupon usage list with names',
+    'description' => 'List coupon usage',
+    'page callback' => 'register_list_coupon_status',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_LOCAL_TASK,
   );
 
   $items['user/%user/tickets'] = array(
@@ -750,7 +757,60 @@ function register_list_presenter_payment_status() {
 
   $output .= theme('table', $headers, $data);
   return $output;
+}
 
+/**
+ * Display couon codes used and the orders they wered used on.
+ */
+function register_list_coupon_status() {
+  $query = "
+    SELECT
+      uc_co.oid AS order_id,
+      uc_o.uid AS uid,
+      ctp.field_profile_firstname_value AS firstname,
+      ctp.field_profile_surname_value AS surname,
+      uc_o.created AS order_date,
+      uc_os.title AS order_status,
+      uc_o.order_total AS order_total,
+      uc_co.code AS coupon
+    FROM
+      {uc_coupons_orders} AS uc_co
+    JOIN
+      {uc_orders} AS uc_o ON (uc_o.order_id=uc_co.oid)
+    JOIN
+      {uc_order_statuses} AS uc_os ON (uc_o.order_status = uc_os.order_status_id)
+    JOIN
+      {node} AS n ON (n.uid=uc_o.uid AND n.type='profile')
+    JOIN
+      {content_type_profile} AS ctp ON (ctp.nid=n.nid)
+    ORDER BY
+      uc_o.created ASC
+    ";
+
+  $result = db_query($query);
+
+  while ($o = db_fetch_object($result)) {
+    $tuple = array(
+      'user' => ($o->uid) ? l($o->firstname . ' ' . $o->surname, 'user/' . $o->uid) : ($o->firstname . ' ' . $o->surname),
+      'oid' => l($o->order_id, 'admin/store/orders/' . $o->order_id),
+      'status' => $o->order_status,
+      'total' => $o->order_total,
+      'date' => strftime('%Y-%m-%d %H:%M', $o->order_date),
+      'code' => $o->coupon,
+    );
+    $data[] = $tuple;
+  }
+
+  $headers = array('User', 'Order', 'Status', 'Total', 'Date', 'Coupon');
+
+  $suffix = (count($data) != 1) ? t('s') : t('');
+  $verb = (count($data) != 1) ? t('have') : t('has');
+  $output  = t('<h3>!num Coupon!s !verb been used</h3>', array('!num' => count($data), '!s' => $suffix, '!verb' => $verb));
+  $output .= t('<p>Orders with status "In checkout" may not have a name or site login associated with them yet.');
+
+  $output .= theme('table', $headers, $data);
+
+  return $output;
 }
 
 function ordinalise($number) {
