@@ -293,7 +293,7 @@ function review_remind_reviewers_submit($form, &$form_state) {
   if(empty($params['!site_mail']))
      $params['!site_mail'] = variable_get('site_mail', '');
   if(empty($params['!review_assigned_list_url']))
-     $params['!review_assigned_list_url'] = url('review/peer_proposals', array('absolute' => true));
+     $params['!review_assigned_list_url'] = url('review/assigned_proposals', array('absolute' => true));
   if(empty($params['!review_nonpeer_list_url']))
      $params['!review_nonpeer_list_url'] = url('review/nonpeer_proposals', array('absolute' => true));
 
