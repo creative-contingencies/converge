@@ -978,8 +978,13 @@ function proposal_export_csv($type) {
   while ($o = db_fetch_array($result)) {
     $row = array();
 
-    foreach ($o as $field) {
-      $row[] = '"' . str_replace('"', '\'', $field) . '"';
+    foreach ($o as $key => $value) {
+      if ( $key != 'ID' ) {
+        $row[] = '"' . str_replace('"', '\'', $value) . '"';
+      }
+      else {
+        $row[] = $value;
+      }
     }
 
     // Now I should really grab the taxonomies as well.
