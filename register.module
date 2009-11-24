@@ -65,6 +65,13 @@ function register_menu() {
     'access arguments' => array('view own orders'),
     'type' => MENU_CALLBACK,
   );
+  $items['admin/user/user/prizedraw'] = array(
+    'title' => 'Prize Draw!',
+    'page callback' => 'register_prizedraw',
+    'access callback' => 'user_access',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
@@ -808,6 +815,61 @@ function register_list_coupon_status() {
   $output  = t('<h3>!num Coupon!s !verb been used</h3>', array('!num' => count($data), '!s' => $suffix, '!verb' => $verb));
   $output .= t('<p>Orders with status "In checkout" may not have a name or site login associated with them yet.');
 
+  $output .= theme('table', $headers, $data);
+
+  return $output;
+}
+
+/**
+ * Return a random list of registrees
+ */
+function register_prizedraw() {
+
+  // Get all presenters (and co-presenters) for all proposals.
+  $query = "SELECT
+      ccc_ta.uid AS uid,
+      uc_op.order_id AS order_id,
+      uc_op.order_product_id,
+      uc_o.order_status AS order_status,
+      n.title,
+      ctp.field_profile_firstname_value AS firstname,
+      ctp.field_profile_surname_value AS surname
+    FROM
+      {uc_order_products} AS uc_op
+    JOIN
+      {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+    JOIN
+      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
+    JOIN
+      {node} AS n ON (uc_op.nid=n.nid)
+    JOIN
+      {node} AS np ON (ccc_ta.uid=np.uid AND np.type='profile')
+    JOIN
+      {content_type_profile} AS ctp ON(np.nid=ctp.nid)
+    WHERE
+      uc_o.order_status IN ('completed','payment_received')
+    GROUP BY
+      ccc_ta.uid
+    ORDER BY
+      RAND()
+    LIMIT
+      10";
+
+  $result = db_query($query);
+
+  while ($o = db_fetch_object($result)) {
+    $tuple = array(
+      'user' => ($o->uid) ? l($o->firstname . ' ' . $o->surname, 'user/' . $o->uid) : ($o->firstname . ' ' . $o->surname),
+      'oid' => l($o->order_id, 'admin/store/orders/' . $o->order_id),
+      'order' => $o->title,
+      'status' => $o->order_status,
+    );
+    $data[] = $tuple;
+  }
+
+  $headers = array('Name', 'Order', 'Product', 'Status');
+
+  $output  = t('<p>Here are 10 random people with tickets from a completed or paid order allocated to them.');
   $output .= theme('table', $headers, $data);
 
   return $output;
