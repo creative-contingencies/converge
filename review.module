@@ -316,6 +316,7 @@ function review_remind_reviewers_submit($form, &$form_state) {
       $reviewer_profile = content_profile_load('profile', $reviewer_user->uid);
       $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
       $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
+      $params['!reviewer_lastname'] = $reviewer_profile->field_profile_surname[0]['value'];
       $params['!reviewer_email'] = $reviewer_user->mail;
       
       $message = array();
@@ -668,6 +669,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
 
       $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
       $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
+      $params['!reviewer_lastname'] = $profile->field_profile_surname[0]['value'];
       $params['!reviewer_user'] = $reviewer->mail;
       $params['!reviewer_email'] = $reviewer->mail;
       $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
@@ -944,6 +946,7 @@ function review_nodeapi(&$node, $op, $a1) {
                 $reviewer_user = user_load(array('uid' => $reviewer['uid']));
                 $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
                 $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
+                $params['!reviewer_lastname'] = $reviewer_profile->field_profile_surname[0]['value'];
                 $params['!reviewer_email'] = $reviewer_user->mail;
                 drupal_mail('review', 'reviewer_remove_notify', $reviewer_user->mail, $language, $params);
                 drupal_set_message(t('A notification of removal from reviewing has been sent to ' . $reviewer_user->mail . '.'));
@@ -960,6 +963,7 @@ function review_nodeapi(&$node, $op, $a1) {
               $params['!review_decline_url'] = url('manage/review/decline/' . $node->nid . '/' . $node->uuid . '/' . $reviewer_user->uid , array('absolute' => true));
               $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
               $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
+              $params['!reviewer_lastname'] = $reviewer_profile->field_profile_surname[0]['value'];
               $params['!reviewer_email'] = $reviewer_user->mail;
               drupal_mail('review', 'reviewer_add_notify', $reviewer_user->mail, $language, $params);
               drupal_set_message(t('An invite to review has been sent to ' . $reviewer_user->mail . '.'));
@@ -1156,6 +1160,7 @@ function review_reviewer_csv_submit($form, &$form_state) {
     // make email vars.
     $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
     $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
+    $params['!reviewer_lastname'] = $profile->field_profile_surname[0]['value'];
     $params['!reviewer_user'] = $reviewer->mail;
     $params['!reviewer_email'] = $reviewer->mail;
     $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
@@ -1192,6 +1197,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
 
   $params['!reviewer_firstname'] = $profile->field_profile_firstname[0]['value'];
   $params['!reviewer_surname'] = $profile->field_profile_surname[0]['value'];
+  $params['!reviewer_lastname'] = $profile->field_profile_surname[0]['value'];
   $params['!reviewer_email'] = $victim->mail;
   $params['!action'] = $op;
 
@@ -1323,6 +1329,7 @@ function review_manage_review($op, $pid, $uuid, $vuid) {
         $reviewer_profile = content_profile_load('profile', $victim->uid);
         $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
         $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
+        $params['!reviewer_lastname'] = $reviewer_profile->field_profile_surname[0]['value'];
         $params['!reviewer_email'] = $victim->mail;
         $params['!title'] = $proposal->title;
         $params['!abstract'] = $proposal->body;
