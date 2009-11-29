@@ -5,6 +5,38 @@ function overrides_content_allowed_values($field) {
 }
 
 /**
+ * Add extra menu items to make it easier to edit permissions by role.
+ * Pushed to github as caftools module.
+ */
+function overrides_menu() {
+  $items = array();
+
+  if (module_exists('admin_menu')) {
+    $roles = user_roles();
+
+    foreach($roles as $rid => $role) {
+      $items['admin/user/permissions/edit/' . $rid] = array(
+        'title' => $role,
+        'description' => 'Determine access to features by selecting permissions for ' . $role . '.',
+        'page callback' => 'overrides_user_admin_perm_redir',
+        'page arguments' => array(4),
+        'access callback' => 'user_access',
+        'access arguments' => array('administer permissions'),
+      );
+    }
+  }
+  return $items;
+}
+
+/**
+ * Helper to redirect the user to the correct role based
+ * permissions admin page.
+ */
+function overrides_user_admin_perm_redir($rid) {
+  drupal_goto('admin/user/permissions/'. $rid);
+}
+
+/**
  * Form alter overrides for the conference system.
  */
 function overrides_form_alter(&$form, $form_state, $form_id) {
@@ -47,6 +79,8 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     $form['taxonomy'][4]['#title'] = 'Your Interests';
     $form['taxonomy'][4]['#description'] = 'Please tell us which topic areas are of interest to you. We can use this information to suggest sessions you may want to attend.';
     $form['taxonomy'][4]['#required'] = FALSE;
+
+    unset($form['taxonomy']);
   }
 
   if(strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE) {
@@ -57,6 +91,29 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     array_unshift($form['#validate'], 'overrides_uc_product_add_to_cart_form_validate');
   }
 }
+
+/**
+ * User profile taxonomy data migration.
+ *
+ * Load $node->taxonomy data into the field_profile_interests field.
+ */
+function overrides_nodeapi(&$node, $op, $a1) {
+  if($node->type != 'profile')
+    return;
+
+  switch($op) {
+    case 'load':
+      // If interests are set, do not touch the field.
+      if (!$node->field_profile_interests) {
+        $terms = taxonomy_node_get_terms($node);
+        foreach ($terms as $tid => $term) {
+          $node->field_profile_interests[] = $tid;
+        }
+      }
+      break;
+  }
+}
+
 
 /**
  * User signup form validation function override.
