@@ -59,6 +59,12 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
       '#default_value' => variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig'),
       '#required' => TRUE,
     );
+    $form['twitter_height'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Widget Height'),
+      '#description' => t('How high (in pixels) should the twitter widget be?'),
+      '#default_value' => variable_get('promotion_twitter_height', 150),
+    );
     return $form;
   }
 
@@ -70,6 +76,7 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
     variable_set('promotion_twitter_title', $edit['twitter_title']);
     variable_set('promotion_twitter_subject', $edit['twitter_subject']);
     variable_set('promotion_twitter_search', $edit['twitter_search']);
+    variable_set('promotion_twitter_height', $edit['twitter_height']);
   }
 
   if ($op == 'view') {
@@ -278,7 +285,7 @@ function promotion_tweeps() {
   $title = variable_get('promotion_twitter_title', 'What\'s happening on twitter');
   $subject = variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps');
   $search = variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig');
-
+  $height = variable_get('promotion_twitter_height', 150);
 
   $block['subject'] = 'Twitter Widget';
   $block['content'] = "<script type='text/javascript' src='http://widgets.twimg.com/j/2/widget.js'></script>
@@ -286,12 +293,12 @@ function promotion_tweeps() {
 new TWTR.Widget({
   version: 2,
   type: 'search',
-  search: '" . $search . "',
+  search: '" . addslashes($search) . "',
   interval: 5000,
-  title: '" . $title . "',
-  subject: '". $subject ."',
+  title: '" . addslashes($title) . "',
+  subject: '" . addslashes($subject) . "',
   width: 250,
-  height: 150,
+  height: " . $height . ",
   theme: {
     shell: {
       background: '#cc66cc',
