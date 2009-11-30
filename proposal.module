@@ -336,6 +336,16 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
   unset($form['body_field']['teaser_include']);
 
   if ($form_id == 'proposal_node_form') {
+
+    // Hide the stream taxonomy if you're not an admin or papers chair.
+    if (!in_array('site administrator', $user->roles) || !in_array('papers chair',$user->roles) || $user->uid != 1) {
+      $js = "
+        $(document).ready(function() {
+          $('#edit-taxonomy-10-wrapper').hide();
+        });";
+      drupal_add_js($js, 'inline');
+    }
+
     if ((variable_get('proposal_c4p_open', 0) == 0) && !$form['title']['#default_value']) {
       drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
     }
