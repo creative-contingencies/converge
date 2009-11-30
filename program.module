@@ -90,11 +90,48 @@ function program_block($op = 'view', $delta = 0, $edit = array()) {
  * Helper to grab a list of proposals with matching key words.
  */
 function program_block_related_proposals_by_nid($nid) {
+
+  $proposal = node_load($nid);
+  $terms = taxonomy_node_get_terms($proposal);
+
+  foreach ($terms as $tid => $term) {
+    // Skip type.
+    if ($term->vid == variable_get('proposal_vocabulary_kind'))
+      continue;
+    $tids[] = $tid;
+  }
+
+  // Select all nodes that match one or more terms with he current one.
+  $query = "/* Select nodes with matching terms */
+    SELECT
+      COUNT(tn.tid) AS num,
+      tn.nid AS nid,
+      n.title AS title
+    FROM
+      {term_node} AS tn
+    JOIN
+      {node} AS n ON (tn.nid=n.nid AND n.type='proposal')
+    WHERE
+      tn.tid IN (" . implode(',', $tids) . ")
+      AND tn.tid != 42
+      AND tn.nid != %d
+    GROUP BY
+      tn.tid
+    ORDER BY
+      COUNT(tn.tid) DESC,
+      RAND()
+    LIMIT 4";
+
+  $result = db_query($query, $proposal->nid);
+  while ($row = db_fetch_array($result)) {
+    $nodes[] = l($row['title'], 'node/' . $row['nid']);
+  }
+
+  // Output.
   $block = array(
     'subject' => 'Related sessions',
-    'content' => '',
+    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul>',
   );
-
   return $block;
 }
 
