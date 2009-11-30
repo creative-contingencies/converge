@@ -1,7 +1,7 @@
 <?php
 
 function overrides_content_allowed_values($field) {
-  dpm($field);
+  // dpm($field);
 }
 
 /**
