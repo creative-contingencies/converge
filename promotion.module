@@ -36,10 +36,38 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
     return $form;
   }
 
+  if ($op == 'configure' && $delta == 3) {
+    $form['twitter_title'] = array(
+      '#type' => 'text',
+      '#title' => t('Widget Title'),
+      '#description' => t('What widget title do you want to display?'),
+      '#default_value' => variable_get('promotion_twitter_title', 'What\'s happening on twitter?'),
+    );
+    $form['twitter_subject'] = array(
+      '#type' => 'text',
+      '#title' => t('Widget Subject'),
+      '#description' => t('What widget subject do you want to display?'),
+      '#default_value' => variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps'),
+    );
+    $form['twitter_search'] = array(
+      '#type' => 'text',
+      '#title' => t('Search query'),
+      '#description' => t('What terms do we search twitter for?'),
+      '#default_value' => variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig'),
+      '#required' => TRUE,
+    );
+    return $form;
+  }
+
   if ($op == 'save' && $delta == 0) {
     variable_set('promotion_faces', $edit['faces']);
   }
 
+  if ($op == 'save' && $delta == 3) {
+    variable_set('promotion_twitter_title', $edit['twitter_title']);
+    variable_set('promotion_twitter_subject', $edit['twitter_subject']);
+    variable_set('promotion_twitter_search', $edit['twitter_search']);
+  }
 
   if ($op == 'view') {
     if ($delta == 0) {
@@ -50,6 +78,9 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
     }
     if ($delta == 2) {
       $block = promotion_myacec_percentage();
+    }
+    if ($delta == 3) {
+      $block = promotion_tweeps();
     }
     return $block;
   }
@@ -237,4 +268,51 @@ function promotion_myacec_percentage() {
   }
 
   return $block;
+}
+
+function promotion_tweeps() {
+  $block = array();
+  $title = variable_get('promotion_twitter_title', 'What\'s happening on twitter');
+  $subject = variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps');
+  $search = variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig');
+
+  $block['subject'] = 'Twitter Widget';
+  $block['content'] = "
+<script src='http://widgets.twimg.com/j/2/widget.js'></script> <script>
+new TWTR.Widget({
+  version: 2,
+  type: 'search',
+  search: '" . $search . "',
+  interval: 5000,
+  title: '" . $title . "',
+  subject: '". $subject ."',
+  width: 250,
+  height: 150,
+  theme: {
+    shell: {
+      background: '#cc66cc',
+      color: '#ffffff'
+    },
+    tweets: {
+      background: '#ffffff',
+      color: '#333333',
+      links: '#1985b5'
+    }
+  },
+  features: {
+    scrollbar: false,
+    loop: true,
+    live: true,
+    hashtags: true,
+    timestamp: false,
+    avatars: true,
+    behavior: 'default'
+  }
+}).render().start();
+</script>";
+
+  return array(
+    'subject' => $subject,
+    'content' => $content,
+    );
 }
