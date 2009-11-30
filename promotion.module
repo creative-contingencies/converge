@@ -9,15 +9,18 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
     $blocks = array();
     $blocks[0] = array(
-      'info' => t('Who\'s Coming?'),
+      'info' => t('promotion: Who\'s Coming?'),
       'cache' => BLOCK_NO_CACHE,
     );
     $blocks[1] = array(
-      'info' => t('T-shirt Competition'),
+      'info' => t('promotion: T-shirt Competition'),
     );
     $blocks[2] = array(
-      'info' => t('myACEC Percentage Incentive'),
+      'info' => t('promotion: myACEC Percentage Incentive'),
       'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[3] = array(
+      'info' => t('promotion: Twitter Widget'),
     );
     return $blocks;
   }
