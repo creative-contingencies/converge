@@ -315,8 +315,5 @@ new TWTR.Widget({
 }).render().start();
 </script>";
 
-  return array(
-    'subject' => $subject,
-    'content' => $content,
-    );
+  return $block;
 }
