@@ -41,19 +41,19 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
 
   if ($op == 'configure' && $delta == 3) {
     $form['twitter_title'] = array(
-      '#type' => 'text',
+      '#type' => 'textfield',
       '#title' => t('Widget Title'),
       '#description' => t('What widget title do you want to display?'),
       '#default_value' => variable_get('promotion_twitter_title', 'What\'s happening on twitter?'),
     );
     $form['twitter_subject'] = array(
-      '#type' => 'text',
+      '#type' => 'textfield',
       '#title' => t('Widget Subject'),
       '#description' => t('What widget subject do you want to display?'),
       '#default_value' => variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps'),
     );
     $form['twitter_search'] = array(
-      '#type' => 'text',
+      '#type' => 'textfield',
       '#title' => t('Search query'),
       '#description' => t('What terms do we search twitter for?'),
       '#default_value' => variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig'),
@@ -279,9 +279,10 @@ function promotion_tweeps() {
   $subject = variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps');
   $search = variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig');
 
+  drupal_add_js('http://widgets.twimg.com/j/2/widget.js');
+
   $block['subject'] = 'Twitter Widget';
-  $block['content'] = "
-<script src='http://widgets.twimg.com/j/2/widget.js'></script> <script>
+  $block['content'] = "<script type='text/css'>
 new TWTR.Widget({
   version: 2,
   type: 'search',
