@@ -83,6 +83,15 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     unset($form['taxonomy']);
   }
 
+  // Planet feed add.
+  if ($form_id == 'planet_feed_form') {
+    $form['feeds']['title']['#description'] = t('Enter the name or title of your blog.');
+    $form['feeds']['link']['#title'] = 'Feed URL';
+    $form['feeds']['link']['#maxlength'] = 255;
+    $form['feeds']['link']['#description'] = t('Enter the RSS or ATOM feed to syndicate your blog on planetACEC.');
+  }
+
+  // Change the 'continue shopping' button if required.
   if(strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE) {
     $form['continue_shopping'] = array(
       '#type' => 'submit',
