@@ -279,10 +279,10 @@ function promotion_tweeps() {
   $subject = variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps');
   $search = variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig');
 
-  drupal_add_js('http://widgets.twimg.com/j/2/widget.js');
 
   $block['subject'] = 'Twitter Widget';
-  $block['content'] = "<script type='text/css'>
+  $block['content'] = "<script type='text/css' src='http://widgets.twimg.com/j/2/widget.js'></script>
+<script type='text/css'>
 new TWTR.Widget({
   version: 2,
   type: 'search',
