@@ -26,6 +26,14 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  $items['admin/store/reports/attendees'] = array(
+    'title' => 'Attendee Registration Report',
+    'description' => 'List all known attendees.',
+    'page callback' => 'register_list_attendees',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
   $items['admin/store/reports/presenters'] = array(
     'title' => 'Presenter Registration Report',
     'description' => 'List the registration status for presenters with accepted proposals.',
@@ -825,7 +833,7 @@ function register_list_coupon_status() {
  */
 function register_prizedraw() {
 
-  // Get all presenters (and co-presenters) for all proposals.
+  // Get all users who have a completed or payment received ticket allocated to them.
   $query = "SELECT
       ccc_ta.uid AS uid,
       uc_op.order_id AS order_id,
@@ -842,9 +850,9 @@ function register_prizedraw() {
       {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
     JOIN
       {node} AS n ON (uc_op.nid=n.nid)
-    JOIN
+    LEFT JOIN
       {node} AS np ON (ccc_ta.uid=np.uid AND np.type='profile')
-    JOIN
+    LEFT JOIN
       {content_type_profile} AS ctp ON(np.nid=ctp.nid)
     WHERE
       uc_o.order_status IN ('completed','payment_received')
@@ -871,6 +879,85 @@ function register_prizedraw() {
 
   $output  = t('<p>Here are 10 random people with tickets from a completed or paid order allocated to them.');
   $output .= theme('table', $headers, $data);
+
+  return $output;
+}
+
+/**
+ * List all users with a ticket of some kind allocated to them.
+ */
+function register_list_attendees() {
+  $query = "SELECT
+      ccc_ta.uid AS uid,
+      uc_op.order_id AS order_id,
+      uc_op.order_product_id,
+      uc_o.order_status AS order_status,
+      n.title,
+      ctp.field_profile_firstname_value AS firstname,
+      ctp.field_profile_surname_value AS surname
+    FROM
+      {uc_order_products} AS uc_op
+    JOIN
+      {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+    JOIN
+      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
+    JOIN
+      {users} AS u ON (u.uid = ccc_ta.uid)
+    JOIN
+      {node} AS n ON (uc_op.nid=n.nid)
+    LEFT JOIN
+      {node} AS np ON (ccc_ta.uid=np.uid AND np.type='profile')
+    LEFT JOIN
+      {content_type_profile} AS ctp ON(np.nid=ctp.nid)
+    WHERE
+      uc_o.order_status IN ('completed','payment_received')
+    GROUP BY
+      ccc_ta.uid
+    ORDER BY
+      ctp.field_profile_surname_value ASC,
+      ctp.field_profile_firstname_value ASC";
+
+  $count_query = "SELECT
+      COUNT(DISTINCT(ccc_ta.uid))
+    FROM
+      {uc_order_products} AS uc_op
+    JOIN
+      {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+    JOIN
+      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
+    JOIN
+      {node} AS n ON (uc_op.nid=n.nid)
+    WHERE
+      uc_o.order_status IN ('completed','payment_received')";
+
+  $items_per_page = 20;
+  $total = db_result(db_query($count_query));
+  $page = intval($_REQUEST['page']);
+
+  $query = db_rewrite_sql($query);
+  $result = pager_query($query, $items_per_page, 0, $count_query);
+
+  while ($o = db_fetch_object($result)) {
+    $tuple = array(
+      'user' => ($o->firstname) ? l($o->firstname . ' ' . $o->surname, 'user/' . $o->uid) : l($o->username, 'user/'. $o->uid),
+      'oid' => l($o->order_id, 'admin/store/orders/' . $o->order_id),
+      'order' => $o->title,
+      'status' => $o->order_status,
+    );
+    $data[] = $tuple;
+  }
+
+  $headers = array('Name', 'Order', 'Product', 'Status');
+
+  drupal_set_title('Attendee Report');
+  $output .= t('Listing !start - !end of !total attendees who have a paid-for ticket of any kind allocated to them.',
+    array(
+      '!start' => ($items_per_page * $page) + 1,
+      '!end' => min($total, ($items_per_page * ($page + 1))),
+      '!total' => $total,
+    ));
+  $output .= theme('table', $headers, $data);
+  $output .= theme('pager', array(), $items_per_page);
 
   return $output;
 }
