@@ -655,7 +655,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
          && isset($form_state['post']['message']) && !empty($form_state['post']['message']))
       {
 
-      $reviewer = user_load(arg(1));
+      $reviewer = user_load(array('uid' => arg(1)));
       $profile = content_profile_load('profile', $reviewer->uid);
 
       $params = array();
@@ -1138,7 +1138,7 @@ function review_reviewer_csv_submit($form, &$form_state) {
 
     $uid = db_result(db_query("SELECT uid FROM users WHERE LCASE(mail) = '%s'", strtolower(trim($line[4]))));
     if ($uid > 0) {
-      $reviewer = user_load($uid);
+      $reviewer = user_load(array('uid' => $uid));
       $profile = content_profile_load('profile', $reviewer->uid);
     } else {
       $data['firstname'] = $line[0];
@@ -1148,7 +1148,7 @@ function review_reviewer_csv_submit($form, &$form_state) {
       $data['mail'] = $line[4];
 
       $new_uid = proposal_copresenter_create($data);
-      $reviewer = user_load($new_uid);
+      $reviewer = user_load(array('uid' => $new_uid));
       $profile = content_profile_load('profile', $reviewer->uid);
     }
 
@@ -1186,8 +1186,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
   global $user;
 
   // Load a user by UUID.
-  $victim = user_load($vuid);
-
+  $victim = user_load(array('uid' => $vuid));
   if ($victim->uid == 0 || $victim->uuid != $uuid) {
     drupal_set_message('The link you clicked is invalid.', 'error');
     drupal_goto('<front>');
@@ -1285,7 +1284,7 @@ function review_manage_review($op, $pid, $uuid, $vuid) {
   }
 
   $proposal = node_load($pid);
-  $victim = user_load($vuid);
+  $victim = user_load(array('uid' => $vuid));
 
   // Don't bother if we're removing the guest user.
 

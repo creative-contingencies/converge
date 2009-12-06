@@ -1,6 +1,6 @@
 name = Custom user search
 description = Find and filter users by any content_profile field or role.
-package = " Creative Contingencies Conference"
+package = " Creative Contingencies Conference"A
 core = 6.x
 
 dependencies[] = content_profile

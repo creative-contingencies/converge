@@ -766,7 +766,7 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
   }
 
   $proposal = node_load($pid);
-  $victim = user_load($vuid);
+  $victim = user_load(array('uid' => $vuid));
 
   // Don't bother if we're removing the guest user.
 
@@ -800,7 +800,7 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
       if($user_is_presenter) {
         drupal_set_message('You are already a presenter for "' . $proposal->title . '"', 'warning');
       } else {  // if user is not a presenter
-        $author = user_load($proposal->uid);
+        $author = user_load(array('uid' => $proposal->uid));
         $proposal->field_proposal_presenters[] = array('uid' => $user->uid);
         node_save($proposal);
 
