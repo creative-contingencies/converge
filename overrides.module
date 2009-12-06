@@ -37,25 +37,6 @@ function overrides_user_admin_perm_redir($rid) {
 }
 
 /**
- * Add extra menu items to make it easier to edit permissions by role.
- */
-function overrides_menu() {
-  $items = array();
-  $roles = user_roles();
-
-  foreach($roles as $rid => $role) {
-    $items['admin/user/permissions/'. $rid] = array(
-      'title' => $role,
-      'description' => 'Determine access to features by selecting permissions for ' . $role . '.',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('user_admin_perm'),
-      'access arguments' => array('administer permissions'),
-    );
-  }
-  return $items;
-}
-
-/**
  * Form alter overrides for the conference system.
  */
 function overrides_form_alter(&$form, $form_state, $form_id) {
