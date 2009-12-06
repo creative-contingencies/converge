@@ -385,7 +385,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
     $form['items'][$key] = array();
     $form['items'][$key] = array(
       '#type' => 'fieldset',
-       '#title' => check_plain($order->title),
+      '#title' => check_plain($order->title),
       '#collapsible' => TRUE,
       '#collapsed' => ($order_product_id && $order_product_id != $order->order_product_id) ? TRUE : FALSE,
     );
@@ -884,9 +884,42 @@ function register_prizedraw() {
 }
 
 /**
+ * Filter form for the attendee listing.
+ */
+function register_product_filter_form($form_state) {
+  // Create a keyed array of products.
+  //
+  $options = array(0 => 'List all');
+  $result = db_query("SELECT nid,title FROM {node} WHERE type = 'product'");
+  while ($o = db_fetch_object($result)) {
+    $options[$o->nid] = $o->title;
+  }
+
+  $form = array();
+  $form['filter'] = array(
+    '#title' => 'Filter',
+    '#type' => 'fieldset',
+    '#description' => 'Choose a product to filter the results by.',
+  );
+  $form['filter']['product'] = array(
+    '#title' => 'Product',
+    '#type' => 'select',
+    '#options' => $options,
+  );
+  $form['filter']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Filter',
+  );
+}
+
+/**
  * List all users with a ticket of some kind allocated to them.
  */
 function register_list_attendees() {
+
+  if (arg(4) == 'csv')
+    dpm(arg());
+
   $query = "SELECT
       ccc_ta.uid AS uid,
       uc_op.order_id AS order_id,
@@ -956,6 +989,7 @@ function register_list_attendees() {
       '!end' => min($total, ($items_per_page * ($page + 1))),
       '!total' => $total,
     ));
+  $output .= drupal_get_form('register_product_filter');
   $output .= theme('table', $headers, $data);
   $output .= theme('pager', array(), $items_per_page);
 
