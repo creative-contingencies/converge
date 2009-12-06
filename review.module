@@ -1187,6 +1187,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
 
   // Load a user by UUID.
   $victim = user_load($vuid);
+
   if ($victim->uid == 0 || $victim->uuid != $uuid) {
     drupal_set_message('The link you clicked is invalid.', 'error');
     drupal_goto('<front>');
@@ -1207,23 +1208,15 @@ function review_manage_reviewer($op, $uuid, $vuid) {
   switch($op) {
     case 'accept':
 
-      // Log the user in.
-      if ($user->uid == 0) {
-        $user = $victim;
-      }
-
       if (in_array('reviewer', $victim->roles)) {
         drupal_set_message('You are aready a reviewer.', 'warning');
-        drupal_goto('user/' . $user->uid . '/edit/profile');
+        drupal_goto();
         return;
       }
 
       // Set reviewer role.
       $roles = $victim->roles + array($rid => 'reviewer');
       user_save($victim, array('roles' => $roles));
-
-      // Update logged-in user!
-      $user = $victim;
 
       // Send email to chairs.
       $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
@@ -1233,9 +1226,16 @@ function review_manage_reviewer($op, $uuid, $vuid) {
 
       // Tell the $user what we did.
       drupal_set_message(t('Thank you for agreeing to review papers.'));
-      drupal_set_message(t('Please complete this profile and indicate your interest areas below, so we can assign relevant papers.'));
-      drupal_set_message(t('You will receive an email with instructions once a paper has been assigned for you to review.'));
-      drupal_goto('user/' . $user->uid . '/edit/profile');
+      if ($user->uid) {
+        drupal_set_message(t('Please complete this profile and indicate your interest areas below, so we can assign relevant papers.'));
+        drupal_set_message(t('You will receive an email with instructions once a paper has been assigned for you to review.'));
+        drupal_goto('user/' . $user->uid . '/edit/profile');
+      }
+      else {
+        drupal_set_message(t('Please login and complete your profile and indicate your interest areas below, so we can assign relevant papers.'));
+        drupal_set_message(t('You will receive an email with instructions once a paper has been assigned for you to review.'));
+        drupal_goto('user');
+      }
       return;
       break;
 
@@ -1255,7 +1255,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
         user_save($victim, array('roles' => $roles));
 
         // If logged in, reload the perms.
-        if ($user->uid > 0)
+        if ($user->uid > 0 && $user->uid == $victim->uid)
           $user = $victim;
       } else {
         drupal_set_message(t('Thank you. The paper committee chairs have been notified of your decision to decline the invitation.'));
