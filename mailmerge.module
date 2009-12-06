@@ -1,0 +1,43 @@
+<?php
+// $Id$
+
+/**
+ * This module provides mail merge functionality for the Conference pack.
+ *
+ * Included filters:
+ *   - Role
+ *   - Product
+ *   - Payment status
+ *
+ * When a mail is sent, a log entry is written which includes the mail content.
+ * Past communication can thus be easily retrieved.
+ */
+
+/**
+ * Form for mail entry.
+ */
+
+
+/**
+ * Verification prompt.
+ */
+
+
+/**
+ * Mail handler.
+ */
+
+
+/**
+ * Write log.
+ */
+
+
+/**
+ * Show log.
+ */
+
+
+/**
+ * Show log entry.
+ */

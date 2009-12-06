@@ -1,0 +1,20 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install()
+ */
+function mailmerge_install() {
+  drupal_install_schema('mailmerge');
+}
+
+/**
+ * Implementation of hook_schema()
+ */
+function mailmerge_schema() {
+  $schema = array();
+
+  $schema['mailmerge_log'] = array();
+
+  return $schema;
+}
