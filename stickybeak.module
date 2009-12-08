@@ -1,0 +1,114 @@
+<?php
+/**
+ * Provide some stickybeakness into the sessions table. Show us who is online and from where.
+ */
+
+/**
+ * Implementation of hook_menu()
+ */
+function stickybeak_menu() {
+  $items = array();
+  $items['admin/reports/sessions'] = array(
+    'title' => 'View session list',
+    'description' => 'View a list of sessions',
+    'page callback' => 'stickybeak_browse',
+    'access arguments' => array('examine sessions'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/reports/sessions/%'] = array(
+    'title' => 'View session info',
+    'description' => 'View info about a specific session',
+    'page callback' => 'stickybeak_details',
+    'page arguments' => array(3),
+    'access arguments' => array('examine sessions'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm()
+ */
+function stickybeak_perm() {
+  return array('examine sessions');
+}
+
+/**
+ * Pager through sessions 20 at a time.
+ */
+function stickybeak_browse() {
+  $query = "SELECT s.uid, s.sid, u.name, s.hostname, s.timestamp, s.session FROM {sessions} AS s INNER JOIN {users} AS u ON (s.uid = u.uid) ORDER BY s.timestamp DESC";
+
+
+
+  $items_per_page = 20;
+  $query = db_rewrite_sql($query);
+  $result = pager_query($query, $items_per_page, 0, NULL);
+
+  while ($o = db_fetch_object($result)) {
+    $tuple = array(
+      'user' => ($o->uid) ? l($o->name, 'user/' . $o->uid) : 'Anonymous',
+      'sid' => l($o->sid, 'admin/reports/sessions/' . $o->sid),
+      'hostname' => $o->hostname,
+      'timestamp' => date('D j M G:i:s', $o->timestamp),
+    );
+    $data[] = $tuple;
+  }
+
+  $headers = array('User', 'Session', 'Hostname', 'Active');
+  drupal_set_title('Sessions');
+
+  // $output .= drupal_get_form('register_product_filter');
+  $output  = theme('table', $headers, $data);
+  $output .= theme('pager', array(), $items_per_page);
+
+  return $output;
+}
+
+/**
+ * Show detailed info about a specific sid.
+ */
+function stickybeak_details($sid) {
+
+  $output = '';
+
+  $query = "SELECT s.uid, s.sid, u.name, s.hostname, s.timestamp, s.session FROM {sessions} AS s INNER JOIN {users} AS u ON (s.uid = u.uid) WHERE s.sid = '%s'";
+  $object = db_fetch_object(db_query($query, $sid));
+  $session = stickybeak_unserialize_session($object->session);
+
+  if ($session) {
+    drupal_set_title('Session ' . $sid);
+    $output .= '<ul>';
+    $output .= '<li>' . t('User') . ': ' . (($object->uid) ? l($object->name, 'user/' . $object->uid) : 'Anonymous') . '</li>';
+    $output .= '<li>' . t('Hostname') . ': ' . $object->hostname . '</li>';
+    $output .= '<li>' . t('Timestamp') . ': ' . date('D j M G:i:s', $object->timestamp) . '</li>';
+    $output .= '</ul>';
+    $output .= '<p>' . t('Below are listed all session variables and their contents for session !sid.', array('!sid' => $sid)) . '</p>';
+    foreach ($session as $variable => $data) {
+      $output .= '<h3>' . $variable . '</h3>';
+      $output .= '<pre>';
+      $output .= print_r($data, TRUE);
+      $output .= '</pre>';
+    }
+  } else {
+    drupal_set_message(t('Session !sid does not exist', array('!sid' => $sid)), 'error');
+    $output = 'No data.';
+  }
+
+  return $output;
+}
+
+/**
+ * Helper to unserialuze the session data from the DB.
+ * See http://www.php.net/manual/en/function.session-decode.php
+ */
+function stickybeak_unserialize_session($data) {
+  $vars = preg_split(
+     '/([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\|/',
+     $data, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE
+   );
+   for($i=0; $vars[$i]; $i++) {
+       $result[$vars[$i++]]=unserialize($vars[$i]);
+   }
+   return $result;
+}

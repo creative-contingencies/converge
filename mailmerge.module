@@ -4,6 +4,13 @@
 /**
  * This module provides mail merge functionality for the Conference pack.
  *
+ * So maybe we need a node type with some additional storage:
+ *   - Status (sent/draft)
+ *   - Filter
+ *
+ * That requires a nodeapi handler to populate the right fields on load
+ * and (I guess) one that can send mails on save.
+ *
  * Included filters:
  *   - Role
  *   - Product
@@ -14,7 +21,8 @@
  */
 
 /**
- * Form for mail entry.
+ * Form for mail entry - node/add form. Must add filters, though. Pull-down with #ahah
+ * call that lists how many users would be mailed would be nice.
  */
 
 
