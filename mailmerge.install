@@ -2,19 +2,101 @@
 // $Id$
 
 /**
- * Implementation of hook_install()
- */
-function mailmerge_install() {
-  drupal_install_schema('mailmerge');
-}
-
-/**
  * Implementation of hook_schema()
  */
 function mailmerge_schema() {
   $schema = array();
 
-  $schema['mailmerge_log'] = array();
+  // Define schema to store send status and filter info.
+  // Based mainly on the newsletter schema from the simplenews module.
+  $schema['mailmerge_formletter'] = array(
+    'description' => 'Mailmerge formletter data.',
+    'fields' => array(
+      'nid' => array(
+      'description' => '{node} that is used as formletter.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+      ),
+    'vid' => array(
+      'description' => 'The {node}.vid that identifies the version used as newsletter.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+      ),
+    's_filter' => array(
+      'description' => 'A serialized view of the filters to be used to select recipients.',
+      'type' => 'text',
+      'not null' => TRUE,
+      'default' => '',
+    ),
+    's_status' => array(
+      'description' => 'Send status of the form letter (0 = not sent; 1 = pending; 2 = send). ',
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+      ),
+    's_format' => array(
+      'description' => 'Format of the form letter (plain or html).',
+      'type' => 'varchar',
+      'length' => 8,
+      'not null' => TRUE,
+      'default' => '',
+      ),
+    'priority' => array(
+      'description' => 'Email priority according to RFC 2156 and RFC 5231 (0 = none; 1 = highest; 2 = high; 3 = normal; 4 = low; 5 = lowest).',
+      'type' => 'varchar',
+      'size' => 8,
+      'not null' => TRUE,
+      'default' => '',
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
 
   return $schema;
+}
+
+/**
+ * Create a node type for mailmerge.
+ */
+function _mailmerge_install_nodetype() {
+  if ($type = node_get_types('type', 'mailmerge')) {
+    $type->module = 'node';
+    $type->locked = FALSE;
+    $type->custom = TRUE;
+    node_type_save($type);
+  }
+  else {
+    $info = array(
+      'type' => 'mailmerge',
+      'name' => t('Mailmerge Form Letter'),
+      'module' => 'node',
+      'description' => t('A form letter to be sent to a selection of web site users.'),
+      'locked' => FALSE,
+      'custom' => TRUE,
+    );
+    $info = _node_type_set_defaults($info);
+    node_type_save((object)$info);
+  }
+}
+
+/**
+ * Implementation of hook_install()
+ */
+function mailmerge_install() {
+  if (!drupal_install_schema('mailmerge')) {
+    drupal_set_message(t('The installation of Mailmerge was not successful.'), 'error'); 
+  }
+  _mailmerge_install_nodetype();
+  variable_set('mailmerge_content_types', array('mailmerge' => 'mailmerge')); 
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function mailmerge_uninstall() {
+  drupal_uninstall_schema('mailmerge');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'mailmerge_%%'");
 }
