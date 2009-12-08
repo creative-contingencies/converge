@@ -74,21 +74,27 @@ function stickybeak_details($sid) {
 
   $query = "SELECT s.uid, s.sid, u.name, s.hostname, s.timestamp, s.session FROM {sessions} AS s INNER JOIN {users} AS u ON (s.uid = u.uid) WHERE s.sid = '%s'";
   $object = db_fetch_object(db_query($query, $sid));
-  $session = stickybeak_unserialize_session($object->session);
 
-  if ($session) {
+  if ($object) {
     drupal_set_title('Session ' . $sid);
     $output .= '<ul>';
     $output .= '<li>' . t('User') . ': ' . (($object->uid) ? l($object->name, 'user/' . $object->uid) : 'Anonymous') . '</li>';
     $output .= '<li>' . t('Hostname') . ': ' . gethostbyaddr($object->hostname) . '</li>';
     $output .= '<li>' . t('Timestamp') . ': ' . date('D j M G:i:s', $object->timestamp) . '</li>';
     $output .= '</ul>';
-    $output .= '<p>' . t('Below are listed all session variables and their contents for session !sid.', array('!sid' => $sid)) . '</p>';
-    foreach ($session as $variable => $data) {
-      $output .= '<h3>' . $variable . '</h3>';
-      $output .= '<pre>';
-      $output .= print_r($data, TRUE);
-      $output .= '</pre>';
+
+    $session = stickybeak_unserialize_session($object->session);
+    if (!$session) {
+      $output .= '<p>' . t('This session contains no variables.') . '</p>';
+    }
+    else {
+      $output .= '<p>' . t('Below are listed all session variables and their contents for session !sid.', array('!sid' => $sid)) . '</p>';
+      foreach ($session as $variable => $data) {
+        $output .= '<h3>' . $variable . '</h3>';
+        $output .= '<pre>';
+        $output .= print_r($data, TRUE);
+        $output .= '</pre>';
+      }
     }
   } else {
     drupal_set_message(t('Session !sid does not exist', array('!sid' => $sid)), 'error');
