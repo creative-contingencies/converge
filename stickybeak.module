@@ -80,7 +80,7 @@ function stickybeak_details($sid) {
     drupal_set_title('Session ' . $sid);
     $output .= '<ul>';
     $output .= '<li>' . t('User') . ': ' . (($object->uid) ? l($object->name, 'user/' . $object->uid) : 'Anonymous') . '</li>';
-    $output .= '<li>' . t('Hostname') . ': ' . $object->hostname . '</li>';
+    $output .= '<li>' . t('Hostname') . ': ' . gethostbyaddr($object->hostname) . '</li>';
     $output .= '<li>' . t('Timestamp') . ': ' . date('D j M G:i:s', $object->timestamp) . '</li>';
     $output .= '</ul>';
     $output .= '<p>' . t('Below are listed all session variables and their contents for session !sid.', array('!sid' => $sid)) . '</p>';
