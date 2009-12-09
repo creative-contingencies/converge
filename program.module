@@ -23,19 +23,19 @@ function program_block($op = 'view', $delta = 0, $edit = array()) {
   if ($op == 'list') {
     $blocks = array();
     $blocks[0] = array(
-      'info' => t('INCOMPLETE: Related proposal suggestions by node'),
+      'info' => t('program: Related proposal suggestions by node'),
       'cache' => BLOCK_NO_CACHE,
     );
     $blocks[1] = array(
-      'info' => t('Related keyword suggestions by keyword'),
+      'info' => t('program: Related keyword suggestions by keyword'),
       'cache' => BLOCK_NO_CACHE,
     );
     $blocks[2] = array(
-      'info' => t('Related proposal suggestions by keyword'),
+      'info' => t('program: Related proposal suggestions by keyword'),
       'cache' => BLOCK_NO_CACHE,
     );
     $blocks[3] = array(
-      'info' => t('Proposal suggestions based on preferences'),
+      'info' => t('program: Proposal suggestions based on preferences'),
       'cache' => BLOCK_NO_CACHE,
     );
     return $blocks;
@@ -111,8 +111,13 @@ function program_block_related_proposals_by_nid($nid) {
       {term_node} AS tn
     JOIN
       {node} AS n ON (tn.nid=n.nid AND n.type='proposal')
+    JOIN
+      {content_type_proposal} AS ctp ON (n.nid = ctp.nid AND  n.vid = ctp.vid)
     WHERE
       tn.tid IN (" . implode(',', $tids) . ")
+      AND n.type='proposal'
+      AND n.status <> 0
+      AND ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes')
       AND tn.tid != 42
       AND tn.nid != %d
     GROUP BY
@@ -321,7 +326,7 @@ function program_block_suggested_sessions() {
   // Output.
   $block = array(
     'subject' => 'Suggested sessions',
-    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul>',
+    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul><p class="note">Based on your interests, we think you might like these sessions.</p>',
   );
   return $block;
 
