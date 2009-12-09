@@ -4,3 +4,4 @@ package = " Creative Contingencies Conference"
 core = 6.x
 
 dependencies[] = proposal
+dependencies[] = overrides

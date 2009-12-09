@@ -129,7 +129,7 @@ function program_block_related_proposals_by_nid($nid) {
 
   $result = db_query($query, $proposal->nid);
   while ($row = db_fetch_array($result)) {
-    $nodes[] = l($row['title'], 'node/' . $row['nid']);
+    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
   }
 
   // Output.
@@ -238,7 +238,7 @@ function program_block_related_proposals_by_term($raw_term) {
       td.vid = %d AND
       tn.tid = %d", $term[0]->vid, $term[0]->tid);
   while ($row = db_fetch_array($result)) {
-    $nodes[] = l($row['title'], 'node/' . $row['nid']);
+    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
   }
 
   // Output.
@@ -320,7 +320,7 @@ function program_block_suggested_sessions() {
       tn.nid
     ORDER BY " . $order . " " . $limit, $vid);
   while ($row = db_fetch_array($result)) {
-    $nodes[] = l($row['title'], 'node/' . $row['nid']);
+    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
   }
 
   // Output.
