@@ -105,6 +105,16 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     );
     array_unshift($form['#validate'], 'overrides_uc_product_add_to_cart_form_validate');
   }
+
+  // Override address titles on the uc checkout address form.
+  if ($form_id == 'uc_cart_checkout_form') {
+    $form['panes']['delivery']['#title'] = t('Contact Address');
+    $form['panes']['delivery']['#description'] = t('Please enter your home address.');
+
+    $form['panes']['billing']['copy_address']['#title'] = t('I\'m paying for myself, my home address is the billing address.');
+    $form['panes']['billing']['#title'] = t('Billing Address');
+    $form['panes']['billing']['#description'] = t('If an organisation is paying for this order, please enter the organisation\'s billing address here.');
+  }
 }
 
 /**
