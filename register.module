@@ -75,10 +75,11 @@ function register_menu() {
   );
   $items['admin/user/user/prizedraw'] = array(
     'title' => 'Prize Draw!',
+    'description' => 'Select 10 random registrants for the prize draw.',
     'page callback' => 'register_prizedraw',
     'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
