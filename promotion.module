@@ -13,7 +13,7 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
       'cache' => BLOCK_NO_CACHE,
     );
     $blocks[1] = array(
-      'info' => t('promotion: T-shirt Competition'),
+      'info' => t('promotion: Unused'),
     );
     $blocks[2] = array(
       'info' => t('promotion: myACEC Percentage Incentive'),
@@ -84,7 +84,7 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
       $block = promotion_user_faces();
     }
     if ($delta == 1) {
-      $block = promotion_tshirt_competition();
+      $block = promotion_unused();
     }
     if ($delta == 2) {
       $block = promotion_myacec_percentage();
@@ -127,12 +127,12 @@ function promotion_user_faces() {
 /**
  * Delta = 1
  *
- * Return a block with t-shirt comp info.
+ * Return a block with info.
  */
-function promotion_tshirt_competition() {
+function promotion_unused() {
   $block = array();
 
-  $block['subject'] = t('T-shirt Competition');
+  $block['subject'] = t('Unused');
   $block['content'] = 'Placeholder.';
 
   return $block;
