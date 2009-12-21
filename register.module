@@ -12,6 +12,13 @@
  */
 
 /**
+ * Implementation of hook_perm().
+ */
+function registration_perm() {
+  return array('select conference sessions');
+}
+
+/**
  * Implementation of hook_menu().
  */
 function register_menu() {
@@ -204,7 +211,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
         // Get a big list of event purchases and stuff.
         $orders = register_get_orders($account->uid);
 
-        foreach ($orders AS $key => $order) {
+        foreach ($orders as $key => $order) {
           if (!$order->some_user_allocated && $order->qty == 1) {
             // No-one is allocated to this ticket, we could allocate them here.
             if (register_allocate_ticket($order->order_product_id, $account->uid)) {
@@ -224,6 +231,23 @@ function register_user($op, &$edit, &$account, $category = NULL) {
           'link' => array(
             '#type' => 'user_profile_item',
             '#value' => theme('user_overview_registrations', $account, $orders),
+          ),
+        );
+      }
+
+      if ($user->uid && (($user->uid == $account->uid && user_access('select conference sessions')))) {
+
+        // Get a big list of selected sessions.
+        $selections = register_get_selections($account->uid);
+
+        // Show selected sessions.
+        $account->content['selections'] = array(
+          '#type' => 'user_profile_category',
+          '#weight' => 0,
+          '#title' => t('Session Selections'),
+          'link' => array(
+            '#type' => 'user_profile_item',
+            '#value' => theme('user_overview_registrations', $account, $selections),
           ),
         );
       }
