@@ -88,6 +88,15 @@ function register_menu() {
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
+  $items['user/%user/sessions'] = array(
+    'title' => 'Session Selections',
+    'description' => 'Conference session selection',
+    'page callback' => 'register_sessions',
+    'page arguments' => array(1, 3),
+    'access callback' => 'user_access',
+    'access arguments' => array('select conference sessions'),
+    'type' => MENU_LOCAL_TASK,
+  );
 
   return $items;
 }
@@ -393,11 +402,9 @@ function register_get_ticketholders($order_product) {
  *
  * TODO: needs a t() cleanup and better for theming?
  */
- 
 function register_tickets($user, $order_product_id) {
   return drupal_get_form('register_tickets_form', $user, $order_product_id);
 }
-
 
 function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
 
@@ -1040,4 +1047,75 @@ function ordinalise($number) {
       break;
     }
   }
+}
+
+function register_get_tickets($uid) {
+  $result = db_queryd("SELECT DISTINCT(uc_op.nid) FROM {uc_order_products} AS uc_op JOIN 
+    {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+    WHERE cccta.uid=%d", $uid);
+  while ($row = db_fetch_array($result)) {
+    $data[] = $row['nid'];
+  }
+  return $data;
+}
+
+/**
+ * Turn an array of product node IDs into a list of the dates they apply to.
+ * To this end, a product MUST contain a list of dates. Ordered by date, obviously.
+ */
+function register_products_to_timeslots($nodes) {
+  $result = db_queryd("SELECT DISTINCT ctt.nid, ctt.field_timeslot_date_value, ctt.field_timeslot_date_value2, cfrt.nid AS registration FROM {content_field_registration_timeslot} AS cfrt LEFT JOIN {content_type_timeslot} AS ctt ON (cfrt.field_registration_timeslot_nid = ctt.nid) WHERE cfrt.nid IN (" . implode(',', $nodes) . ") ORDER BY ctt.field_timeslot_date_value ASC");
+  while ($row = db_fetch_object($result)) {
+    $data[] = $row;
+  }
+  return $data;
+}
+
+/**
+ * Retieve a list of timeslots that this user may choose sessions for.
+ *
+ * First, retrieve the tickets that were assigned to this uid, then see which timeslots that maps to.
+ */
+function register_get_timeslots($uid) {
+  $tickets = register_get_tickets($uid);
+
+  // Map these node IDs to timeslots.
+  return register_products_to_timeslots($tickets);
+}
+
+/**
+ * Retrieve a list of selected sessions for $user.
+ */
+function register_get_sessions($uid) {
+  $result = db_query("SELECT timeslot, nid FROM {ccc_session_selection} WHERE uid=%d", $uid);
+  while ($row = db_fetch_array($result)) {
+    $data[] = $row;
+  }
+  return $data;
+}
+
+/**
+ * Display the session selection form
+ */
+function register_sessions($user) {
+  return drupal_get_form('register_sessions_form', $user);
+}
+
+function register_sessions_form(&$form_state, $user) {
+
+  $timeslots = register_get_timeslots($user->uid);
+  $sessions = register_get_sessions($user->uid);
+
+  $form = array();
+  $form['items'] = array('#tree' => TRUE);
+
+  // Grab earliest accessible timeslot.
+
+  // Show sessions.
+
+  // #ahah callback to:
+  //  - grab next timeslot
+  //  - wibble
+
+  return $form;
 }
