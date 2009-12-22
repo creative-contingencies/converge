@@ -247,7 +247,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
       if ($user->uid && (($user->uid == $account->uid && user_access('select conference sessions')))) {
 
         // Get a big list of selected sessions.
-        $selections = register_get_selections($account->uid);
+        $sessions = register_get_sessions($account->uid);
 
         // Show selected sessions.
         $account->content['selections'] = array(
@@ -256,7 +256,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
           '#title' => t('Session Selections'),
           'link' => array(
             '#type' => 'user_profile_item',
-            '#value' => theme('user_overview_registrations', $account, $selections),
+            '#value' => theme('user_overview_registrations', $account, $sessions),
           ),
         );
       }
