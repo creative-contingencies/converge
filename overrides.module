@@ -124,11 +124,16 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
       $profile = content_profile_load('profile', $user->uid);
       // dpm($profile);
       if ($profile->nid) {
+        foreach($form['panes']['delivery']['delivery_country']['options'] as $key => $val) {
+          if (strtolower($val) == strtolower($profile->field_profile_country[0]['value'])) {
+            $country_id = $key;
+          }
+        }
         $form['panes']['delivery']['delivery_first_name']['#default_value'] = $profile->field_profile_firstname[0]['value'];
         $form['panes']['delivery']['delivery_last_name']['#default_value'] = $profile->field_profile_surname[0]['value'];
         $form['panes']['delivery']['delivery_street1']['#default_value'] = $profile->field_profile_address[0]['value'];
         $form['panes']['delivery']['delivery_city']['#default_value'] = $profile->field_profile_city[0]['value'];
-        $form['panes']['delivery']['delivery_country']['#default_value'] = $profile->field_profile_country[0]['value'];
+        $form['panes']['delivery']['delivery_country']['#default_value'] = $key;
         $form['panes']['delivery']['delivery_zone']['#default_value'] = $profile->field_profile_state[0]['value'];
         $form['panes']['delivery']['delivery_postal_code']['#default_value'] = $profile->field_profile_postcode[0]['value'];
         $form['panes']['delivery']['delivery_phone']['#default_value'] = $profile->field_profile_phone[0]['value'];
