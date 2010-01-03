@@ -70,6 +70,10 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
         );
       }
       break;
+
+    case 'load':
+      $user->selections = sessions_user_sessions($account->uid);
+      break;
   }
 }
 
@@ -102,7 +106,7 @@ function sessions_get_timeslots($date) {
 function sessions_next_timeslots($date, $time = '00:00:00') {
   $nids = array();
 
-  dpm('Find timeslots that start at or after ' . $date . ' ' . $time);
+  // dpm('Find timeslots that start at or after ' . $date . ' ' . $time);
 
   // First, grab the lowest "next" start time.
   $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_type_timeslot} AS ctt WHERE field_timeslot_date_value >= '%s %s' AND field_timeslot_date_value LIKE '%s%%'", $date, $time, $date));
@@ -114,7 +118,7 @@ function sessions_next_timeslots($date, $time = '00:00:00') {
   // Then, grab the lowest "next" end time, counting from the lowest next start time.
   $finish = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value2) FROM {content_type_timeslot} AS ctt WHERE field_timeslot_date_value >= '%s' AND field_timeslot_date_value LIKE '%s%%'", $start, $date));
 
-  dpm('Going to return all timeslots that start at or after ' . $start . ' and end BEFORE ' . $finish);
+  // dpm('Going to return all timeslots that start at or after ' . $start . ' and end BEFORE ' . $finish);
 
   // Now grab all slots that start between these two values.
   $query = "SELECT ctt.nid, field_timeslot_date_value, field_timeslot_date_value2 FROM {content_type_timeslot} AS ctt WHERE field_timeslot_date_value >= '%s' AND field_timeslot_date_value < '%s' ORDER BY field_timeslot_date_value ASC, field_timeslot_date_value2 ASC";
@@ -124,8 +128,8 @@ function sessions_next_timeslots($date, $time = '00:00:00') {
     $nids[] = $row['nid'];
     $data[] = $row;
   }
-  dpm('Returning ' . count($nids) . ' timeslots');
-  dpm($data);
+  // dpm('Returning ' . count($nids) . ' timeslots');
+  // dpm($data);
   return $nids;
 }
 
@@ -139,7 +143,7 @@ function sessions_next_timeslots($date, $time = '00:00:00') {
  * @object timeslot
  *   A timeslot node.
  */
-function sessions_get_overlapping_timeslots($timeslot) {
+function sessions_overlapping_timeslots($timeslot) {
   $nids = array();
 
   $timeslot = node_load($timeslot);
@@ -274,7 +278,7 @@ function sessions_form_confirm($form_state, $user, $timeslot, $session) {
   // Remove conflicting session selections.
   // ie: something in a timeslot that starts at or before this one and ends during or with this one.
 
-  $conflicts = sessions_get_conflicts($user, $timeslot);
+  $conflicts = sessions_conflicts($user, $timeslot);
   if ($conflicts) {
     $sessions  = '<p>' . t('Your choice conflicts with some of the selections you made earlier:');
     $sessions .= '<ul><li>';
@@ -320,7 +324,7 @@ function sessions_form_confirm_submit($form, &$form_state) {
 
   // Remove conflicting session selections.
   // ie: something in a timeslot that starts at or before this one and ends during or with this one.
-  $timeslots = sessions_get_overlapping_timeslots($timeslot);
+  $timeslots = sessions_overlapping_timeslots($timeslot);
   foreach ($timeslots as $t) {
     db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $uid, $t);
   }
@@ -376,7 +380,7 @@ function sessions_form($form_state, $user) {
       // Check if any of the values of $nids matches any of the keys of $selected.
       if (($selected = sessions_check_selected($nids, $selections)) !== FALSE) {
 
-        dpm('Found selection ' . $selections[$selected] . ' for timeslot ' . $selected);
+        // dpm('Found selection ' . $selections[$selected] . ' for timeslot ' . $selected);
 
         $timeslot = node_load($selected);
         $session = node_load($selections[$selected]);
@@ -393,7 +397,7 @@ function sessions_form($form_state, $user) {
       }
       else {
         // No selection, display a list of timeslots and jump to the associated sessions.
-        dpm('No selections found, load up timeslot ' . $nids[0]);
+        // dpm('No selections found, load up timeslot ' . $nids[0]);
 
         $timeslot = node_load($nids[0]);
         $times = sessions_min_max_times($nids);
@@ -449,10 +453,10 @@ function sessions_check_selected($timeslots, $selections) {
  * @return
  *   An array of conflicting session titles.
  */
-function sessions_get_conflicts($user, $timeslot) {
+function sessions_conflicts($user, $timeslot) {
   $conflicts = array();
-  $selections = sessions_get_sessions($user->uid);
-  $timeslots = sessions_get_overlapping_timeslots($timeslot->nid);
+  $selections = sessions_user_sessions($user->uid);
+  $timeslots = sessions_overlapping_timeslots($timeslot->nid);
 
   foreach ($selections as $slot => $selection) {
     if (in_array($slot, $timeslots)) {
