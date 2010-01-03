@@ -4,14 +4,14 @@
  * Implementation of hook_install().
  */
 function register_install() {
-  drupal_install_schema('registration');
+  drupal_install_schema('register');
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function register_uninstall() {
-  drupal_uninstall_schema('registration');
+  drupal_uninstall_schema('register');
 }
 
 /**
@@ -39,45 +39,5 @@ function register_schema() {
     ),
   );
 
-  $schema['ccc_session_selection'] = array(
-    'description' => t('Store session selections made by users who have registered.'),
-    'fields' => array(
-      'uid' => array(
-        'description' => t('User {user}.uid'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE),
-      'nid' => array(
-        'description' => t('Proposal {node}.nid'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE),
-      'timeslot_nid' => array(
-        'description' => t('Timeslot {node}.nid'),
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE),
-      ),
-    'indexes' => array(
-      'user_id' => array('uid'),
-      'node_id' => array('nid'),
-      'timeslot_id' => array('timeslot_nid'),
-      ),
-    'unique keys' => array(
-      'user_session' => array('uid', 'nid'),
-      'user_timeslot' => array('uid', 'timeslot_nid'),
-      ),
-  );
-
   return $schema;
-}
-
-/**
- * Add new ccc_session_selection table.
- */
-function register_update_6001() {
-  $ret = array();
-  $schema = drupal_get_schema('ccc_session_selection', TRUE);
-  db_create_table($ret, 'ccc_session_selection', $schema);
-  return $ret;
 }
