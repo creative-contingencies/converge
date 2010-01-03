@@ -4,7 +4,7 @@
  *
  * Handle session selection info
  *
- * We are coupling a bit with registration. AFter all, we need to know which ticket
+ * We are coupling a bit with registration. After all, we need to know which ticket
  * a user has purchased, so we can allow them to pick appropriate sessions.
  */
 
@@ -13,12 +13,13 @@
  *
  */
 function sessions_perm() {
-  return array('select conference sessions');
+  return array('choose conference sessions');
 }
-
 
 /**
  * Implementation of hook_nodeapi()
+ *
+ * TODO: Select the node type to use as a timeslot.
  */
 function sessions_nodeapi(&$node, $op) {
   if($node->type == 'timeslot' && $op == 'load') {
@@ -39,7 +40,7 @@ function sessions_menu() {
     'page callback' => 'sessions_list',
     'page arguments' => array(1, 3, 4),
     'access callback' => 'user_access',
-    'access arguments' => array('select conference sessions'),
+    'access arguments' => array('choose conference sessions'),
     'type' => MENU_LOCAL_TASK,
   );
 
@@ -53,7 +54,7 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
   global $user;
   switch ($op) {
     case 'view':
-      if ($user->uid && (($user->uid == $account->uid && user_access('select conference sessions')))) {
+      if ($user->uid && (($user->uid == $account->uid && user_access('choose conference sessions')))) {
 
         // Get a big list of selected sessions.
         $sessions = sessions_user_sessions($account->uid);
@@ -72,7 +73,7 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
       break;
 
     case 'load':
-      $user->selections = sessions_user_sessions($account->uid);
+      $account->selections = sessions_user_sessions($account->uid);
       break;
   }
 }
@@ -157,7 +158,8 @@ function sessions_overlapping_timeslots($timeslot) {
 }
 
 /**
- * Grab a list of days that a user is attending.
+ * Grab a list of days that a user is attending. These in turn determine the timeslots the
+ * user needs to choose sessions for.
  *
  * @integer uid
  *   The user's uid.
@@ -238,22 +240,49 @@ function sessions_timeslot_sessions($nid) {
 }
 
 /**
+ * Helper that checks if a given user may choose a session for a given timeslot.
+ *
+ * @param user
+ *   User uid.
+ * @param nid
+ *   Timeslot nid.
+ */
+function sessions_user_valid_timeslot($uid, $nid) {
+  $query = "SELECT
+     COUNT(ctt.nid)
+   FROM
+     {uc_order_products} AS uc_op
+   JOIN
+     {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+   JOIN
+     {content_field_registration_timeslot} AS cfrt ON (uc_op.nid = cfrt.nid)
+   JOIN
+     {content_type_timeslot} AS ctt ON (cfrt.field_registration_timeslot_nid = ctt.nid)
+   WHERE
+     cccta.uid = %d AND ctt.nid=%d";
+  return db_result(db_query($query, $uid, $nid));
+}
+
+/**
  * Display the session selection form
  *
- * @object user
+ * @param user
  *   The user being viewed.
+ * @param timeslot
+ *
+ * @param session
  */
 function sessions_list($user, $timeslot = NULL, $session = NULL) {
-  drupal_set_title('Conference session selection');
+  drupal_set_title('Conference Session Selection');
   if ($timeslot && $session) {
-    return drupal_get_form('sessions_form_confirm', $user, $timeslot, $session);
+    return drupal_get_form('sessions_list_form', $user, $timeslot, $session);
   }
   else {
-    return drupal_get_form('sessions_form', $user);
+    return sessions_list_table($user);
   }
 }
 
-function sessions_form_confirm($form_state, $user, $timeslot, $session) {
+function sessions_list_form($form_state, $user, $timeslot, $session) {
   $form = array();
   $items = array();
 
@@ -300,7 +329,7 @@ function sessions_form_confirm($form_state, $user, $timeslot, $session) {
   }
 }
 
-function sessions_form_confirm_validate($form, &$form_state) {
+function sessions_list_form_validate($form, &$form_state) {
   $user = user_load($form_state['values']['uid']);
   if (!$user->uid)
     form_set_error('uid', 'You need to be a user');
@@ -317,7 +346,7 @@ function sessions_form_confirm_validate($form, &$form_state) {
     form_set_error('session', 'The selected session is not in the selected timeslot');
 }
 
-function sessions_form_confirm_submit($form, &$form_state) {
+function sessions_list_form_submit($form, &$form_state) {
   $uid = $form_state['values']['uid'];
   $timeslot = $form_state['values']['timeslot'];
   $session = $form_state['values']['session'];
@@ -347,8 +376,9 @@ function sessions_form_confirm_submit($form, &$form_state) {
  * @object user
  *   The user being viewed.
  */
-function sessions_form($form_state, $user) {
+function sessions_list_table($user) {
 
+  $output = '';
   $days = sessions_get_days($user->uid);
   $selections = sessions_user_sessions($user->uid);
 
@@ -362,12 +392,8 @@ function sessions_form($form_state, $user) {
 
     $datetime = strtotime($day);
 
-    $form['sessions']['days'][$day] = array(
-      '#type' => 'fieldset',
-      '#title' => strftime('%b %e %b', $datetime),
-      '#description' => t('These are your session selections for !date.', array('!date' => strftime('%B %e %B %Y', $datetime))),
-      '#collapsible' => TRUE,
-    );
+    $output .= '<h3>' . strftime('%b %e %b', $datetime) .'</h3>';
+    $output .= '<p>' .  t('These are your session selections for !date.', array('!date' => strftime('%B %e %B %Y', $datetime)));
 
     // Format the date and time so the timeslot fetching function can cope.
     $date = date('Y-m-d', $datetime);
@@ -388,7 +414,9 @@ function sessions_form($form_state, $user) {
         $tuple = array(
           'timeslot' => $timeslot->between,
           'session' => $session->title,
-          'change' => t('!link', array('!link' => l('Also on...', 'program/schedule/timeslot/' . implode('+', $nids))))
+          // 'action' => t('!link', array('!link' => l('Also on...', 'program/schedule/timeslot/' . implode('+', $nids))))
+          // 'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
+          'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
         );
         $data[] = $tuple;
 
@@ -410,7 +438,8 @@ function sessions_form($form_state, $user) {
                    '!endmax' => ($endtimes['minimum']!=$endtimes['maximum']) ? '/' . date('H:i', strtotime($endtimes['maximum'])+$offset) : ''
              )),
           'session' => null,
-          'change' => t('!link', array('!link' => l('Choose...', 'program/schedule/timeslot/' . implode('+', $nids)))),
+          // 'change' => t('!link', array('!link' => l('Choose...', 'program/schedule/timeslot/' . implode('+', $nids)))),
+          'action' => theme('sessions_form', 'Choose...', url('program/schedule/timeslot/' . implode('+', $nids))),
         );
         $data[] = $tuple;
       } // endif
@@ -420,14 +449,11 @@ function sessions_form($form_state, $user) {
 
     // Add a table with timeslots and selections for today.
     //
-    $form['sessions']['days'][$day]['selections'] = array(
-      '#type' => 'markup',
-      '#value' => theme('table', $headers, $data),
-    );
+    $output .= theme('table', $headers, $data);
 
   } // end foreach days
 
-  return $form;
+  return $output;
 }
 
 /**
@@ -489,4 +515,42 @@ function sessions_min_max_end_times($nids) {
 function sessions_raw_end_time($nid) {
   $result = db_query("SELECT field_timeslot_date_value AS start, field_timeslot_date_value2 AS end FROM {content_type_timeslot} WHERE nid = %d", $nid);
   return db_fetch_array($result);
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function sessions_theme() {
+  $path = drupal_get_path('module', 'sessions');
+  return array(
+    'sessions_form' => array(
+      'arguments' => array('submit' => $submit, 'action' => $action, 'hidden' => array()),
+      'template' => 'sessions-form',
+      'path' => "$path/theme",
+    ),
+    'sessions_timeslot' => array(
+      'arguments' => array('timeslot' => $timeslot, 'fields' => array('value' => 'H:i')),
+    ),
+  );
+}
+
+/**
+ * Theme functions.
+ */
+function theme_sessions_timeslot($timeslot, $fields) {
+  // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
+  $offset = variable_get('date_default_timezone', 0);
+  $offset -= 3600;
+
+  $output = '';
+
+  foreach ($fields as $field => $format) {
+    $datetime = strtotime($timeslot->field_timeslot_date[0][$field]);
+    $datetime += $offset;
+
+    $output .= '<span style="date date-' . $field. '">';
+    $output .= date($format, $datetime);
+    $output .= '</span>';
+  }
+  return $output;
 }
