@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function sessions_install() {
+  drupal_install_schema('sessions');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function sessions_uninstall() {
+  drupal_uninstall_schema('sessions');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function sessions_schema() {
+  // This field allows users to select sessions to attend.
+  $schema = array();
+
+  $schema['ccc_session_selection'] = array(
+    'description' => t('Store session selections made by users who have registered.'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('User {user}.uid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'nid' => array(
+        'description' => t('Proposal {node}.nid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'timeslot' => array(
+        'description' => t('Timeslot {node}.nid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      ),
+    'indexes' => array(
+      'user_id' => array('uid'),
+      'node_id' => array('nid'),
+      'timeslot_id' => array('timeslot'),
+      ),
+    'unique keys' => array(
+      'user_session' => array('uid', 'nid'),
+      'user_timeslot' => array('uid', 'timeslot'),
+      ),
+  );
+
+  return $schema;
+}
