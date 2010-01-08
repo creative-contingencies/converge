@@ -22,9 +22,24 @@ function sessions_perm() {
  * TODO: Select the node type to use as a timeslot.
  */
 function sessions_nodeapi(&$node, $op) {
-  if($node->type == 'timeslot' && $op == 'load') {
-    $dateparts = split(' ', $node->title);
-    $node->between = t('!start - !end', array('!start' => $dateparts[4], '!end' => $dateparts[6]));
+  switch ($op) {
+    case 'load':
+      if ($node->type == 'timeslot') {
+        // Create a formatted session time string.
+        $dateparts = split(' ', $node->title);
+        $node->between = t('!start - !end', array('!start' => $dateparts[4], '!end' => $dateparts[6]));
+
+        // Grab the nid of the day we're attached to.
+        $node->day = db_result(db_query("SELECT nid FROM {content_field_day_timeslots} WHERE field_day_timeslots_nid=%d", $node->nid));
+      }
+
+      if ($node->type == 'proposal') {
+        $node->attendees = intval(sessions_attendees($node->nid));
+        $capacity = intval(db_result(db_query("SELECT ctr.field_room_capacity_value FROM {content_type_proposal} AS ctp LEFT JOIN {content_type_room} AS ctr ON (ctp.field_proposal_room_nid = ctr.nid) WHERE ctp.nid = %d", $node->nid)));
+        $node->capacity = $capacity;
+        $node->full = ($node->capacity < $node->attendees);
+      }
+      break;
   }
 }
 
@@ -33,6 +48,16 @@ function sessions_nodeapi(&$node, $op) {
  */
 function sessions_menu() {
   $items = array();
+
+ // Admin page.
+  $items['admin/settings/sessions'] = array(
+    'title' => 'CCC Session Selection Settings',
+    'description' => 'Change configuration for Session Selection',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sessions_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
 
   $items['user/%user/sessions'] = array(
     'title' => 'Session Selections',
@@ -45,6 +70,32 @@ function sessions_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Administration settings.
+ */
+function sessions_admin_settings() {
+
+  $form['sessions'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Session Selection',
+    '#description' => t('General session selection settings.'),
+  );
+
+  $statuses = uc_order_state_list();
+  foreach ($statuses as $status) {
+    $options[$status['id']] = $status['title'];
+  }
+  $form['sessions']['sessions_order_status'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Payment Status',
+    '#description' => t('Payment status needed before sessions can be selected.'),
+    '#options' => $options,
+    '#default_value' => variable_get('sessions_order_status', array('completed')),
+  );
+
+  return system_settings_form($form);
 }
 
 /**
@@ -79,15 +130,15 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
 }
 
 /**
- * Grab all timeslots that happen to be on a particular day.
+ * Grab all timeslots that are associated with a particular day and order them by date.
  *
- * @string date
- *   An YYYY-MM-DD formatted date.
+ * @param nid
+ *   An day node id.
  */
-function sessions_get_timeslots($date) {
+function sessions_get_timeslots($nid) {
   $nids = array();
-  $query = "SELECT ctt.nid FROM {content_type_timeslot} AS ctt WHERE field_timeslot_date_value LIKE '%s% %%' ORDER BY field_timeslot_date_value ASC, field_timeslot_date_value2 ASC";
-  $result = db_query($query, $date);
+  $query = "SELECT ctt.nid FROM {content_field_day_timeslots} AS ctfd LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid) WHERE cfdt.nid = %d ORDER BY ctt.field_timeslot_date_value ASC, ctt.field_timeslot_date_value2 ASC";
+  $result = db_query($query, $nid);
   while ($row = db_fetch_array($result)) {
     $nids[] = $row['nid'];
   }
@@ -99,38 +150,58 @@ function sessions_get_timeslots($date) {
  *
  * This should include all concurrent sessions at this time.
  *
- * @string date
- *   An YYYY-MM-DD formatted date.
- * @string time
- *   An HH:MM:SS formatted time.
+ * @param nid
+ *   A timeslot or day node id.
  */
-function sessions_next_timeslots($date, $time = '00:00:00') {
+function sessions_next_timeslots($nid) {
   $nids = array();
 
-  // dpm('Find timeslots that start at or after ' . $date . ' ' . $time);
+  // Load the timeslot we want data for.
+  $timeslot = node_load($nid);
 
-  // First, grab the lowest "next" start time.
-  $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_type_timeslot} AS ctt WHERE field_timeslot_date_value >= '%s %s' AND field_timeslot_date_value LIKE '%s%%'", $date, $time, $date));
+  if ($timeslot->type == 'day') {
+    // There is no previous timeslot, because we're the first session of the day.
+    // First, grab the first timeslot nid and the lowest start time.
+    $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid) WHERE cfdt.nid = %d", $timeslot->nid));
+
+    // Grab the timeslot nid that goes with this start time on this day.
+    $nid = db_result(db_query("SELECT ctt.nid FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE ctt.field_timeslot_date_value = '%s'", $timeslot->nid, $start));
+    $timeslot = node_load($nid);
+  }
+  else {
+    // $timeslot contains the one we need to start *after*
+    // First, grab the lowest start time *after* the $timeslot start time.
+    // if ($match == 'start') {
+    //   $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE field_timeslot_date_value > '%s'", $timeslot->day, $timeslot->field_timeslot_date[0]['value']));
+    // }
+    // else {
+      $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE field_timeslot_date_value >= '%s'", $timeslot->day, $timeslot->field_timeslot_date[0]['value2']));
+    // }
+  }
+
+//  global $run;
+//  dpm(++$run . '  Find all timeslots that start after ' . $timeslot->field_timeslot_date[0]['value']);
 
   // If there is no such start time, just return.
   if (!$start)
     return $nids;
 
   // Then, grab the lowest "next" end time, counting from the lowest next start time.
-  $finish = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value2) FROM {content_type_timeslot} AS ctt WHERE field_timeslot_date_value >= '%s' AND field_timeslot_date_value LIKE '%s%%'", $start, $date));
+  $finish = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value2) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE field_timeslot_date_value >= '%s'", $timeslot->day, $start));
 
   // dpm('Going to return all timeslots that start at or after ' . $start . ' and end BEFORE ' . $finish);
 
-  // Now grab all slots that start between these two values.
-  $query = "SELECT ctt.nid, field_timeslot_date_value, field_timeslot_date_value2 FROM {content_type_timeslot} AS ctt WHERE field_timeslot_date_value >= '%s' AND field_timeslot_date_value < '%s' ORDER BY field_timeslot_date_value ASC, field_timeslot_date_value2 ASC";
-  $result = db_query($query, $start, $finish);
+  // Now grab all slots that start between these two values and are on the same day nid.
+  $query = "SELECT ctt.nid, ctt.field_timeslot_date_value, ctt.field_timeslot_date_value2 FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE ctt.field_timeslot_date_value >= '%s' AND field_timeslot_date_value < '%s' ORDER BY field_timeslot_date_value ASC, field_timeslot_date_value2 ASC";
+  $result = db_query($query, $timeslot->day, $start, $finish);
 
   while ($row = db_fetch_array($result)) {
     $nids[] = $row['nid'];
     $data[] = $row;
   }
-  // dpm('Returning ' . count($nids) . ' timeslots');
-  // dpm($data);
+//  dpm('Returning ' . count($nids) . ' timeslots');
+//  dpm($data);
+
   return $nids;
 }
 
@@ -139,17 +210,18 @@ function sessions_next_timeslots($date, $time = '00:00:00') {
  * Overlap means timeslots that: simultaneous start time or start whilst the given slot is still going.
  *   - start at the same time as the given slot, or
  *   - start before the given slot finishes, but
- *   - do not start before the given slot.
+ *   - do not start before the given slot, and
+ *   - are on the same day.
  *
- * @object timeslot
- *   A timeslot node.
+ * @param nid
+ *   A timeslot node id.
  */
-function sessions_overlapping_timeslots($timeslot) {
+function sessions_overlapping_timeslots($nid) {
   $nids = array();
 
-  $timeslot = node_load($timeslot);
-  $query = "SELECT ctt.nid FROM {content_type_timeslot} AS ctt WHERE (ctt.field_timeslot_date_value BETWEEN '%s' AND '%s')";
-  $result = db_query($query, $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2']);
+  $timeslot = node_load($nid);
+  $query = "SELECT ctt.nid FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE (ctt.field_timeslot_date_value BETWEEN '%s' AND '%s')";
+  $result = db_query($query, $timeslot->day,  $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2']);
 
   while ($row = db_fetch_array($result)) {
     $nids[] = $row['nid'];
@@ -158,47 +230,41 @@ function sessions_overlapping_timeslots($timeslot) {
 }
 
 /**
- * Grab a list of days that a user is attending. These in turn determine the timeslots the
- * user needs to choose sessions for.
+ * Grab a list of day nids that a user is attending. These in turn determine the timeslots the
+ * user needs to choose sessions for. List the days by their date value.
+ *
+ * TODO: Return nids only if a ticket has been paid for.
  *
  * @integer uid
  *   The user's uid.
  */
 function sessions_get_days($uid) {
+  $nids = array();
 
   $query = "SELECT
-     DISTINCT(DATE_FORMAT(ctt.field_timeslot_date_value, '%%Y-%%m-%%d'))
+     DISTINCT(cfrd.field_registration_day_nid) AS nid
    FROM
      {uc_order_products} AS uc_op
-   JOIN
+   LEFT JOIN
+     {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+   LEFT JOIN
      {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
-   JOIN
-     {content_field_registration_timeslot} AS cfrt ON (uc_op.nid = cfrt.nid)
-   JOIN
-     {content_type_timeslot} AS ctt ON (cfrt.field_registration_timeslot_nid = ctt.nid)
+   LEFT JOIN
+     {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
+   LEFT JOIN
+     {content_type_day} AS ctd ON (cfrd.field_registration_day_nid = ctd.nid)
    WHERE
-     cccta.uid = %d";
-  $result = db_query($query, $uid);
-  while ($day = db_result($result)) {
-    $data[] = $day;
+       cccta.uid = %d
+     AND
+       uc_o.order_status IN ('%s')
+   ORDER BY
+     ctd.field_day_date_value ASC";
+  $result = db_query($query, $uid, implode("','", variable_get('sessions_order_status', array('completed'))));
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
   }
-  return $data;
 
-}
-
-/**
- * Grab a set of days based on timeslots.
- *
- * @array timeslots
- *   An array of timeslot info.
- */
-function sessions_timeslots_to_days($timeslots) {
-  $days = array();
-  foreach($timeslots as $timeslot) {
-    $date = split(' ', $timeslot->field_timeslot_date_value);
-    $days[$date[0]] = $date[0];
-  }
-  return $days;
+  return $nids;
 }
 
 /**
@@ -208,13 +274,15 @@ function sessions_timeslots_to_days($timeslots) {
  *   An integer referring to a user.
  */
 function sessions_user_sessions($uid) {
-  $data = array();
+  $selections = array();
+
   $query = "SELECT timeslot, nid FROM {ccc_session_selection} WHERE uid = %d";
   $result = db_query($query, $uid);
   while ($row = db_fetch_array($result)) {
-    $data[$row['timeslot']] = $row['nid'];
+    $selections[$row['timeslot']] = $row['nid'];
   }
-  return $data;
+
+  return $selections;
 }
 
 /**
@@ -255,9 +323,11 @@ function sessions_user_valid_timeslot($uid, $nid) {
    JOIN
      {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
    JOIN
-     {content_field_registration_timeslot} AS cfrt ON (uc_op.nid = cfrt.nid)
+     {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
    JOIN
-     {content_type_timeslot} AS ctt ON (cfrt.field_registration_timeslot_nid = ctt.nid)
+     {content_field_day_timeslots} AS cfdt ON (cfdt.nid = cfrd.field_registration_day_nid)
+   JOIN
+     {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid)
    WHERE
      cccta.uid = %d AND ctt.nid=%d";
   return db_result(db_query($query, $uid, $nid));
@@ -269,8 +339,9 @@ function sessions_user_valid_timeslot($uid, $nid) {
  * @param user
  *   The user being viewed.
  * @param timeslot
- *
+ *   A timeslot node id.
  * @param session
+ *   A session node id.
  */
 function sessions_list($user, $timeslot = NULL, $session = NULL) {
   drupal_set_title('Conference Session Selection');
@@ -290,6 +361,7 @@ function sessions_list_form($form_state, $user, $timeslot, $session) {
   $session = node_load($session);
 
   $form['#tree'] = TRUE;
+  $form['#redirect'] = 'user/' . $user->uid . '/sessions';
 
   $form['uid'] = array(
     '#type' => 'hidden',
@@ -320,11 +392,12 @@ function sessions_list_form($form_state, $user, $timeslot, $session) {
     // Set some default form values
     $form = confirm_form(
       $form,
-      t('!title', array('!title' => $session->title)),
-      'user/' . $user->uid . '/sessions',
-      t('!conflicts Would you like to add this session to your program?', array('!conflicts' => $sessions)),
+      t('Add session'),
+      $form_state['post']['listing'],
+      t('!conflicts Would you like to add "!title" to your program?', array('!conflicts' => $sessions, '!title' => $session->title)),
       t('Add to my program'),
-      t('Cancel'));
+      t('Back to list')
+    );
     return $form;
   }
 }
@@ -344,6 +417,11 @@ function sessions_list_form_validate($form, &$form_state) {
 
   if ($session->field_proposal_scheduled[0]['nid'] != $timeslot->nid)
     form_set_error('session', 'The selected session is not in the selected timeslot');
+
+  $room = node_load($session->field_proposal_room[0]['nid']);
+  if ($room->field_room_capacity <= count($session->attendees))
+    form_set_error('session', 'The selected session is full');
+
 }
 
 function sessions_list_form_submit($form, &$form_state) {
@@ -365,7 +443,7 @@ function sessions_list_form_submit($form, &$form_state) {
 
   // Tell the user what we did.
   $session = node_load($session);
-  drupal_set_message(t('!title was added to your personalised program', array('!title' => $session->title)));
+  drupal_set_message(t('Added "!title"', array('!title' => $session->title)));
 }
 
 /**
@@ -386,21 +464,27 @@ function sessions_list_table($user) {
   $offset = variable_get('date_default_timezone', 0);
   $offset -= 3600;
 
-  foreach ($days as $day) {
+  if (!$days) {
+    return t('There are no sessions to be selected. Please check that your order status is paid and that tickets have been assigned to you.');
+  }
+
+  // Now, loop through the list of day nids.
+  foreach ($days as $day_nid) {
+    // Load a day nid.
+    $day = node_load($day_nid);
+
+    // Set the first timeslot to the day.
+    $timeslot = $day;
+
     $data = array();
     $headers = array('Time', 'Selected Session', 'Change');
 
-    $datetime = strtotime($day);
+    $output .= '<h3>' . $day->title . '</h3>';
+    $output .= '<p>' .  t('These are your session selections for !day.', array('!day' => $day->title));
 
-    $output .= '<h3>' . strftime('%b %e %b', $datetime) .'</h3>';
-    $output .= '<p>' .  t('These are your session selections for !date.', array('!date' => strftime('%B %e %B %Y', $datetime)));
-
-    // Format the date and time so the timeslot fetching function can cope.
-    $date = date('Y-m-d', $datetime);
-    $time = date('H:i:s', $datetime);
-
-    // Get the timeslots that are "up next".
-    while ($nids = sessions_next_timeslots($date, $time)) {
+    // Get the timeslots that are "up next". On the first run this function accepts a day node.
+    //
+    while ($nids = sessions_next_timeslots($timeslot->nid)) {
 
       // Check if the user has made a selection for one of these timeslots.
       // Check if any of the values of $nids matches any of the keys of $selected.
@@ -413,21 +497,18 @@ function sessions_list_table($user) {
 
         $tuple = array(
           'timeslot' => $timeslot->between,
-          'session' => $session->title,
+          'session' => l($session->title, 'node/' . $session->nid),
           // 'action' => t('!link', array('!link' => l('Also on...', 'program/schedule/timeslot/' . implode('+', $nids))))
           // 'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
           'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
         );
         $data[] = $tuple;
-
-        // Grab the raw end time for this timeslot.
-        $times = sessions_raw_end_time($timeslot->nid);
       }
       else {
         // No selection, display a list of timeslots and jump to the associated sessions.
         // dpm('No selections found, load up timeslot ' . $nids[0]);
 
-        $timeslot = node_load($nids[0]);
+        $timeslot = node_load($nids[count($nids)-1]);
         $times = sessions_min_max_times($nids);
         $endtimes = sessions_min_max_end_times($nids);
 
@@ -439,12 +520,10 @@ function sessions_list_table($user) {
              )),
           'session' => null,
           // 'change' => t('!link', array('!link' => l('Choose...', 'program/schedule/timeslot/' . implode('+', $nids)))),
-          'action' => theme('sessions_form', 'Choose...', url('program/schedule/timeslot/' . implode('+', $nids))),
+          'action' => theme('sessions_form', 'Sessions...', url('program/schedule/timeslot/' . implode('+', $nids))),
         );
         $data[] = $tuple;
       } // endif
-
-      list($date, $time) = split(' ', $times['end']);
     } // end while nids
 
     // Add a table with timeslots and selections for today.
@@ -515,6 +594,27 @@ function sessions_min_max_end_times($nids) {
 function sessions_raw_end_time($nid) {
   $result = db_query("SELECT field_timeslot_date_value AS start, field_timeslot_date_value2 AS end FROM {content_type_timeslot} WHERE nid = %d", $nid);
   return db_fetch_array($result);
+}
+
+/**
+ * Return the number of places available for a session.
+ */
+function sessions_places($nid) {
+  $session = node_load($nid);
+  $room = node_load($session->field_proposal_room[0]['nid']);
+  return $room->field_room_capacity[0]['value'];
+}
+
+/**
+ * Return a list of attendees for a session.
+ */
+function sessions_attendees($nid) {
+  $users = array();
+  $result = db_query("SELECT uid FROM {ccc_session_selection} WHERE nid = %d", $nid);
+  while ($row = db_fetch_array($result)) {
+    $users[] = $row['uid'];
+  }
+  return $users;
 }
 
 /**
