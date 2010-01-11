@@ -140,6 +140,12 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
       }
     }
   }
+
+  // Change address labels on order edit form.
+  if ($form_id == 'uc_order_edit_form') {
+    $form['ship_to']['#title'] = "Modify 'Home' information";
+    $form['bill_to']['#title'] = "Modify 'Organisation' information";
+  }
 }
 
 /**
