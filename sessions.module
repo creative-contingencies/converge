@@ -60,7 +60,7 @@ function sessions_menu() {
   );
 
   $items['user/%user/sessions'] = array(
-    'title' => 'Session Selections',
+    'title' => 'My Program',
     'description' => 'Conference session selection',
     'page callback' => 'sessions_list',
     'page arguments' => array(1, 3, 4, 5),
@@ -470,7 +470,7 @@ function sessions_user_valid_timeslot($uid, $nid) {
  *   A session node id.
  */
 function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL) {
-  drupal_set_title('Conference Session Selection');
+  drupal_set_title('My Program');
   if ($action && $timeslot && $session) {
     return drupal_get_form('sessions_list_form', $user, $action, $timeslot, $session);
   }
@@ -638,7 +638,7 @@ function sessions_list_table($user) {
     $timeslot = $day;
 
     $data = array();
-    $headers = array('Time', 'Selected Session', 'Change', 'Remove');
+    $headers = array('Time', 'Room', 'Presenter', 'Selected Session', 'Change', 'Remove');
 
     $output .= '<h3>' . $day->title . '</h3>';
     $output .= '<p>' .  t('These are your session selections for !day.', array('!day' => $day->title));
@@ -655,15 +655,25 @@ function sessions_list_table($user) {
 
         $timeslot = node_load($selected);
         $session = node_load($selections[$selected]);
+        $room = node_load($session->field_proposal_room[0]['nid']);
 
         $tuple = array(
           'timeslot' => $timeslot->between,
+          'room' => l($room->title, 'program/schedule/room/' . $room->nid),
+          'presenter' => theme('username', user_load($session->uid)),
           'session' => l($session->title, 'node/' . $session->nid),
-          // 'action' => t('!link', array('!link' => l('Also on...', 'program/schedule/timeslot/' . implode('+', $nids))))
-          // 'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
           'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
           'remove' => theme('sessions_form', 'Remove', url('user/' . $user->uid . '/sessions/remove/' . $timeslot->nid . '/' . $session->nid), NULL, 'form-submit-red'),
         );
+
+        // Remove the remove button (yes) if the user is presenting this session.
+        foreach ($session->field_proposal_presenters as $presenter) {
+          if ($presenter['uid'] == $user->uid) {
+            $tuple['action'] = null;
+            $tuple['remove'] = theme('sessions_form', 'My Session', '#', NULL, 'form-submit-green');
+          }
+        }
+
         $data[] = $tuple;
       }
       else {
@@ -680,9 +690,12 @@ function sessions_list_table($user) {
                    '!endmin' => date('H:i', strtotime($endtimes['minimum'])+$offset),
                    '!endmax' => ($endtimes['minimum']!=$endtimes['maximum']) ? '/' . date('H:i', strtotime($endtimes['maximum'])+$offset) : ''
              )),
+          'room' => null,
+          'presenter' => null,
           'session' => null,
           // 'change' => t('!link', array('!link' => l('Choose...', 'program/schedule/timeslot/' . implode('+', $nids)))),
           'action' => theme('sessions_form', 'Sessions...', url('program/schedule/timeslot/' . implode('+', $nids))),
+          'remove'=> null,
         );
         $data[] = $tuple;
       } // endif
