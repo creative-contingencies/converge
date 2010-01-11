@@ -12,15 +12,6 @@
  */
 
 /**
- * Implementation of hook_perm().
- *
- */
-function register_perm() {
-  return array('select conference sessions');
-}
-
-
-/**
  * Implementation of hook_nodeapi()
  */
 function register_nodeapi(&$node, $op) {
