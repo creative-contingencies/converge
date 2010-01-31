@@ -97,6 +97,20 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     $form['feeds']['link']['#description'] = t('Enter the RSS or ATOM feed to syndicate your blog on planetACEC.');
   }
 
+  // UD Planet feed add/edit.
+  if ($form_id == 'udplanet_feeds_user_edit') {
+    $form['feed']['#collapsed'] = false;
+    $form['feed']['feed_title']['#title'] = t('Title');
+    $form['feed']['feed_title']['#description'] = t('Enter your blog\'s title or a short description.');
+    $form['feed']['feed_url']['#description'] = t('Enter full URL to the ATOM or RSS syndication feed of you blog.');
+    if (user_access('administer udplanet')) {
+      $form['feed']['disabled']['#description'] = t('Tick to disable blog aggregation. (Unchecking this overrides the frozen attribute)');
+    }
+    else {
+      $form['feed']['disabled']['#type'] = 'hidden';
+    }
+  }
+
   // Change the 'continue shopping' button if required.
   if(strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE) {
     $form['continue_shopping'] = array(
