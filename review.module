@@ -118,6 +118,14 @@ function review_email_authors() {
     '#type' => 'fieldset',
     '#title' => 'E-mail Authors',
   );
+
+  $form['reviewer_email_authors']['review_email_authors_from'] = array(
+    '#title' => t('From Address'),
+    '#description' => t('Set the from and reply-to address for the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('site_mail', ''),
+    '#required' => true,
+  );
   $form['reviewer_email_authors']['review_email_authors_to'] = array(
     '#title' => t('Filter by proposal status status'),
     '#description' => t("Select which proposal status' to e-mail authors."),
@@ -126,14 +134,14 @@ function review_email_authors() {
     '#multiple' => true
   );
   $form['reviewer_email_authors']['review_email_authors_kind'] = array(
-    '#title' => t('Filter by proposal type.'),
+    '#title' => t('Filter by proposal type'),
     '#description' => t("Select which proposal types to e-mail authors. If you select none, this filter will be ignored."),
     '#type' => 'select',
     '#options' => $type_options,
     '#multiple' => true
   );
   $form['reviewer_email_authors']['review_email_authors_attachments'] = array(
-    '#title' => t('Filter by attachments.'),
+    '#title' => t('Filter by attachments'),
     '#description' => t("Select which attachment status to e-mail authors. If you select none, this filter will be ignored."),
     '#type' => 'select',
     '#options' => array('none' => '----------',
@@ -152,10 +160,11 @@ function review_email_authors() {
     '#type' => 'textarea',
     '#default_value' => variable_get('review_email_authors_body', ''),
     '#rows' => 12,
+    '#required' => true,
   );
   $form['reviewer_email_authors']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !proposal_tech_internet, !proposal_tech_equipment, !proposal_attendee_notes, !site, !site_url, !site_mail'),
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -165,7 +174,20 @@ function review_email_authors() {
   return $form;
 }
 
+/**
+ * Validate handler for the author bulk-emailer.
+ */
+function review_email_authors_validate($form, &$form_state) {
+  if (!valid_email($form_state['values']['review_email_authors_from'])) {
+    form_set_error('reviewer_email_authors][review_email_authors_from', t('Please enter a valid From email address'));
+  }
+  if (!$form_state['values']['review_email_authors_body']) {
+    form_set_error('reviewer_email_authors][review_email_authors_body', t('Please enter message content'));
+  }
+}
+
 function review_email_authors_submit($form, &$form_state) {
+
   $params = array();
   if(empty($params['!site_url']))
      $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
@@ -199,20 +221,27 @@ function review_email_authors_submit($form, &$form_state) {
   while ( $n = db_fetch_object($result) ) {
     $proposal_node = node_load($n->nid);
     $params['!proposal_title'] = $proposal_node->title;
-    $params['!proposal_abstract'] = $proposal_node->body;
+    $params['!proposal_abstract'] = check_plain($proposal_node->body);
     $params['!proposal_url'] = url('node/' . $proposal_node->nid, array('absolute' => TRUE));
     $params['!proposal_feedback_url'] = url('node/' . $proposal_node->nid . '/feedback', array('absolute' => TRUE));
     $params['!proposal_status'] = $proposal_node->field_proposal_status[0]['value'];
-    
+
+    // Add in 
+    $params['!proposal_tech_internet'] = check_plain($proposal_node->field_proposal_tech_internet[0]['value']);
+    $params['!proposal_tech_equipment'] = check_plain($proposal_node->field_proposal_tech_equipment[0]['value']);
+    $params['!proposal_attendee_notes'] = check_plain($proposal_node->field_proposal_attendee_notes[0]['value']);
+
     $author_user = user_load(array('uid' => $proposal_node->uid));
     $author_profile = content_profile_load('profile', $author_user->uid);
     $params['!author_firstname'] = $author_profile->field_profile_firstname[0]['value'];
     $params['!author_surname'] = $author_profile->field_profile_surname[0]['value'];
+    $params['!author_lastname'] = $author_profile->field_profile_surname[0]['value'];
     $params['!author_email'] = $author_user->mail;
-    
+
     $message = array();
     $message['id'] = 'email_author';
-    //$message['to'] = 'josh@opentechnologysolutions.com.au'; //testing mail
+    // $message['to'] = 'me@cafuego.net';
+    // $message['to'] = 'josh@opentechnologysolutions.com.au'; //testing mail
     $message['to'] = $author_user->mail;
     $message['subject'] = strtr($form_state['values']['review_email_authors_subject'], $params);
     $message['body'] = drupal_wrap_mail(strtr($form_state['values']['review_email_authors_body'], $params));
