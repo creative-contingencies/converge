@@ -258,18 +258,24 @@ function theme_user_overview_registrations($account, $orders) {
     if ($order->this_user_purchased) {
       // User bought this ticket.
       $info['status'] = 'The status of your order is \'' . $order->order_status . '\'.';
+      if ($order->order_status == 'pending') {
+        $info['status'] .= ' Your status will be confirmed after payment has been processed.';
+      }
       if ($order->this_user_allocated && $order->qty == 1) {
-        $info['attendees'] = 'Your ticket is allocated to you. ';
+        $info['attendees'] = '<p>Your ticket is allocated to you. ';
       }
       else {
-        $info['attendees'] = count($order->ticket_links) ? t('Current attendees are ') . implode(', ', $order->ticket_links) . '. ' : t("No tickets have been allocated.");
+        $info['attendees'] = count($order->ticket_links) ? t('<p>Current attendees are <ul><li>') . implode('<li>', $order->ticket_links) . '</ul>. ' : t('<p>No tickets have been allocated.');
       }
-      $info['manage'] = t('Click here to change ') . l(t('ticket allocations'), $order->manage_path) . '.';
+      $info['manage'] = t('Click here to ') . l(t('change ticket allocations'), $order->manage_path) . '.';
     }
     elseif ($order->this_user_allocated) {
       // User is just allocated to a ticket.
       $purchaser = user_load(array('uid' => $order->uid));
-      $info['status'] = t('Your ticket has been purchased by ') . l($purchaser->name, 'user/' . $purchaser->uid) . '. ' . t('The status of the order is') . ' \'' . $order->order_status . '\'. ';
+      $info['status'] = t('<p>Your ticket has been purchased by ') . l($purchaser->name, 'user/' . $purchaser->uid) . '. ' . t('<p>The status of the order is') . ' \'' . $order->order_status . '\'. ';
+      if ($order->order_status == 'pending') {
+        $info['status'] .= ' Your status will be confirmed after payment has been processed.';
+      }
     }
     $output .= '<h4>' . $title . '</h4><p>' . implode(' ', $info) . '</p>';
   }
