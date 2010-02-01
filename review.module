@@ -380,6 +380,14 @@ function review_admin_settings() {
     '#rows' => 12,
   );
 
+  $form['review_show_presenters'] = array(
+    '#title' => 'Show Presenters',
+    '#description' => t('Show or hide presenters on peer-reviewed proposals. Hide presenters whilst blind review is in progress.'),
+    '#type' => 'radios',
+    '#options' => array(0 => 'Hide presenters', 1 => 'Show presenters'),
+    '#default_value' => variable_get('review_show_presenters', 0),
+  );
+
   // Reviewer invitations.
   $form['reviewer_invitation'] = array(
     '#type' => 'fieldset',
@@ -814,7 +822,7 @@ function review_nodeapi(&$node, $op, $a1) {
             break;
           }
         }
-        if ( $reviewers ) {
+        if ($reviewers && !variable_get('review_show_presenters', 0) ) {
           unset($node->field_proposal_presenters);
         }
       }
