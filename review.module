@@ -245,7 +245,7 @@ function review_email_authors_submit($form, &$form_state) {
     $message['to'] = $author_user->mail;
     $message['subject'] = strtr($form_state['values']['review_email_authors_subject'], $params);
     $message['body'] = drupal_wrap_mail(strtr($form_state['values']['review_email_authors_body'], $params));
-    $message['headers']['From'] = $message['headers']['Sender'] = $message['headers']['Return-Path'] = $message['headers']['Errors-To'] = variable_get('site_mail', '');
+    $message['headers']['From'] = $message['headers']['Sender'] = $message['headers']['Return-Path'] = $message['headers']['Errors-To'] = $form_state['values']['review_email_authors_from'];
 
     if ( drupal_mail_send($message) ) {
       //dpm("Successfully sent to " . $message['to']);
