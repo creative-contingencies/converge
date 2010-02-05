@@ -253,6 +253,8 @@ function overrides_user($type, &$edit, &$account, $category = NULL) {
   if ($type == 'view') {
     unset($account->content['summary']);
     unset($account->content['orders']);
+
+    $account->name = theme('username', $account, FALSE);
   }
 }
 
