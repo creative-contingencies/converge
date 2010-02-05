@@ -437,10 +437,10 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
       for ($count = $start; $count <= $order->qty; $count++) {
         $form['items'][$key]['allocations']['rows']['#theme'] = 'register_allocations_form_table';
 
-        $user = array_shift($allocations);
+        $account = array_shift($allocations);
         // Load the user profile, so we can show first name and surname.
-        if($user->uid > 0)
-          $profile = content_profile_load('profile', $user->uid);
+        if($account->uid > 0)
+          $profile = content_profile_load('profile', $account->uid);
         else
           unset($profile);
 
@@ -448,7 +448,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
         $form['items'][$key]['allocations']['rows'][$count]['remove'] = array(
           '#type' => 'checkbox',
           '#default_value' => FALSE,
-          '#disabled' => $user ? FALSE : TRUE,
+          '#disabled' => $account ? FALSE : TRUE,
         );
 
         $form['items'][$key]['allocations']['rows'][$count]['firstname'] = array(
@@ -461,7 +461,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
           $form['items'][$key]['allocations']['rows'][$count]['firstname']['#value'] = $profile->field_profile_firstname[0]['value'];
 
         $form['items'][$key]['allocations']['rows'][$count]['surname'] = array(
-          '#type' => $user ? 'markup' : 'textfield',
+          '#type' => $account ? 'markup' : 'textfield',
           '#size' => 10,
           '#default_value' => $profile ? $profile->field_profile_surname[0]['value'] : '',
           '#disabled' => $profile ? TRUE : FALSE,
@@ -470,7 +470,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
           $form['items'][$key]['allocations']['rows'][$count]['surname']['#value'] = $profile->field_profile_surname[0]['value'];
 
         $form['items'][$key]['allocations']['rows'][$count]['position'] = array(
-          '#type' => $user ? 'markup' : 'textfield',
+          '#type' => $account ? 'markup' : 'textfield',
           '#size' => 10,
           '#default_value' => $profile ? $profile->field_profile_position[0]['value'] : '',
           '#disabled' => $profile ? TRUE : FALSE,
@@ -479,18 +479,18 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
           $form['items'][$key]['allocations']['rows'][$count]['position']['#value'] = $profile->field_profile_position[0]['value'];
 
         $form['items'][$key]['allocations']['rows'][$count]['mail'] = array(
-          '#type' => $user ? 'hidden' : 'textfield',
+          '#type' => $account ? 'hidden' : 'textfield',
           '#size' => 28,
-          '#default_value' => $user ? $user->mail : '',
-          '#disabled' => $user ? TRUE : FALSE,
+          '#default_value' => $account ? $account->mail : '',
+          '#disabled' => $account ? TRUE : FALSE,
         );
 
         $form['items'][$key]['allocations']['rows'][$count]['info'] = array(
-          '#value' => $user ? l($user->mail, 'user/' . $user->uid) : '',
+          '#value' => $account ? l($account->mail, 'user/' . $account->uid) : '',
         );
 
         // Extra info
-        $form['items'][$key]['allocations']['rows'][$count]['uid'] = array('#type' => 'hidden', '#value' => $user->uid);
+        $form['items'][$key]['allocations']['rows'][$count]['uid'] = array('#type' => 'hidden', '#value' => $account->uid);
       }
     }
   }
@@ -515,7 +515,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
       '#value' => $output,
     );
   }
-  
+
   return $form;
 }
 
