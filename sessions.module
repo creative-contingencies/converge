@@ -139,7 +139,50 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
     case 'load':
       $account->selections = sessions_user_sessions($account->uid);
       break;
+
+
+    case 'login':
+      sessions_warn_invalid_selections($account);
+      break;
   }
+}
+
+/**
+ * Helper that checks if sessions selections contain invalid choices.
+ *
+ * @param $user
+ *   A valid user account.
+ */
+function sessions_warn_invalid_selections($user = NULL) {
+  if ($user == NULL) {
+    global $user;
+  }
+
+  // Haha. Anonymous. Go away.
+  //
+  if ($user->uid == 0)
+    return;
+
+  // Use a flag variable, so we can print a single link to sessions election IF there was a problem.
+  //
+  $flag = FALSE;
+
+  // Check if any of the user's selections are not in the listing of acceptable proposal statuses.
+  //
+  $query = "SELECT ccc_ss.nid AS nid, n.title AS title, ctp.field_proposal_status AS status FROM {ccc_session_selection} AS ccc_ss JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid) JOIN {node} AS n ON (ccc_ss.nid = n.nid) WHERE ccc_ss.uid=%d AND ctp.field_status_value NOT IN ('" . implode("','", variable_get('sessions_proposal_status', array('accepted'))) . "')";
+  $result = db_query($query, $user->uid);
+
+  // Print each proposal title that we found.
+  //
+  while ($row = db_fetch_array($result)) {
+    drupal_set_message(t('!title has been !status', array('!title' => l($row['title'], 'node/' . $row['nid']), '!status' => $row['status'])), 'warning');
+    $flag = TRUE;
+  }
+
+  if ($flag) {
+    drupal_set_message(t('Some of your selected sessions are no longer available. Please !sessions.', array('!sessions' => l('update your selections', 'user/' . $user->uid . '/sessions'))));
+  }
+
 }
 
 /**
