@@ -59,6 +59,7 @@ function sessions_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  // Session selections.
   $items['user/%user/sessions'] = array(
     'title' => 'My Program',
     'description' => 'Conference session selection',
@@ -92,6 +93,7 @@ function sessions_admin_settings() {
   );
 
   $statuses = uc_order_state_list();
+  $options = array('pending' => 'Pending');
   foreach ($statuses as $status) {
     $options[$status['id']] = $status['title'];
   }
@@ -122,16 +124,12 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
         // Get a big list of selected sessions.
         $sessions = sessions_user_sessions($account->uid);
 
-        // Show selected sessions.
-        $account->content['selections'] = array(
-          '#type' => 'user_profile_category',
-          '#weight' => 0,
-          '#title' => t('Session Selections'),
-          'link' => array(
-            '#type' => 'user_profile_item',
-            '#value' => theme('user_overview_registrations', $account, $sessions),
-          ),
-        );
+        // The content of this block should depend on the ticket allocation status. register.module should
+        // set a flag on the account if a ticket of any kind has been allocated to it.
+
+        // Show selected sessions (or not ;-)
+        //
+        $account->content['selections'] = theme('user_overview_sessions', $account, $sessions);
       }
 
       break;
@@ -139,7 +137,6 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
     case 'load':
       $account->selections = sessions_user_sessions($account->uid);
       break;
-
 
     case 'login':
       sessions_warn_invalid_selections($account);
@@ -845,6 +842,9 @@ function sessions_attendees($nid) {
 function sessions_theme() {
   $path = drupal_get_path('module', 'sessions');
   return array(
+    'user_overview_sessions' => array(
+      'arguments' => array('account' => $account, $sessions => array()),
+    ),
     'sessions_form' => array(
       'arguments' => array('submit' => $submit, 'action' => $action, 'hidden' => array(), 'colour' => $colour),
       'template' => 'sessions-form',
@@ -857,6 +857,42 @@ function sessions_theme() {
     ),
     'sessions_timeslot' => array(
       'arguments' => array('timeslot' => $timeslot, 'fields' => array('value' => 'H:i')),
+    ),
+  );
+}
+
+/**
+ * This is the bit of information on the /user/%user/sessions page.
+ */
+function theme_user_overview_sessions($account, $sessions) {
+  // Check to see if the user has a ticket.
+  //
+  $got_a_ticket = FALSE;
+  foreach ($account->orders as $order) {
+    foreach($order->tickets as $ticket) {
+      if ($ticket->uid == $account->uid) {
+        $got_a_ticket = TRUE;
+      }
+    }
+  }
+
+  if (!$got_a_ticket) {
+    $output = t('You have not yet purchased a ticket.');
+  }
+  else if (!$sessions) {
+    $output = t('You have not selected any conference sessions for your program. Click !link to start selecting sessions.', array('!link' => l('My Program', 'user/' . $account->uid . '/sessions')));
+  }
+  else {
+    $output = t('You have already selected conference sessions for your program. Click !link to review your session selections.', array('!link' => l('My Program', 'user/' . $account->uid . '/sessions')));
+  }
+
+  return array(
+    '#type' => 'user_profile_category',
+    '#weight' => 0,
+    '#title' => t('My Program'),
+    'link' => array(
+      '#type' => 'user_profile_item',
+      '#value' => $output,
     ),
   );
 }
