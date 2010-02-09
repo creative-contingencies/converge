@@ -184,7 +184,6 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     $form['title']['#description'] = t('Enter a name for your t-shirt design.');
     $form['body_field']['body']['#rows'] = 4;
     $form['body_field']['body']['#description'] = t('Enter an optional description for your design. Maybe explain the design principles or tell us how you created the artwork.');
-    dpm($form);
   }
 }
 
