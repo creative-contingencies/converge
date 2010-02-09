@@ -125,11 +125,13 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
     // dpm($form);
     $form['panes']['delivery']['#title'] = t('Home Address');
     $form['panes']['delivery']['#description'] = t('Please enter your home address.');
+
     unset($form['panes']['delivery']['delivery_company']);
 
-    $form['panes']['billing']['copy_address']['#title'] = '<b>' . t('I\'m paying for myself, my home address is the billing address.') .'</b>';
     $form['panes']['billing']['#title'] = t('School / Organisation Address');
-    $form['panes']['billing']['#description'] = t('If a school or other organisation is paying for this order, please enter the school or organisation\'s billing address here.');
+    $form['pages']['billing']['#description'] = t('If your are paying for your own order, please check the box below.');
+    $form['panes']['billing']['copy_address']['#title'] = '<b>' . t('I\'m paying for myself, my home address is the billing address.') .'</b>';
+    $form['panes']['billing']['copy_address']['#description'] = t('If a school or other organisation is paying for this order, please enter the school or organisation\'s billing address here. If not, simply check the box above and the organisation address fields will disappear.');
 
     // If logged in, use profile fields as default values.
     global $user;
@@ -174,6 +176,15 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'uc_order_edit_form') {
     $form['ship_to']['#title'] = "Modify 'Home' information";
     $form['bill_to']['#title'] = "Modify 'Organisation' information";
+  }
+
+  // Twiddle the t-shirt submission form.
+  //
+  if ($form_id == 'tshirt_node_form') {
+    $form['title']['#description'] = t('Enter a name for your t-shirt design.');
+    $form['body_field']['body']['#rows'] = 4;
+    $form['body_field']['body']['#description'] = t('Enter an optional description for your design. Maybe explain the design principles or tell us how you created the artwork.');
+    dpm($form);
   }
 }
 
