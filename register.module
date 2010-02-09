@@ -244,6 +244,37 @@ function register_user($op, &$edit, &$account, $category = NULL) {
         $account->orders = $orders;
       }
       break;
+
+    // This needs to only be active if the attendee role is required. It will
+    // be magically set or disabled at login.
+    //
+    case 'login':
+      register_toggle_attendee_role($account);
+      break;
+  }
+}
+
+
+function register_toggle_attendee_role(&$account) {
+
+  // Check for allocated tickets.
+  //
+  $ticket = db_result(db_query("SELECT COUNT(order_product_id) FROM {ccc_ticket_allocation} WHERE uid=%d", $account->uid));
+
+  // Attendee rid.
+  //
+  $rid = db_result(db_query("SELECT rid FROM {role} WHERE name = '%s'", 'attendee'));
+
+  // If a ticket is allocated to user but attendee role is NOT set ... add it.
+  // If user has no ticket allocation but DOES have the attendee role set ... remove it.
+  //
+  if ($ticket && !in_array('attendee', $account->roles)) {
+    $roles = $account->roles + array($rid => 'attendee');
+    user_save($account, array('roles' => $roles));
+  }
+  else if (!$ticket && in_array('attendee', $account->roles)) {
+    $roles = array_diff($account->roles, array($rid => 'attendee'));
+    user_save($account, array('roles' => $roles));
   }
 }
 
