@@ -131,7 +131,6 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
         //
         $account->content['selections'] = theme('user_overview_sessions', $account, $sessions);
       }
-
       break;
 
     case 'load':
@@ -142,6 +141,28 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
       sessions_warn_invalid_selections($account);
       break;
   }
+}
+
+/**
+ * Helper to retrieve a useable array of acceptable proposal statuses.
+ */
+function sessions_valid_status() {
+  // Cache this. Really.
+  //
+  static $statuses;
+
+  if ($statuses) {
+    return $statuses;
+  }
+
+  $statuses = array();
+  $status = variable_get('sessions_proposal_status', array('accepted'));
+  foreach ($status as $key => $val) {
+    if ($val) {
+      $statuses[] = $key;
+    }
+  }
+  return $statuses;
 }
 
 /**
@@ -166,8 +187,8 @@ function sessions_warn_invalid_selections($user = NULL) {
 
   // Check if any of the user's selections are not in the listing of acceptable proposal statuses.
   //
-  $query = "SELECT ccc_ss.nid AS nid, n.title AS title, ctp.field_proposal_status AS status FROM {ccc_session_selection} AS ccc_ss JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid) JOIN {node} AS n ON (ccc_ss.nid = n.nid) WHERE ccc_ss.uid=%d AND ctp.field_status_value NOT IN ('" . implode("','", variable_get('sessions_proposal_status', array('accepted'))) . "')";
-  $result = db_query($query, $user->uid);
+  $query = "SELECT ccc_ss.nid AS nid, n.title AS title, ctp.field_proposal_status_value AS status FROM {ccc_session_selection} AS ccc_ss JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid) JOIN {node} AS n ON (ccc_ss.nid = n.nid) WHERE ccc_ss.uid=%d AND ctp.field_proposal_status_value NOT IN ('" . implode("','", sessions_valid_status()) . "')";
+  $result = db_queryd($query, $user->uid);
 
   // Print each proposal title that we found.
   //
@@ -176,6 +197,8 @@ function sessions_warn_invalid_selections($user = NULL) {
     $flag = TRUE;
   }
 
+  // Ask the user to update their selections.
+  //
   if ($flag) {
     drupal_set_message(t('Some of your selected sessions are no longer available. Please !sessions.', array('!sessions' => l('update your selections', 'user/' . $user->uid . '/sessions'))));
   }
@@ -202,7 +225,7 @@ function sessions_presenter($uid) {
   WHERE
     n.type = 'proposal'
     AND n.status <> 0
-    AND ctp.field_proposal_status_value IN ('" . implode("','", variable_get('sessions_proposal_status', array('accepted'))) ."')
+    AND ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) ."')
     AND cfpp.field_proposal_presenters_uid = %d
   ORDER BY nid ASC";
   $result = db_query($query, $uid);
@@ -343,17 +366,12 @@ function sessions_next_timeslots($nid) {
     // }
   }
 
-//  global $run;
-//  dpm(++$run . '  Find all timeslots that start after ' . $timeslot->field_timeslot_date[0]['value']);
-
   // If there is no such start time, just return.
   if (!$start)
     return $nids;
 
   // Then, grab the lowest "next" end time, counting from the lowest next start time.
   $finish = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value2) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE field_timeslot_date_value >= '%s'", $timeslot->day, $start));
-
-  // dpm('Going to return all timeslots that start at or after ' . $start . ' and end BEFORE ' . $finish);
 
   // Now grab all slots that start between these two values and are on the same day nid.
   $query = "SELECT ctt.nid, ctt.field_timeslot_date_value, ctt.field_timeslot_date_value2 FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE ctt.field_timeslot_date_value >= '%s' AND field_timeslot_date_value < '%s' ORDER BY field_timeslot_date_value ASC, field_timeslot_date_value2 ASC";
@@ -363,8 +381,6 @@ function sessions_next_timeslots($nid) {
     $nids[] = $row['nid'];
     $data[] = $row;
   }
-//  dpm('Returning ' . count($nids) . ' timeslots');
-//  dpm($data);
 
   return $nids;
 }
@@ -627,7 +643,7 @@ function sessions_list_form_submit($form, &$form_state) {
 
       // Add the new selection to the database.
       //
-      $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot) VALUES (%d, %d, %d)";
+      $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
       db_query($query, $uid, $session, $timeslot);
 
       // Tell the user what we did.
@@ -697,6 +713,7 @@ function sessions_list_table($user) {
         $session = node_load($selections[$selected]);
         $room = node_load($session->field_proposal_room[0]['nid']);
 
+
         $tuple = array(
           'timeslot' => $timeslot->between,
           'room' => l($room->title, 'program/schedule/room/' . $room->nid),
@@ -712,6 +729,13 @@ function sessions_list_table($user) {
             $tuple['action'] = null;
             $tuple['remove'] = theme('sessions_form', 'My Session', '#', NULL, 'form-submit-green');
           }
+        }
+
+        // Mark the session if it is no longer a valid selection!
+        //
+        if (!in_array($session->field_proposal_status[0]['value'], sessions_valid_status())) {
+          $tuple['session'] = l($session->title, 'node/' . $session->nid) . ' <em>(' . $session->field_proposal_status[0]['value'] . ')</em>';
+          $tuple['action'] = theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids)), NULL, 'form-submit-red');
         }
 
         $data[] = $tuple;
