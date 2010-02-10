@@ -39,11 +39,16 @@ function sessions_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE),
+      'modified' => array(
+        'description' => t('Timestamp of when this selection was made'),
+        'type' => 'datetime',
+        'not null' => TRUE),
       ),
     'indexes' => array(
       'user_id' => array('uid'),
       'node_id' => array('nid'),
       'timeslot_id' => array('timeslot'),
+      'modified_idx' => array('modified'),
       ),
     'unique keys' => array(
       'user_session' => array('uid', 'nid'),
@@ -52,4 +57,14 @@ function sessions_schema() {
   );
 
   return $schema;
+}
+
+/**
+ * Add the modified field to the database.
+ */
+function sessions_update_6001() {
+  $ret = array();
+  db_add_field($ret, 'ccc_session_selection', 'modified', array('description' => t('Timestamp of when this selection was made'), 'type' => 'datetime', 'not null' => TRUE));
+  db_add_index($ret, 'ccc_session_selection', 'modified_idx', array('modified'));
+  return $ret;
 }
