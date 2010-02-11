@@ -36,7 +36,7 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/store/reports/attendees'] = array(
+  $items['admin/store/reports/custom/attendees'] = array(
     'title' => 'Attendee Registration Report',
     'description' => 'List all known attendees.',
     'page callback' => 'register_list_attendees',
@@ -44,7 +44,7 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/store/reports/presenters'] = array(
+  $items['admin/store/reports/custom/presenters'] = array(
     'title' => 'Presenter Registration Report',
     'description' => 'List the registration status for presenters with accepted proposals.',
     'page callback' => 'register_list_presenter_payment_status',
@@ -52,7 +52,7 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/store/reports/coupons'] = array(
+  $items['admin/store/reports/custom/coupons'] = array(
     'title' => 'Coupon usage list with names',
     'description' => 'List coupon usage',
     'page callback' => 'register_list_coupon_status',
@@ -970,10 +970,20 @@ function register_product_filter_form($form_state) {
  */
 function register_list_attendees() {
 
-  if (arg(4) == 'csv')
-    // dpm(arg());
+  $count_query = "SELECT
+      COUNT(DISTINCT(ccc_ta.uid))
+    FROM
+      {uc_order_products} AS uc_op
+    JOIN
+      {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+    JOIN
+      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
+    JOIN
+      {node} AS n ON (uc_op.nid=n.nid)
+    WHERE
+      uc_o.order_status IN ('completed','payment_received')";
 
-  $query = "SELECT
+  $select_query = "SELECT
       ccc_ta.uid AS uid,
       uc_op.order_id AS order_id,
       uc_op.order_product_id,
@@ -1003,25 +1013,12 @@ function register_list_attendees() {
       ctp.field_profile_surname_value ASC,
       ctp.field_profile_firstname_value ASC";
 
-  $count_query = "SELECT
-      COUNT(DISTINCT(ccc_ta.uid))
-    FROM
-      {uc_order_products} AS uc_op
-    JOIN
-      {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
-    JOIN
-      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
-    JOIN
-      {node} AS n ON (uc_op.nid=n.nid)
-    WHERE
-      uc_o.order_status IN ('completed','payment_received')";
-
   $items_per_page = 20;
   $total = db_result(db_query($count_query));
   $page = intval($_REQUEST['page']);
 
-  $query = db_rewrite_sql($query);
-  $result = pager_query($query, $items_per_page, 0, $count_query);
+  $select_query = db_rewrite_sql($select_query);
+  $result = pager_query($select_query, $items_per_page, 0, $count_query);
 
   while ($o = db_fetch_object($result)) {
     $tuple = array(
