@@ -70,6 +70,17 @@ function sessions_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  // A redirect item for the navigation menu as well.
+  //
+  $items['my-program'] = array(
+    'title' => 'My Program',
+    'description' => 'Conference session selection',
+    'page callback' => 'sessions_list_goto',
+    'access callback' => 'user_access',
+    'access arguments' => array('choose conference sessions'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   return $items;
 }
 
@@ -188,7 +199,7 @@ function sessions_warn_invalid_selections($user = NULL) {
   // Check if any of the user's selections are not in the listing of acceptable proposal statuses.
   //
   $query = "SELECT ccc_ss.nid AS nid, n.title AS title, ctp.field_proposal_status_value AS status FROM {ccc_session_selection} AS ccc_ss JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid) JOIN {node} AS n ON (ccc_ss.nid = n.nid) WHERE ccc_ss.uid=%d AND ctp.field_proposal_status_value NOT IN ('" . implode("','", sessions_valid_status()) . "')";
-  $result = db_queryd($query, $user->uid);
+  $result = db_query($query, $user->uid);
 
   // Print each proposal title that we found.
   //
@@ -511,6 +522,19 @@ function sessions_user_valid_timeslot($uid, $nid) {
    WHERE
      cccta.uid = %d AND ctt.nid=%d";
   return db_result(db_query($query, $uid, $nid));
+}
+
+/**
+ * Redirect the user to their session selection page.
+ */
+function sessions_list_goto() {
+  global $user;
+  if ($user->uid) {
+    drupal_goto('user/' . $user->uid . '/sessions');
+  }
+  else {
+    drupal_access_denied();
+  }
 }
 
 /**

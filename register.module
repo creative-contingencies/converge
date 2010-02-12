@@ -69,6 +69,15 @@ function register_menu() {
     'access arguments' => array('view own orders'),
     'type' => MENU_LOCAL_TASK,
   );
+
+  $items['my-profile'] = array(
+    'title' => 'My Profile',
+    'page callback' => 'user_profile_goto',
+    'access callback' => 'user_access',
+    'access arguments' => array('edit own profile content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   $items['user-profile'] = array(
     'title' => 'Edit profile redirect',
     'page callback' => 'user_profile_redirect',
@@ -123,6 +132,16 @@ function register_admin_settings() {
   );
 
   return system_settings_form($form);
+}
+
+function user_profile_goto() {
+  global $user;
+  if ($user->uid) {
+    drupal_goto('user/' . $user->uid . '/edit/profile' );
+  }
+  else {
+    return drupal_access_denied();
+  }
 }
 
 function user_profile_redirect($path1, $path2) {
