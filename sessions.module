@@ -97,7 +97,7 @@ function sessions_admin_settings() {
 
   $form['sessions']['sessions_proposal_status'] = array(
     '#type' => 'checkboxes',
-    '#title' => 'Propsal Status',
+    '#title' => t('Propsal Status'),
     '#description' => t('Acceptance status a proposal needs before it is scheduled, and can thus be selected.'),
     '#options' => content_allowed_values(content_fields('field_proposal_status')),
     '#default_value' => variable_get('sessions_proposal_status', array('accepted')),
@@ -110,10 +110,31 @@ function sessions_admin_settings() {
   }
   $form['sessions']['sessions_order_status'] = array(
     '#type' => 'checkboxes',
-    '#title' => 'Payment Status',
+    '#title' => t('Payment Status'),
     '#description' => t('Payment status needed before sessions can be selected.'),
     '#options' => $options,
     '#default_value' => variable_get('sessions_order_status', array('completed')),
+  );
+
+  $form['sessions_program_header'] = array(
+    '#type' => 'textarea',
+    '#title' => t('My Program Header'),
+    '#description' => t('Enter any instructions or notes that you want displayed at the top of each user\'s "My Program" page.'),
+    '#default_value' => variable_get('sessions_program_header', ''),
+  );
+
+  $form['sessions_program_footer'] = array(
+    '#type' => 'textarea',
+    '#title' => t('My Program Footer'),
+    '#description' => t('Enter any instructions or notes that you want displayed at the bottom of each user\'s "My Program" page.'),
+    '#default_value' => variable_get('sessions_program_footer', ''),
+  );
+
+  $form['sessions_program_select'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Session List Header'),
+    '#description' => t('Enter any instructions or notes that you want displayed at the top of the list of sessions for a timeslot, when the user has to make a choice.'),
+    '#default_value' => variable_get('sessions_program_select', ''),
   );
 
   return system_settings_form($form);
@@ -709,6 +730,8 @@ function sessions_list_table($user) {
     return t('There are no sessions to be selected. Please check that your order payment status is <en>completed</em> and that a ticket has been assigned to you.');
   }
 
+  $output .= variable_get('sessions_program_header', '');
+
   // Now, loop through the list of day nids.
   foreach ($days as $day_nid) {
     // Load a day nid.
@@ -794,6 +817,8 @@ function sessions_list_table($user) {
     $output .= theme('table', $headers, $data);
 
   } // end foreach days
+
+  $output .= variable_get('sessions_program_footer', '');
 
   return $output;
 }
