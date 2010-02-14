@@ -324,12 +324,12 @@ function sessions_presenter_select($uid) {
       $node = node_load($session);
       $timeslot = node_load($node->field_proposal_scheduled[0]['nid']);
       // Is there a conflict?
-      $conflicts = sessions_conflicts($uid, $timeslot, $session);
+      $conflicts = sessions_conflicts($uid, $timeslot->nid, $session);
       if ($conflicts) {
         // Display message
         $warning = t('This choice conflicts with a session you are presenting and it has been removed:<ul>');
         foreach ($conflicts as $conflict) {
-          $warning .= t('<li>!title</li>', array('!title' => $conflict['title']));
+          $warning .= t('<li>!title</li>', array('!title' => l($conflict['title'], 'node/' . $conflict['nid'])));
         }
         $warning .= t('</ul>');
         drupal_Set_message($warning);
@@ -571,8 +571,35 @@ function sessions_list_goto() {
  *   A session node id.
  */
 function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL) {
+
   drupal_set_title('My Program');
   if ($action && $timeslot && $session) {
+    if ($action == 'add') {
+      $conflicts = sessions_conflicts($user->uid, $timeslot->nid, $session->nid);
+      // Do not return this form IF we're adding a session an there are NO clashes.
+      if (!$conflicts) {
+        $timeslots = sessions_overlapping_timeslots($timeslot);
+
+        // This really needs a function of its own.
+        //
+        foreach ($timeslots as $t) {
+          db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $user->uid, $t);
+        }
+
+        // Add the new selection to the database.
+        //
+        $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
+        db_query($query, $user->uid, $session, $timeslot);
+
+        // Tell the user what we did.
+        $session = node_load($session);
+        drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
+
+        return sessions_list_table($user);
+      }
+    }
+    // Make a confirmation form.
+    //
     return drupal_get_form('sessions_list_form', $user, $action, $timeslot, $session);
   }
   else {
@@ -612,21 +639,21 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
       // Remove conflicting session selections.
       // ie: something in a timeslot that starts at or before this one and ends during or with this one.
 
-      $conflicts = sessions_conflicts($user->uid, $timeslot, $session->nid);
+      $conflicts = sessions_conflicts($user->uid, $timeslot->nid, $session->nid);
       if ($conflicts) {
         $sessions  = theme('sessions_conflicts', $conflicts);
-        $sessions .= '<p>' . t('If you click add, these earlier selections will be removed from your program.');
+        $sessions .= '<p>' . t('If you click <strong>replace</strong>, these earlier selections will be removed from your program.');
       }
 
       $title = t('Add session');
-      $description = t('!conflicts Would you like to add "!title" to your program?', array('!conflicts' => $sessions, '!title' => $session->title));
+      $description = t('!conflicts<p>Would you like to add "!title" to your program?</p><p>&nbsp;</p>', array('!conflicts' => $sessions, '!title' => $session->title));
       $submit = ($conflicts) ? t('Replace earlier selection') : t('Add to my program');
       $cancel = t('Back to list');
       break;
 
     case 'remove':
       $title = t('Remove session');
-      $description = t('Really remove session "!title" from your program?', array('!title' => $session->title));
+      $description = t('<p>Really remove session "!title" from your program?</p><p>&nbsp;</p>', array('!title' => $session->title));
       $submit  = t('Remove');
       $cancel = t('Back to list');
       break;
@@ -846,9 +873,10 @@ function sessions_check_selected($timeslots, $selections) {
  * @return
  *   An array of conflicting session titles.
  */
-function sessions_conflicts($uid, $timeslot, $session = 0) {
+function sessions_conflicts($uid, $timeslot = 0, $session = 0) {
   $conflicts = array();
   $selections = sessions_user_sessions($uid);
+  $timeslot = node_load($timeslot);
   $timeslots = sessions_overlapping_timeslots($timeslot->nid);
 
   foreach ($selections as $slot => $selection) {

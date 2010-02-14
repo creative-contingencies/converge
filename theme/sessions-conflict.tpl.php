@@ -8,6 +8,6 @@
 <p>Your choice conflicts with some of the selections you made earlier:
 <ul>
 <?php foreach ($conflicts as $conflict): ?>
-  <li><?php print $conflict['title']; ?>
+  <li><?php print l($conflict['title'], 'node/' . $conflict['nid']); ?>
 <?php endforeach; ?>
 </ul>
