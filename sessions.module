@@ -432,8 +432,9 @@ function sessions_overlapping_timeslots($nid) {
   $nids = array();
 
   $timeslot = node_load($nid);
-  $query = "SELECT ctt.nid FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE (ctt.field_timeslot_date_value BETWEEN '%s' AND '%s')";
-  $result = db_query($query, $timeslot->day,  $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2']);
+  // Select all timeslots that start between the start and end times of this given timeslot. Should ALSO include timeslots that END between these values.
+  $query = "SELECT ctt.nid FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE (ctt.field_timeslot_date_value BETWEEN '%s' AND '%s') OR (ctt.field_timeslot_date_value2 > '%s' AND ctt.field_timeslot_date_value2 <= '%s')";
+  $result = db_query($query, $timeslot->day,  $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2'], $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2']);
 
   while ($row = db_fetch_array($result)) {
     $nids[] = $row['nid'];
@@ -575,8 +576,10 @@ function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL)
   drupal_set_title('My Program');
   if ($action && $timeslot && $session) {
     if ($action == 'add') {
-      $conflicts = sessions_conflicts($user->uid, $timeslot->nid, $session->nid);
+      $conflicts = sessions_conflicts($user->uid, $timeslot, $session);
       // Do not return this form IF we're adding a session an there are NO clashes.
+      // dpm("sessions_list({$user->uid}, {$action}, {$timeslot}, {$session})");
+      // dpm($conflicts);
       if (!$conflicts) {
         $timeslots = sessions_overlapping_timeslots($timeslot);
 
@@ -874,10 +877,11 @@ function sessions_check_selected($timeslots, $selections) {
  *   An array of conflicting session titles.
  */
 function sessions_conflicts($uid, $timeslot = 0, $session = 0) {
+
+  // dpm("sessions_conflicts({$uid}, {$timeslot}, {$session})");
   $conflicts = array();
   $selections = sessions_user_sessions($uid);
-  $timeslot = node_load($timeslot);
-  $timeslots = sessions_overlapping_timeslots($timeslot->nid);
+  $timeslots = sessions_overlapping_timeslots($timeslot);
 
   foreach ($selections as $slot => $selection) {
     // A current selection should not clash with itself :-)
