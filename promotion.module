@@ -177,6 +177,23 @@ function promotion_myacec_percentage() {
     ),
   );
 
+  // This field should only be used if users can in fact buy tickets.
+  //
+  if (module_exists("uc_order") && user_access("create orders")) {
+    // If users can buy tickets, 10% for having a ticket.
+    $data['user']['twitter'] = 5;
+    $data['custom']['ticket'] = 10;
+
+    // This field should only be shown if users can buy tickets AND select
+    // conference session preferences.
+    //
+    if (module_exists("sessions") && user_access("choose conference sessions")) {
+      $data['user']['planet'] = 5;
+      $data['user']['picture'] = 5;
+      $data['custom']['sessions'] = 10;
+    }
+  }
+
   foreach ($data as $node => $fields) {
     foreach ($fields as $name => $value) {
        if ($node == 'user') {
@@ -242,6 +259,36 @@ function promotion_myacec_percentage() {
              'field' => t('your !field', array('!field' => ($name != 'blog') ? $name : 'website url')),
              'link' => 'user/' . $user->uid . '/edit/profile',
            );
+         }
+       }
+       else if ($node == 'custom') {
+         // Does user have a ticket allocated?
+         if ($name == 'ticket') {
+           $tickets = db_result(db_query("SELECT COUNT(order_product_id) FROM {ccc_ticket_allocation} WHERE uid=%d", $user->uid));
+           if ($tickets) {
+             $percentage += $value;
+           }
+           else {
+             $todo[] = array(
+               'value' => $value,
+               'field' => t('a conference ticket'),
+               'link' => 'register',
+             );
+           }
+         }
+         // Does user have selected sessions?
+         if ($name == 'sessions') {
+           $sessions = db_result(db_query("SELECT COUNT(nid) FROM {ccc_session_selection} WHERE uid=%d", $user->uid));
+           if ($sessions) {
+             $percentage += $value;
+           }
+           else {
+             $todo[] = array(
+               'value' => $value,
+               'field' => t('your personal program'),
+               'link' => 'register',
+             );
+           }
          }
        }
        else {
