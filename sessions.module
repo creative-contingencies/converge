@@ -74,6 +74,17 @@ function sessions_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  // List who is in a particular session.
+  $items['admin/store/reports/sessions/%node'] = array(
+    'title' => 'Session Selection Report',
+    'description' => 'List attendees for a session',
+    'page callback' => 'sessions_report_session',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+  );
+
   // Session selections.
   $items['user/%user/sessions'] = array(
     'title' => 'My Program',
@@ -130,6 +141,20 @@ function sessions_admin_settings() {
     '#options' => $options,
     '#default_value' => variable_get('sessions_order_status', array('completed')),
   );
+  unset($options);
+
+  // Add some values. 5 to 25 seems reasonable.
+  for ($i = 0; $i <= 50; $i+=5) {
+    $options[$i] = $i;
+  }
+  $form['sessions']['sessions_available_warning'] = array(
+    '#type' => 'select',
+    '#title' => t('Available Warning'),
+    '#description' => t('Start warning conference organisers when this number of spaces or less is available for a session.'),
+    '#options' => $options,
+    '#default_value' => variable_get('sessions_available_warning', 10),
+  );
+  unset($options);
 
   $form['sessions_program_header'] = array(
     '#type' => 'textarea',
@@ -1044,16 +1069,14 @@ function theme_user_overview_sessions($account, $sessions) {
 /**
  * Show a grid of sessions and their fullness.
  */
-function sessions_report() {
+function sessions_report($nid = 0) {
 
-  // select session nid, title, room id, room title, room size, timeslot where selectakle
-  //   count selected
-
+  // 
   $query = "SELECT n.nid AS nid, n.title AS title,
       nt.nid AS tnid, nt.title AS ttitle,
       nr.nid AS rnid, nr.title AS rtitle,
       ctr.field_room_capacity_value AS capacity, COUNT(ccc_ss.uid) AS attendees,
-      ctr.field_room_capacity_value - COUNT(ccc_ss.uid) AS nearlyfull
+      ctr.field_room_capacity_value - COUNT(ccc_ss.uid) AS available
     FROM
       {node} AS n
     LEFT JOIN
@@ -1084,7 +1107,8 @@ function sessions_report() {
   $header[] = array('data' => t('Room'),     'field' => 'rn.title');
   $header[] = array('data' => t('Attendee'), 'field' => 'attendees');
   $header[] = array('data' => t('Capacity'), 'field' => 'ctr.field_room_capacity_value');
-  $header[] = array('data' => t('Available'), 'field' => 'nearlyfull');
+  $header[] = array('data' => t('Available'), 'field' => 'available');
+  $header[] = array('data' => t('List'));
 
   $query = $query . tablesort_sql($header);
   $result = db_query($query);
@@ -1097,13 +1121,57 @@ function sessions_report() {
       'room' => l($row['rtitle'], 'node/' . $row['rnid']),
       'attendees' => $row['attendees'],
       'capacity' => $row['capacity'],
-      'nearlyfull' => ($row['nearlyfull'] < 5) ? '<strong>' . $row['nearlyfull'] . '</strong>' : $row['nearlyfull'],
+      'available' => ($row['available'] < variable_get('sessions_available_warning', 10)) ? '<strong>' . $row['available'] . '</strong>' : $row['available'],
+      'list' => l('list', 'admin/store/reports/sessions/' . $row['nid']),
     );
     $data[] = $tuple;
   }
 
   drupal_set_title('Session Selection Report - ' . count($data) . ' Sessions');
 
+  return theme('table', $header, $data);
+}
+
+/**
+ * Show who has chosen to attend a particular session.
+ */
+function sessions_report_session($proposal) {
+
+  $query = "SELECT
+    u.uid AS uid,
+    ctp.field_profile_firstname_value AS firstname,
+    ctp.field_profile_surname_value AS surname,
+    u.mail AS mail,
+    UNIX_TIMESTAMP(ccc_ss.modified) AS modified
+  FROM
+    {ccc_session_selection} AS ccc_ss
+  LEFT JOIN
+    {users} AS u ON (ccc_ss.uid = u.uid)
+  LEFT JOIN
+    {node} AS n ON (n.uid = u.uid AND n.type = 'profile')
+  LEFT JOIN
+    {content_type_profile} AS ctp ON (ctp.vid = n.vid)
+  WHERE
+    ccc_ss.nid = %d";
+
+  $data = array();
+  $header[] = array('data' => t('Firstname'), 'field' => 'firstname');
+  $header[] = array('data' => t('Surname'),   'field' => 'surname');
+  $header[] = array('data' => t('Email'),     'field' => 'mail');
+  $header[] = array('data' => t('Selected'),  'field' => 'modified', 'sort' => 'desc');
+
+  $result = db_query($query . tablesort_sql($header), $proposal->nid);
+  while ($row = db_fetch_array($result)) {
+    $tuple = array(
+      'firstname' => $row['firstname'],
+      'surname' => $row['surname'],
+      'mail' => l($row['mail'], 'user/' . $row['uid']),
+      'modified' => format_date($row['modified'], 'long'),
+    );
+    $data[] = $tuple;
+  }
+
+  drupal_set_title(t('Attendees for !title', array('!title' => $proposal->title)));
   return theme('table', $header, $data);
 }
 
