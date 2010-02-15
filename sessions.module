@@ -59,6 +59,17 @@ function sessions_menu() {
     'description' => 'Change configuration for Session Selection',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sessions_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  // Grid to see which sessions are full.
+  $items['admin/store/reports/sessions'] = array(
+    'title' => 'Session Selection Report',
+    'description' => 'List all sessions and their sizes',
+    'page callback' => 'sessions_report',
+    'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -594,8 +605,17 @@ function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL)
 
   drupal_set_title('My Program');
   if ($action && $timeslot && $session) {
+
     if ($action == 'add') {
-      $conflicts = sessions_conflicts($user->uid, $timeslot, $session);
+
+      // Tell the user what we did.
+      $session = node_load($session);
+      if ($session->full == TRUE) {
+        drupal_set_message(t('Session "!title" is full, you cannot select it', array('!title' => $session->title)), 'error');
+        return sessions_list_table($user);
+      }
+
+      $conflicts = sessions_conflicts($user->uid, $timeslot, $session->nid);
       // Do not return this form IF we're adding a session an there are NO clashes.
       // dpm("sessions_list({$user->uid}, {$action}, {$timeslot}, {$session})");
       // dpm($conflicts);
@@ -611,10 +631,8 @@ function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL)
         // Add the new selection to the database.
         //
         $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
-        db_query($query, $user->uid, $session, $timeslot);
+        db_query($query, $user->uid, $session->nid, $timeslot);
 
-        // Tell the user what we did.
-        $session = node_load($session);
         drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
 
         return sessions_list_table($user);
@@ -1021,6 +1039,60 @@ function theme_user_overview_sessions($account, $sessions) {
       '#value' => $output,
     ),
   );
+}
+
+/**
+ * Show a grid of sessions and their fullness.
+ */
+function sessions_report() {
+
+  // select session nid, title, room id, room title, room size, timeslot where selectakle
+  //   count selected
+
+  $query = "SELECT n.nid AS nid, n.title AS title, nt.nid AS tnid, nt.title AS ttitle, nr.nid AS rnid, nr.title AS rtitle, ctr.field_room_capacity_value AS capacity
+    FROM
+      {node} AS n
+    LEFT JOIN
+      {content_type_proposal} AS ctp ON (n.nid = ctp.nid)
+    LEFT JOIN
+      {node} AS nt ON (ctp.field_proposal_scheduled_nid = nt.nid AND nt.type = 'timeslot')
+    LEFT JOIN
+      {content_type_timeslot} AS ctt ON (ctt.nid = nt.nid)
+    LEFT JOIN
+      {node} AS nr ON (ctp.field_proposal_room_nid = nr.nid AND nr.type = 'room')
+    LEFT JOIN
+      {content_type_room} AS ctr ON (ctr.nid = nr.nid)
+    WHERE
+        n.type = 'proposal'
+      AND
+        n.status <> 0
+      AND
+        ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
+    ORDER BY
+      ctt.field_timeslot_date_value ASC, ctt.field_timeslot_date_value2 ASC";
+
+  $data = array();
+  $headers = array('ID', 'Title', 'Timeslot', 'Room', 'Attendee', 'Capacity');
+
+  $result = db_query($query);
+
+  while ($row = db_fetch_array($result)) {
+    $attendees = db_result(db_query("SELECT COUNT(*) FROM {ccc_session_selection} WHERE nid=%d", $row['nid']));
+    $tuple = array(
+      'nid' => $row['nid'],
+      'title' => l($row['title'], 'node/' . $row['nid']),
+      'timeslot' => l($row['ttitle'], 'program/schedule/timeslot/' . $row['tnid']),
+      'room' => l($row['rtitle'], 'node/' . $row['rnid']),
+      'attendees' => $attendees,
+      'capacity' => $row['capacity'],
+    );
+    $data[] = $tuple;
+  }
+
+  drupal_set_title('Session Selection Report');
+
+  return theme('table', $headers, $data);
+
 }
 
 /**
