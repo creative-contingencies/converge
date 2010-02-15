@@ -25,9 +25,13 @@ function sessions_nodeapi(&$node, $op) {
   switch ($op) {
     case 'load':
       if ($node->type == 'timeslot') {
+
         // Create a formatted session time string.
-        $dateparts = split(' ', $node->title);
-        $node->between = t('!start - !end', array('!start' => $dateparts[4], '!end' => $dateparts[6]));
+        //
+        $start = theme('sessions_timeslot', $node, array('value' => 'H:i'));
+        $end = theme('sessions_timeslot', $node, array('value2' => 'H:i'));
+
+        $node->between = t('!start - !end', array('!start' => $start, '!end' => $end));
 
         // Grab the nid of the day we're attached to.
         $node->day = db_result(db_query("SELECT nid FROM {content_field_day_timeslots} WHERE field_day_timeslots_nid=%d", $node->nid));
@@ -1018,7 +1022,7 @@ function theme_sessions_timeslot($timeslot, $fields) {
     $datetime = strtotime($timeslot->field_timeslot_date[0][$field]);
     $datetime += $offset;
 
-    $output .= '<span style="date date-' . $field. '">';
+    $output .= '<span class="date date-' . $field. '">';
     $output .= date($format, $datetime);
     $output .= '</span>';
   }
