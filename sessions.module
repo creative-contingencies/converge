@@ -1049,7 +1049,11 @@ function sessions_report() {
   // select session nid, title, room id, room title, room size, timeslot where selectakle
   //   count selected
 
-  $query = "SELECT n.nid AS nid, n.title AS title, nt.nid AS tnid, nt.title AS ttitle, nr.nid AS rnid, nr.title AS rtitle, ctr.field_room_capacity_value AS capacity
+  $query = "SELECT n.nid AS nid, n.title AS title,
+      nt.nid AS tnid, nt.title AS ttitle,
+      nr.nid AS rnid, nr.title AS rtitle,
+      ctr.field_room_capacity_value AS capacity, COUNT(ccc_ss.uid) AS attendees,
+      ctr.field_room_capacity_value - COUNT(ccc_ss.uid) AS nearlyfull
     FROM
       {node} AS n
     LEFT JOIN
@@ -1062,37 +1066,45 @@ function sessions_report() {
       {node} AS nr ON (ctp.field_proposal_room_nid = nr.nid AND nr.type = 'room')
     LEFT JOIN
       {content_type_room} AS ctr ON (ctr.nid = nr.nid)
+    LEFT JOIN
+      {ccc_session_selection} AS ccc_ss ON (ccc_ss.nid = n.nid)
     WHERE
         n.type = 'proposal'
       AND
         n.status <> 0
       AND
         ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
-    ORDER BY
-      ctt.field_timeslot_date_value ASC, ctt.field_timeslot_date_value2 ASC";
+    GROUP BY
+      n.nid";
 
   $data = array();
-  $headers = array('ID', 'Title', 'Timeslot', 'Room', 'Attendee', 'Capacity');
+  $header[] = array('data' => t('ID'),       'field' => 'n.nid');
+  $header[] = array('data' => t('Title'),    'field' => 'n.title');
+  $header[] = array('data' => t('Timeslot'), 'field' => 'ctt.field_timeslot_date_value', 'sort' => 'asc');
+  $header[] = array('data' => t('Room'),     'field' => 'rn.title');
+  $header[] = array('data' => t('Attendee'), 'field' => 'attendees');
+  $header[] = array('data' => t('Capacity'), 'field' => 'ctr.field_room_capacity_value');
+  $header[] = array('data' => t('Available'), 'field' => 'nearlyfull');
 
+  $query = $query . tablesort_sql($header);
   $result = db_query($query);
 
   while ($row = db_fetch_array($result)) {
-    $attendees = db_result(db_query("SELECT COUNT(*) FROM {ccc_session_selection} WHERE nid=%d", $row['nid']));
     $tuple = array(
       'nid' => $row['nid'],
       'title' => l($row['title'], 'node/' . $row['nid']),
       'timeslot' => l($row['ttitle'], 'program/schedule/timeslot/' . $row['tnid']),
       'room' => l($row['rtitle'], 'node/' . $row['rnid']),
-      'attendees' => $attendees,
+      'attendees' => $row['attendees'],
       'capacity' => $row['capacity'],
+      'nearlyfull' => ($row['nearlyfull'] < 5) ? '<strong>' . $row['nearlyfull'] . '</strong>' : $row['nearlyfull'],
     );
     $data[] = $tuple;
   }
 
-  drupal_set_title('Session Selection Report');
+  drupal_set_title('Session Selection Report - ' . count($data) . ' Sessions');
 
-  return theme('table', $headers, $data);
-
+  return theme('table', $header, $data);
 }
 
 /**
