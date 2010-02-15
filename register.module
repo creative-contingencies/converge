@@ -1000,7 +1000,7 @@ function register_list_attendees() {
     JOIN
       {node} AS n ON (uc_op.nid=n.nid)
     WHERE
-      uc_o.order_status IN ('completed','payment_received')";
+      uc_o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) . "')";
 
   $select_query = "SELECT
       ccc_ta.uid AS uid,
@@ -1025,7 +1025,7 @@ function register_list_attendees() {
     LEFT JOIN
       {content_type_profile} AS ctp ON(np.nid=ctp.nid)
     WHERE
-      uc_o.order_status IN ('completed','payment_received')
+      uc_o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) . "')
     GROUP BY
       ccc_ta.uid
     ORDER BY
@@ -1052,7 +1052,7 @@ function register_list_attendees() {
   $headers = array('Name', 'Order', 'Product', 'Status');
 
   drupal_set_title('Attendee Report');
-  $output .= t('Listing !start - !end of !total attendees who have a paid-for ticket of any kind allocated to them.',
+  $output .= t('Listing !start - !end of !total attendees who have a ticket of any kind allocated to them.',
     array(
       '!start' => ($items_per_page * $page) + 1,
       '!end' => min($total, ($items_per_page * ($page + 1))),
