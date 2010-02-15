@@ -652,13 +652,15 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
       $description = t('!conflicts<p>Would you like to add "!title" to your program?</p><p>&nbsp;</p>', array('!conflicts' => $sessions, '!title' => $session->title));
       $submit = ($conflicts) ? t('Replace earlier selection') : t('Add to my program');
       $cancel = t('Back to list');
+      $back = $form_state['post']['listing'];
       break;
 
     case 'remove':
       $title = t('Remove session');
       $description = t('<p>Really remove session "!title" from your program?</p><p>&nbsp;</p>', array('!title' => $session->title));
       $submit  = t('Remove');
-      $cancel = t('Back to list');
+      $cancel = t('Back to my program');
+      $back = 'user/' . $user->uid . '/sessions';
       break;
   }
 
@@ -667,7 +669,7 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
     $form = confirm_form(
       $form,
       $title,
-      $form_state['post']['listing'],
+      $back,
       $description,
       $submit,
       $cancel
