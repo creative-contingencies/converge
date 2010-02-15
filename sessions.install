@@ -68,3 +68,11 @@ function sessions_update_6001() {
   db_add_index($ret, 'ccc_session_selection', 'modified_idx', array('modified'));
   return $ret;
 }
+
+/**
+ * Make sure we run *AFTER* the cck/date module, so we can use its values.
+ */
+function sessions_update_6002() {
+  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'date'")));
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'sessions'", $weight + 1);
+}
