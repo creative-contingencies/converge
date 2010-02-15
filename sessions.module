@@ -437,11 +437,26 @@ function sessions_overlapping_timeslots($nid) {
 
   $timeslot = node_load($nid);
   // Select all timeslots that start between the start and end times of this given timeslot. Should ALSO include timeslots that END between these values.
-  $query = "SELECT ctt.nid FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE (ctt.field_timeslot_date_value BETWEEN '%s' AND '%s') OR (ctt.field_timeslot_date_value2 > '%s' AND ctt.field_timeslot_date_value2 <= '%s')";
-  $result = db_query($query, $timeslot->day,  $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2'], $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2']);
+  $query = "SELECT
+      ctt.nid
+    FROM
+      {content_field_day_timeslots} AS cfdt
+    LEFT JOIN
+      {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d)
+    WHERE (
+       (ctt.field_timeslot_date_value >= '%s' AND ctt.field_timeslot_date_value < '%s')
+     OR
+       (ctt.field_timeslot_date_value <= '%s' AND ctt.field_timeslot_date_value2 > '%s')
+     )";
+  $result = db_query($query, $timeslot->day, $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2'], $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value']);
+
+  // B overlaps if
+  //   - It starts at or after A and finishes before A finishes.
+  //   - It starts at or before A and ends after A starts.
 
   while ($row = db_fetch_array($result)) {
     $nids[] = $row['nid'];
+    $node = node_load($row['nid']);
   }
   return $nids;
 }
