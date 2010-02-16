@@ -284,17 +284,30 @@ function register_toggle_attendee_role(&$account) {
   //
   $rid = db_result(db_query("SELECT rid FROM {role} WHERE name = '%s'", 'attendee'));
 
+  // Silently fail if no attendee role exists.
+  //
+  if (!$rid)
+    return;
+
+  // Work on a copy.
+  //
+  $victim = $account;
+
   // If a ticket is allocated to user but attendee role is NOT set ... add it.
   // If user has no ticket allocation but DOES have the attendee role set ... remove it.
   //
-  if ($ticket && !in_array('attendee', $account->roles)) {
-    $roles = $account->roles + array($rid => 'attendee');
-    user_save($account, array('roles' => $roles));
+  if ($ticket && !in_array('attendee', $victim->roles)) {
+    $roles = $victim->roles + array($rid => 'attendee');
+    user_save($victim, array('roles' => $roles));
   }
-  else if (!$ticket && in_array('attendee', $account->roles)) {
-    $roles = array_diff($account->roles, array($rid => 'attendee'));
-    user_save($account, array('roles' => $roles));
+  else if (!$ticket && in_array('attendee', $victim->roles)) {
+    $roles = array_diff($victim->roles, array($rid => 'attendee'));
+    user_save($victim, array('roles' => $roles));
   }
+
+  // Overwrite the parameter account with the new details.
+  //
+  $account = $victim;
 }
 
 /**
@@ -664,11 +677,12 @@ function register_allocate_ticket($order_product_id, $uid) {
   $nid = db_result(db_query("SELECT nid FROM uc_order_products WHERE order_product_id = %d", $order_product_id));
   if ($nid && $uid) {
     $found = register_check_user_allocated_nid($nid, $uid);
+    $victim = user_load($uid);
     if (!$found) {
       db_query("INSERT INTO {ccc_ticket_allocation} (order_product_id, uid) VALUES (%d, %d)", $order_product_id, $uid);
+      register_toggle_attendee_role(&$victim);
       return TRUE;
     } else {
-      $victim = user_load($uid);
       $ticket = node_load($nid);
       drupal_set_message(t('!username already has a !ticket ticket assigned to them', array('!username' => theme('username', $victim), '!ticket' => $ticket->title)), 'warning');
     }
