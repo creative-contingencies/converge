@@ -216,7 +216,7 @@ function usersearch_search_form_process($form_state) {
 
   // Only retrieve checked fields.
   // $query = "SELECT n.uid, u.mail, ctp." . implode('_value, ctp.', proposal_list_users_fields(TRUE) ) . "_value FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE u.mail LIKE '%%%s%%'";
-  $query = "SELECT DISTINCT(n.uid), u.mail, ctp." . implode('_value, ctp.', $fields) . "_value FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE (u.mail LIKE '%%%s%%'";
+  $query = "SELECT DISTINCT(n.uid), u.mail, ctp." . implode('_value, ctp.', $fields) . "_value, u.access FROM {content_type_profile} AS ctp LEFT JOIN {node} AS n ON(ctp.nid=n.nid) LEFT JOIN {users} AS u ON(n.uid=u.uid) LEFT JOIN {users_roles} AS ur ON(u.uid=ur.uid) WHERE (u.mail LIKE '%%%s%%'";
   $args = array($form_state['values']['string']);
 
   // foreach $field add an OR.
@@ -237,6 +237,7 @@ function usersearch_search_form_process($form_state) {
   while ($row = db_fetch_array($result)) {
     $row['mail'] = l($row['mail'], 'user/' . $row['uid']);
     if (in_array('papers chair', $user->roles) || user_access('change own username')) {
+      $row['access'] = t('!interval ago', array('!interval' => format_interval(time() - $row['access'])));
       $row[] = l('contact', 'user/' . $row[uid] . '/contact', array('query' => array('contact_author' => 'true')));
       $row[] = l('invite', 'user/' . $row[uid] . '/contact', array('query' => array('invite_reviewer' => 'true')));
     }
@@ -256,6 +257,7 @@ function usersearch_search_form_process($form_state) {
 
   // Adn add some extra links
   if (in_array('papers chair', $user->roles) || user_access('change own username')) {
+    $header[] = 'Last access';
     $header[] = 'Presenter';
     $header[] = 'Reviewer';
   }
