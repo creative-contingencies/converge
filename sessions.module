@@ -661,6 +661,8 @@ function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL)
         drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
 
         return sessions_list_table($user);
+      } else {
+        $session = $session->nid;
       }
     }
     // Make a confirmation form.
@@ -741,6 +743,7 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
 }
 
 function sessions_list_form_validate($form, &$form_state) {
+
   $user = user_load($form_state['values']['uid']);
   if (!$user->uid)
     form_set_error('uid', 'You need to be a user');
@@ -854,7 +857,6 @@ function sessions_list_table($user) {
         $session = node_load($selections[$selected]);
         $room = node_load($session->field_proposal_room[0]['nid']);
 
-
         $tuple = array(
           'timeslot' => $timeslot->between,
           'room' => l($room->title, 'program/schedule/room/' . $room->nid),
@@ -880,6 +882,9 @@ function sessions_list_table($user) {
         }
 
         $data[] = $tuple;
+
+        // Start again at the next session with a start time that is equal to or larger than the current one.
+        // $timeslot = node_load(session_);
       }
       else {
         // No selection, display a list of timeslots and jump to the associated sessions.
@@ -903,6 +908,7 @@ function sessions_list_table($user) {
           'remove'=> null,
         );
         $data[] = $tuple;
+        $timeslot = node_load($nids[0]);
       } // endif
     } // end while nids
 
