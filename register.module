@@ -1094,6 +1094,10 @@ function register_list_attendees() {
  */
 function register_list_overview() {
 
+  if (!module_exists("sessions")) {
+    return t('The sessions module is required for these reports.');
+  }
+
   $output = '';
 
   // Number of distinct users with a ticket of any kind allocated to them.
@@ -1135,7 +1139,8 @@ function register_list_overview() {
   //
   $data = array();
 
-  $presenters_total = db_result(db_query("SELECT COUNT(DISTINCT(field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters}"));
+  $presenters_total = db_result(db_query("SELECT COUNT(DISTINCT(field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp
+LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')"));
   $data[] = array(
     'Total presenters',
     $presenters_total,
@@ -1144,7 +1149,8 @@ function register_list_overview() {
 
   // Presenters who have an allocated ticket.
   //
-  $presenters_ticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp JOIN {ccc_ticket_allocation} AS ccc_ta ON (cfpp.field_proposal_presenters_uid = ccc_ta.uid)"));
+  $presenters_ticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp JOIN {ccc_ticket_allocation} AS ccc_ta ON (cfpp.field_proposal_presenters_uid = ccc_ta.uid)
+LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')"));
   $data[] = array(
     'Presenters with allocated ticket',
     $presenters_ticket,
@@ -1153,7 +1159,9 @@ function register_list_overview() {
 
   // Presenters who do not have an allocated ticket.
   //
-  $presenters_noticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp WHERE cfpp.field_proposal_presenters_uid NOT IN (SELECT uid FROM {ccc_ticket_allocation})"));
+  $presenters_noticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp
+LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
+AND cfpp.field_proposal_presenters_uid NOT IN (SELECT uid FROM {ccc_ticket_allocation})"));
   $data[] = array(
     'Presenters without allocated ticket',
     $presenters_noticket,
@@ -1162,7 +1170,7 @@ function register_list_overview() {
 
   $output .= '<h3>Presenter Registration Info</h3>';
   $output .= theme('table', array('Presenters', 'Number', 'Percentage'), $data);
-  $output .= t('<p><em>Note that these numbers reflect presenters with an <string>allocated</strong> ticket. We cannot limit this to presenters who have bought a ticket, as their ticket may be purchased for them by a third party. This means presenters who purchased their own ticket, but did not allocate it to themselves are counted here as not having a ticket.</em>');
+  $output .= t('<p><em>Note that these numbers reflect presenters and co-presenters whose proposals are listed as <strong>accepted</strong> and who have an <string>allocated</strong> ticket. We cannot limit this to presenters who have bought a ticket, as their ticket may be purchased for them by a third party. This means presenters who purchased their own ticket, but did not allocate it to themselves are counted here as not having a ticket.</em>');
 
   drupal_set_title('Registration Overview');
   return $output;
