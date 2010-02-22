@@ -210,15 +210,29 @@ function promotion_myacec_percentage() {
              }
              break;
            case 'planet':
-             $planet = db_result(db_query("SELECT checked FROM {planet_feeds} WHERE uid=%d", $user->uid));
-             if ($planet) {
-               $percentage += $value;
-             } else {
-               $todo[] = array(
-                 'value' => $value,
-                 'field' => t('your blog\'s rss feed'),
-                 'link' => 'user/' . $user->uid . '/planet',
-               );
+             if (module_exists("udplanet")) {
+               $planet = db_result(db_query("SELECT COUNT(lid) FROM {udplanet_feeds} WHERE uid=%d", $user->uid));
+               if ($planet) {
+                 $percentage += $value;
+               } else {
+                 $todo[] = array(
+                   'value' => $value,
+                   'field' => t('your blog\'s rss feed'),
+                   'link' => 'user/' . $user->uid . '/udplanet/feeds',
+                 );
+               }
+             }
+             else if (module_exists("planet")) {
+               $planet = db_result(db_query("SELECT checked FROM {planet_feeds} WHERE uid=%d", $user->uid));
+               if ($planet) {
+                 $percentage += $value;
+               } else {
+                 $todo[] = array(
+                   'value' => $value,
+                   'field' => t('your blog\'s rss feed'),
+                   'link' => 'user/' . $user->uid . '/planet',
+                 );
+               }
              }
              break;
            case 'twitter':
