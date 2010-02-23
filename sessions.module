@@ -211,6 +211,7 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
 
     case 'login':
       sessions_warn_invalid_selections($account);
+      sessions_autoselect_sessions($account);
       break;
   }
 }
@@ -238,19 +239,79 @@ function sessions_valid_status() {
 }
 
 /**
+ * Helper that automatically selects certain sessions depending
+ * on which tickets a user has assigned to them. We'll do this
+ * if the ticket type has "auto-select session" set on it.
+ *
+ * Yes, this is an ugly-arse hack.
+ *
+ * @param $account
+ *   A valid user account.
+ */
+function sessions_autoselect_sessions($account = NULL) {
+
+  if ($account == NULL) {
+    global $user;
+    $account = $user;
+  }
+
+  // Haha. Anonymous. Go away.
+  //
+  if ($account->uid == 0)
+    return;
+
+  // Check which tickets are assigned to this user.
+  foreach ($account->orders as $order) {
+    foreach ($order->tickets as $ticket) {
+
+      // Check if the ticket is assigned to the current user.
+      //
+      if ($ticket->uid == $account->uid) {
+
+        // Select all sessions (and their timeslots) associated with this ticket
+        // type that have autoselect set.
+        // Doing this via a direct query is much, much quicker than a node_load().
+
+        $query = "
+          SELECT
+            ctp.nid AS nid, ctp.field_proposal_scheduled_nid AS timeslot, n.title AS title
+          FROM
+            {content_field_registration_day} AS cfrd
+          LEFT JOIN
+            {content_field_day_timeslots} AS cfdt ON (cfdt.nid = cfrd.field_registration_day_nid)
+          LEFT JOIN
+            {content_type_proposal} AS ctp ON (ctp.field_proposal_scheduled_nid = cfdt.field_day_timeslots_nid)
+          LEFT JOIN
+            {node} AS n ON (n.nid = ctp.nid)
+          WHERE
+            cfrd.nid = %d AND ctp.field_proposal_autoselect_value=1";
+
+        $result = db_query($query, $order->nid);
+
+        while ($row = db_fetch_array($result)) {
+          db_query("REPLACE INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())",
+            $account->uid, $row['nid'], $row['timeslot']);
+        }
+      }
+    }
+  }
+}
+
+/**
  * Helper that checks if sessions selections contain invalid choices.
  *
  * @param $user
  *   A valid user account.
  */
-function sessions_warn_invalid_selections($user = NULL) {
-  if ($user == NULL) {
+function sessions_warn_invalid_selections($account = NULL) {
+  if ($account == NULL) {
     global $user;
+    $account = $user;
   }
 
   // Haha. Anonymous. Go away.
   //
-  if ($user->uid == 0)
+  if ($account->uid == 0)
     return;
 
   // Use a flag variable, so we can print a single link to sessions election IF there was a problem.
@@ -260,7 +321,7 @@ function sessions_warn_invalid_selections($user = NULL) {
   // Check if any of the user's selections are not in the listing of acceptable proposal statuses.
   //
   $query = "SELECT ccc_ss.nid AS nid, n.title AS title, ctp.field_proposal_status_value AS status FROM {ccc_session_selection} AS ccc_ss JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid) JOIN {node} AS n ON (ccc_ss.nid = n.nid) WHERE ccc_ss.uid=%d AND ctp.field_proposal_status_value NOT IN ('" . implode("','", sessions_valid_status()) . "')";
-  $result = db_query($query, $user->uid);
+  $result = db_query($query, $account->uid);
 
   // Print each proposal title that we found.
   //
