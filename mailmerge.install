@@ -19,7 +19,7 @@ function mailmerge_schema() {
       'default' => 0,
       ),
     'vid' => array(
-      'description' => 'The {node}.vid that identifies the version used as newsletter.',
+      'description' => 'The {node}.vid that identifies the version used as formletter.',
       'type' => 'int',
       'not null' => TRUE,
       'default' => 0,
@@ -31,14 +31,14 @@ function mailmerge_schema() {
       'default' => '',
     ),
     's_status' => array(
-      'description' => 'Send status of the form letter (0 = not sent; 1 = pending; 2 = send). ',
+      'description' => 'Send status of the formletter (0 = not sent; 1 = pending; 2 = send). ',
       'type' => 'int',
       'size' => 'tiny',
       'not null' => TRUE,
       'default' => 0,
       ),
     's_format' => array(
-      'description' => 'Format of the form letter (plain or html).',
+      'description' => 'Format of the formletter (plain or html).',
       'type' => 'varchar',
       'length' => 8,
       'not null' => TRUE,

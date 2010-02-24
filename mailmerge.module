@@ -34,7 +34,7 @@ function mailmerge_perm() {
 function mailmerge_nodeapi(&$node, $op, $teaser, $page) {
   global $user;
 
-  // Operate only on node types set in 'simplenews_content_types' variable.
+  // Operate only on node types set in 'mailmerge_content_types' variable.
   if (!in_array($node->type, variable_get('mailmerge_content_types', array('mailmerge')))) {
     return;
   }
@@ -65,8 +65,12 @@ function mailmerge_form_alter($form_id, &$form, $form_state) {
     '#type' => 'select',
     '#values' => user_roles(),
   );
-  // products
-  // payments
+  // payment status
+
+  // tickets assigned
+  // per ticket type or day
+
+  // sessions selected
 }
 
 
@@ -77,7 +81,7 @@ function mailmerge_form_alter($form_id, &$form, $form_state) {
 
 /**
  * Mail handler.
- */
+/
 
 
 /**
