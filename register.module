@@ -523,7 +523,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
         );
 
         $form['items'][$key]['allocations']['rows'][$count]['firstname'] = array(
-          '#type' => $user ? 'markup' : 'textfield',
+          '#type' => $account ? 'markup' : 'textfield',
           '#size' => 10,
           '#default_value' => $profile ? $profile->field_profile_firstname[0]['value'] : '',
           '#disabled' => $profile ? TRUE : FALSE,
