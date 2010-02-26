@@ -701,7 +701,7 @@ function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL)
 
       // Tell the user what we did.
       $session = node_load($session);
-      if ($session->full != FALSE || $node->capacity >= $node->attendees) {
+      if ($session->full == TRUE) {
         drupal_set_message(t('Session "!title" is full, you cannot select it', array('!title' => $session->title)), 'error');
         return sessions_list_table($user);
       }
