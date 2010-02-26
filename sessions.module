@@ -41,7 +41,12 @@ function sessions_nodeapi(&$node, $op) {
         $node->attendees = intval(sessions_attendees($node->nid));
         $capacity = intval(db_result(db_query("SELECT ctr.field_room_capacity_value FROM {content_type_proposal} AS ctp LEFT JOIN {content_type_room} AS ctr ON (ctp.field_proposal_room_nid = ctr.nid) WHERE ctp.nid = %d", $node->nid)));
         $node->capacity = $capacity;
-        $node->full = ($node->capacity < $node->attendees);
+        if ($node->capacity > $node->attendees) {
+          $node->full = FALSE;
+        }
+        else {
+          $node->full = TRUE;
+        }
       }
       break;
   }
