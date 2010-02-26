@@ -38,7 +38,7 @@ function sessions_nodeapi(&$node, $op) {
       }
 
       if ($node->type == 'proposal') {
-        $node->attendees = intval(sessions_attendees($node->nid));
+        $node->attendees = count(sessions_attendees($node->nid));
         $capacity = intval(db_result(db_query("SELECT ctr.field_room_capacity_value FROM {content_type_proposal} AS ctp LEFT JOIN {content_type_room} AS ctr ON (ctp.field_proposal_room_nid = ctr.nid) WHERE ctp.nid = %d", $node->nid)));
         $node->capacity = $capacity;
         if ($node->capacity > $node->attendees) {
@@ -549,8 +549,9 @@ function sessions_overlapping_timeslots($nid) {
        (ctt.field_timeslot_date_value >= '%s' AND ctt.field_timeslot_date_value < '%s')
      OR
        (ctt.field_timeslot_date_value <= '%s' AND ctt.field_timeslot_date_value2 > '%s')
+     OR ctt.nid = %d
      )";
-  $result = db_query($query, $timeslot->day, $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2'], $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value']);
+  $result = db_query($query, $timeslot->day, $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2'], $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value'], $nid);
 
   // B overlaps if
   //   - It starts at or after A and finishes before A finishes.
