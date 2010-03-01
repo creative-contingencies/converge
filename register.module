@@ -1110,8 +1110,8 @@ function register_list_overview() {
   // Number of people with each ticket type.
   //
   $data = array();
-  $query = "SELECT DISTINCT(nid) AS nid, title AS ticket, SUM(qty) AS sold FROM {uc_order_products} GROUP BY nid";
-  $result = db_query($query);
+  $query = "SELECT DISTINCT(op.nid) AS nid, op.title AS ticket, SUM(op.qty) AS sold FROM {uc_order_products} AS op LEFT JOIN {uc_orders} AS o ON (o.order_id=o.order_id) WHERE o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) . "') GROUP BY op.nid";
+  $result = db_querd($query);
 
   while($row = db_fetch_array($result)) {
     unset($row['nid']);
