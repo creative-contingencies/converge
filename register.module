@@ -903,7 +903,7 @@ function register_list_coupon_status() {
     array('data' => t('Status'), 'field' => 'uc_os.title'),
     array('data' => t('Total'),  'field' => 'uc_o.order_total'),
     array('data' => t('Date'),   'field' => 'uc_o.created'),
-    array('data' => t('Coupon')  'field' => 'uc_co.code'),
+    array('data' => t('Coupon'), 'field' => 'uc_co.code'),
   );
 
   $query .= tablesort_sql($header);
