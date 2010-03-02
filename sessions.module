@@ -227,20 +227,42 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
 function sessions_valid_status() {
   // Cache this. Really.
   //
-  static $statuses;
+  static $proposal_statuses;
 
-  if ($statuses) {
-    return $statuses;
+  if ($proposal_statuses) {
+    return $proposal_statuses;
   }
 
-  $statuses = array();
+  $proposal_statuses = array();
   $status = variable_get('sessions_proposal_status', array('accepted'));
   foreach ($status as $key => $val) {
     if ($val) {
-      $statuses[] = $key;
+      $proposal_statuses[] = $key;
     }
   }
-  return $statuses;
+  return $proposal_statuses;
+}
+
+/**
+ * Helper to retrieve a useable array of acceptable order statuses.
+ */
+function sessions_valid_order() {
+  // Cache this. Really.
+  //
+  static $order_statuses;
+
+  if ($order_statuses) {
+    return $order_statuses;
+  }
+
+  $order_statuses = array();
+  $status = variable_get('sessions_order_status', array('completed'));
+  foreach ($status as $key => $val) {
+    if ($val) {
+      $order_statuses[] = $key;
+    }
+  }
+  return $order_statuses;
 }
 
 /**
