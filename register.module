@@ -895,10 +895,18 @@ function register_list_coupon_status() {
       {content_type_profile} AS ctp ON (ctp.nid=n.nid)
     WHERE
       uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
-    ORDER BY
-      uc_o.created ASC
     ";
 
+  $header = array(
+    array('data' => t('User'),   'field' => 'ctp.field_profile_surname_value'),
+    array('data' => t('Order'),  'field' => 'uc_o.order_id'),
+    array('data' => t('Status'), 'field' => 'uc_os.title'),
+    array('data' => t('Total'),  'field' => 'uc_o.order_total'),
+    array('data' => t('Date'),   'field' => 'uc_o.created'),
+    array('data' => t('Coupon')  'field' => 'uc_co.code'),
+  );
+
+  $query .= tablesort_sql($header);
   $result = db_query($query);
 
   while ($o = db_fetch_object($result)) {
@@ -913,13 +921,12 @@ function register_list_coupon_status() {
     $data[] = $tuple;
   }
 
-  $headers = array('User', 'Order', 'Status', 'Total', 'Date', 'Coupon');
 
   $suffix = (count($data) != 1) ? t('s') : t('');
   $verb = (count($data) != 1) ? t('have') : t('has');
   $output  = t('<h3>!num Coupon!s !verb been used</h3>', array('!num' => count($data), '!s' => $suffix, '!verb' => $verb));
 
-  $output .= theme('table', $headers, $data);
+  $output .= theme('table', $header, $data);
 
   return $output;
 }
