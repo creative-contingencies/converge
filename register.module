@@ -44,6 +44,7 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+
   $items['admin/store/reports/custom/presenters'] = array(
     'title' => 'Presenter Registration Report',
     'description' => 'List the registration status for presenters with accepted proposals.',
@@ -917,7 +918,6 @@ function register_list_coupon_status() {
   $suffix = (count($data) != 1) ? t('s') : t('');
   $verb = (count($data) != 1) ? t('have') : t('has');
   $output  = t('<h3>!num Coupon!s !verb been used</h3>', array('!num' => count($data), '!s' => $suffix, '!verb' => $verb));
-  $output .= t('<p>Orders with status "In checkout" may not have a name or site login associated with them yet.');
 
   $output .= theme('table', $headers, $data);
 
@@ -1214,3 +1214,31 @@ function register_get_tickets($uid) {
   }
   return $data;
 }
+
+// Skeleton code for mailmerge.
+//
+// Presenters who haven't registered
+//   (proposal accepted and uid in proposal_presenters and not in uc_orders and not in ccc_ticket_allocation)
+// Presenters who have registered, but not allocated their ticket
+//   (proposal accepted and uid in proposal_presenters and in uc_orders and not in ccc_ticket_allocation)
+// Presenters who have registered and allocated their ticket, but have not selected sessions
+//   (proposal accepted and uid in proposal_presenters and in ccc_ticket_allocation and not in ccc_session_selection)
+// Users whose order hasn't had its tickets allocated yet
+//   (order_product_id not in ccc_ticket_allocation)
+// Users who haven't got a ticket allocated to them
+//   (uid not in ccc_ticket_allocation)
+// Users who have got a ticket allocated to them
+//   (uid in ccc_ticket_allocation)
+// Users with tickets who haven't selected sessions yet
+//   (uid in ccc_ticket_allocation and not in ccc_session_selection)
+// Users with tickets who have selected sessions
+//   (uid in ccc_ticket_allocation and in ccc_session_selection)
+// Users with accessibility or dietary needs
+//   (data in content_type_profile fields)
+
+// u.uid, u.mail, pro.firstname, pro.surname
+//   proposal, scheduled
+//   link to pro
+//   link to ccc_ta
+//   link to ccc_ss
+
