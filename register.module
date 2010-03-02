@@ -893,7 +893,7 @@ function register_list_coupon_status() {
     JOIN
       {content_type_profile} AS ctp ON (ctp.nid=n.nid)
     WHERE
-      uc_o.order_status != 'in_checkout'
+      uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
     ORDER BY
       uc_o.created ASC
     ";
@@ -1024,7 +1024,7 @@ function register_list_attendees() {
     JOIN
       {node} AS n ON (uc_op.nid=n.nid)
     WHERE
-      uc_o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) . "')";
+      uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')";
 
   $select_query = "SELECT
       ccc_ta.uid AS uid,
@@ -1049,7 +1049,7 @@ function register_list_attendees() {
     LEFT JOIN
       {content_type_profile} AS ctp ON(np.nid=ctp.nid)
     WHERE
-      uc_o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) . "')
+      uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
     GROUP BY
       ccc_ta.uid
     ORDER BY
