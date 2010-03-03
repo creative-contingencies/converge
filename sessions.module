@@ -343,7 +343,8 @@ function sessions_warn_invalid_selections($account = NULL) {
 
   // Use a flag variable, so we can print a single link to sessions election IF there was a problem.
   //
-  $flag = FALSE;
+  $gone = FALSE;
+  $moved = FALSE;
 
   // Check if any of the user's selections are not in the listing of acceptable proposal statuses.
   //
@@ -354,13 +355,47 @@ function sessions_warn_invalid_selections($account = NULL) {
   //
   while ($row = db_fetch_array($result)) {
     drupal_set_message(t('!title has been !status', array('!title' => l($row['title'], 'node/' . $row['nid']), '!status' => $row['status'])), 'warning');
-    $flag = TRUE;
+
+    db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
+    $gone = TRUE;
+  }
+
+  // Check if a session that a user has selected has moved timeslots.
+  $query = "
+SELECT
+  ccc_ss.nid AS nid,
+  n.title AS title,
+  ccc_ss.timeslot AS timeslot,
+  ctp.field_proposal_scheduled_nid AS scheduled,
+  nf.title AS from_title,
+  nt.title AS to_title FROM
+{ccc_session_selection} AS ccc_ss
+JOIN {node} AS n ON (ccc_ss.nid = n.nid)
+LEFT JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid)
+LEFT JOIN {node} AS nf ON (nf.nid = ccc_ss.timeslot)
+LEFT JOIN {node} AS nt ON (nt.nid = ctp.field_proposal_scheduled_nid)
+WHERE ccc_ss.uid=%d AND ccc_ss.timeslot <> ctp.field_proposal_scheduled_nid";
+
+  $result = db_query($query, $account->uid);
+
+  // Print each proposal title that we found.
+  while ($row = db_fetch_array($result)) {
+    drupal_set_message(t('!title has been moved from !from to !to', array('!title' => l($row['title'], 'node/' . $row['nid']), '!from' => $row['from_title'], '!to' => $row['to_title'])), 'warning');
+
+    db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
+    $moved = TRUE;
   }
 
   // Ask the user to update their selections.
   //
-  if ($flag) {
+  if ($gone) {
     drupal_set_message(t('Some of your selected sessions are no longer available. Please !sessions.', array('!sessions' => l('update your selections', 'user/' . $user->uid . '/sessions'))));
+  }
+
+  // Ask the user to update their selections.
+  //
+  if ($moved) {
+    drupal_set_message(t('Some of your selected sessions have moved to a different timeslot. Please !sessions if you still wish to attend them.', array('!sessions' => l('re-select them', 'user/' . $user->uid . '/sessions'))));
   }
 
 }
