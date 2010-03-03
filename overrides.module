@@ -36,8 +36,11 @@ function overrides_user_admin_perm_redir($rid) {
   drupal_goto('admin/user/permissions/'. $rid);
 }
 
+/**
+ * Helper to remove the access permission check on the login url.
+ * This makes already logged-in users redirect to their profiles, it seems.
+ */
 function overrides_menu_alter(&$items) {
-  dpm($items['user/login']);
   unset($items['user/login']['access callback']);
 }
 
