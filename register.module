@@ -493,6 +493,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
       }
       $form['items'][$key]['order_id'] = array('#type' => 'hidden', '#value' => $order->order_id);
       $form['items'][$key]['order_product_id'] = array('#type' => 'hidden', '#value' => $order->order_product_id);
+      $form['items'][$key]['order_qty'] = array('#type' => 'hidden', '#value' => $order->qty);
       $form['items'][$key]['uid'] = array('#type' => 'hidden', '#value' =>  $user->uid);
       $form['items'][$key]['myself'] = array(
         '#type' => 'checkbox',
@@ -541,14 +542,14 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
         if($profile)
           $form['items'][$key]['allocations']['rows'][$count]['surname']['#value'] = $profile->field_profile_surname[0]['value'];
 
-        $form['items'][$key]['allocations']['rows'][$count]['position'] = array(
+        $form['items'][$key]['allocations']['rows'][$count]['organisation'] = array(
           '#type' => $account ? 'markup' : 'textfield',
           '#size' => 10,
-          '#default_value' => $profile ? $profile->field_profile_position[0]['value'] : '',
+          '#default_value' => $profile ? $profile->field_profile_organisation[0]['value'] : '',
           '#disabled' => $profile ? TRUE : FALSE,
         );
         if($profile)
-          $form['items'][$key]['allocations']['rows'][$count]['position']['#value'] = $profile->field_profile_position[0]['value'];
+          $form['items'][$key]['allocations']['rows'][$count]['organisation']['#value'] = $profile->field_profile_organisation[0]['value'];
 
         $form['items'][$key]['allocations']['rows'][$count]['mail'] = array(
           '#type' => $account ? 'hidden' : 'textfield',
@@ -595,13 +596,13 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
  * Theme a table that is part of register_tickets_form
  */
 function theme_register_allocations_form_table(&$element) {
-  $titles = array('Remove', 'First name', 'Surname', 'Position', 'Email');
+  $titles = array('Remove', 'First name', 'Surname', 'Organisation', 'Email');
   foreach (element_children($element) AS $cnt) {
     $data[$cnt] = array(
       drupal_render($element[$cnt]['remove']),
       drupal_render($element[$cnt]['firstname']),
       drupal_render($element[$cnt]['surname']),
-      drupal_render($element[$cnt]['position']),
+      drupal_render($element[$cnt]['organisation']),
       // drupal_render($element[$cnt]['mail']),
       drupal_render($element[$cnt]) );
   }
@@ -611,6 +612,7 @@ function theme_register_allocations_form_table(&$element) {
 
 function register_tickets_form_validate($form, &$form_state) {
   foreach($form_state['values']['items'] AS $oi => $order) {    
+    $num = 0;
     foreach ($order['allocations']['rows'] AS $ri => $allocated) {
       if (!$allocated['remove'] && !$allocated['uid'] && $allocated['mail']) {
         // New allocation, shouldn't double up.
@@ -620,6 +622,10 @@ function register_tickets_form_validate($form, &$form_state) {
         if ($order_id) {
           form_set_error('items][' . $oi . '][allocations][rows][' . $ri . '][mail',  $allocated['mail'] . ' already has a ticket on order #' . $order_id);
         }
+        $num++;
+        if ($order['order_qty']) {
+          form_set_error('items][' . $oi . '][allocations][rows][' . $ri . '][mail', t('You only have !num ticket!plural, cannot allocate a ticket to !mail', array('!num' => $order['order_qty'], '!plural' => ($order['order_qty'] == 1) ? '' : 's', '!mail' => $allocated['mail'])));
+        }
       }
     }
   }
@@ -627,6 +633,7 @@ function register_tickets_form_validate($form, &$form_state) {
 
   // 1. Check that the user is not allocated on another order
   // 2. Check that the email is valid
+  // 3. Check that only as many users as tickets are allocated.
 }
 
 function register_tickets_form_submit($form, &$form_state) {
@@ -651,7 +658,7 @@ function register_tickets_form_submit($form, &$form_state) {
               'mail' => check_plain($allocated['mail']),
               'firstname' => check_plain($allocated['firstname']),
               'surname' => check_plain($allocated['surname']),
-              'position' => check_plain($allocated['position'])
+              'organisation' => check_plain($allocated['organisation'])
             ));
             $allocated[$uid] = $new_uid;
             register_allocate_ticket($order['order_product_id'], $new_uid);

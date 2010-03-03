@@ -36,6 +36,11 @@ function overrides_user_admin_perm_redir($rid) {
   drupal_goto('admin/user/permissions/'. $rid);
 }
 
+function overrides_menu_alter(&$items) {
+  dpm($items['user/login']);
+  unset($items['user/login']['access callback']);
+}
+
 /**
  * Form alter overrides for the conference system.
  */
