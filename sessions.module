@@ -389,13 +389,13 @@ WHERE ccc_ss.uid=%d AND ccc_ss.timeslot <> ctp.field_proposal_scheduled_nid";
   // Ask the user to update their selections.
   //
   if ($gone) {
-    drupal_set_message(t('Some of your selected sessions are no longer available. Please !sessions.', array('!sessions' => l('update your selections', 'user/' . $user->uid . '/sessions'))));
+    drupal_set_message(t('Some of your selected sessions are no longer available. Please !sessions.', array('!sessions' => l('update your selections', 'user/' . $account->uid . '/sessions'))));
   }
 
   // Ask the user to update their selections.
   //
   if ($moved) {
-    drupal_set_message(t('Some of your selected sessions have moved to a different timeslot. Please !sessions if you still wish to attend them.', array('!sessions' => l('re-select them', 'user/' . $user->uid . '/sessions'))));
+    drupal_set_message(t('Some of your selected sessions have moved to a different timeslot. Please !sessions if you still wish to attend them.', array('!sessions' => l('re-select them', 'user/' . $account->uid . '/sessions'))));
   }
 
 }
