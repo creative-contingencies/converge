@@ -623,8 +623,8 @@ function register_tickets_form_validate($form, &$form_state) {
           form_set_error('items][' . $oi . '][allocations][rows][' . $ri . '][mail',  $allocated['mail'] . ' already has a ticket on order #' . $order_id);
         }
         $num++;
-        if ($order['order_qty']) {
-          form_set_error('items][' . $oi . '][allocations][rows][' . $ri . '][mail', t('You only have !num ticket!plural, cannot allocate a ticket to !mail', array('!num' => $order['order_qty'], '!plural' => ($order['order_qty'] == 1) ? '' : 's', '!mail' => $allocated['mail'])));
+        if ($num > $order['order_qty']) {
+          form_set_error('items][' . $oi . '][allocations][rows][' . $ri . '][mail', t('You have !num ticket!plural, cannot allocate a ticket to !mail', array('!num' => $order['order_qty'], '!plural' => ($order['order_qty'] == 1) ? '' : 's', '!mail' => $allocated['mail'])));
         }
       }
     }
