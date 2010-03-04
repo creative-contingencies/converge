@@ -13,7 +13,7 @@
  *
  */
 function sessions_perm() {
-  return array('choose conference sessions');
+  return array('choose conference sessions', 'view session reports', 'administer session selection');
 }
 
 /**
@@ -65,7 +65,7 @@ function sessions_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sessions_admin_settings'),
     'access callback' => 'user_access',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer session selection'),
     'type' => MENU_LOCAL_TASK,
   );
 
@@ -75,7 +75,7 @@ function sessions_menu() {
     'description' => 'List all sessions and their sizes',
     'page callback' => 'sessions_report',
     'access callback' => 'user_access',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('view session reports'),
     'type' => MENU_LOCAL_TASK,
   );
 
@@ -86,7 +86,7 @@ function sessions_menu() {
     'page callback' => 'sessions_report_session',
     'page arguments' => array(4),
     'access callback' => 'user_access',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('view session reports'),
     'type' => MENU_CALLBACK,
   );
 
