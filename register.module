@@ -819,6 +819,7 @@ function register_list_presenter_payment_status() {
       cfpp.field_proposal_presenters_uid,
       cfpp.delta,
       cfpp.nid,
+      u.mail,
       ctpr.field_profile_firstname_value,
       ctpr.field_profile_surname_value,
       uc_op.nid AS product_nid,
@@ -834,6 +835,8 @@ function register_list_presenter_payment_status() {
     JOIN
       {content_type_profile} AS ctpr ON (n.nid = ctpr.nid)
     LEFT JOIN
+      {users} AS u ON (cfpp.field_proposal_presenters_uid = u.uid)
+    LEFT JOIN
       {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.uid = cfpp.field_proposal_presenters_uid)
     LEFT JOIN
       {uc_order_products} AS uc_op ON (ccc_ta.order_product_id = uc_op.order_product_id)
@@ -842,10 +845,19 @@ function register_list_presenter_payment_status() {
     LEFT JOIN
       {uc_order_statuses} AS uc_os ON (uc_o.order_status = uc_os.order_status_id)
     WHERE
-      ctp.field_proposal_status_value IN('accepted', 'accepted with minor changes')
-    ORDER BY
-      ctpr.field_profile_surname_value ASC, ctpr.field_profile_firstname_value ASC
+      ctp.field_proposal_status_value IN('" . implode("','", sessions_valid_status()) . "')
       ";
+
+  $header = array(
+    array('data' => t('Proposal'),  'field' => 'cfpp.nid'),
+    array('data' => t('Firstname'), 'field' => 'ctpr.field_profile_firstname_value'),
+    array('data' => t('Surname'),   'field' => 'ctpr.field_profile_surname_value'),
+    array('data' => t('Email'),     'field' => 'u.mail'),
+    array('data' => t('Type'),      'field' => 'cfpp.delta'),
+    array('data' => t('Status'),    'field' => 'uc_os.title'),
+    array('data' => t('Product'),   'field' => 'uc_op.title'),
+  );
+  $query .= tablesort_sql($header);
 
   $result = db_query($query);
 
@@ -858,6 +870,7 @@ function register_list_presenter_payment_status() {
       'nid' => l($o->nid, 'node/'. $o->nid),
       'firstname' => $o->field_profile_firstname_value,
       'surname' => $o->field_profile_surname_value,
+      'email' => l($o->mail, 'user/ ' . $o->field_proposal_presenters_uid),
       'type' => ($o->delta == 0) ? 'Primary' : ordinalise($o->delta) . ' Co',
       'status' => ($o->order_status) ? l($o->order_status, 'admin/store/orders/' . $o->order_id) : '',
       'product' => $o->product_title,
@@ -870,9 +883,8 @@ function register_list_presenter_payment_status() {
   $output .= t('<p>Session schedule information is not yet available within the system.</p>');
 
 
-  $headers = array('Proposal','Firstname','Surname','Type','Status','Product');
 
-  $output .= theme('table', $headers, $data);
+  $output .= theme('table', $header, $data);
   return $output;
 }
 
