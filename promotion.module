@@ -300,7 +300,7 @@ function promotion_myacec_percentage() {
              $todo[] = array(
                'value' => $value,
                'field' => t('your personal program'),
-               'link' => 'register',
+               'link' => 'my-program',
              );
            }
          }
