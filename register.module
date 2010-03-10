@@ -764,43 +764,50 @@ function register_thankyou() {
 
   $profile = content_profile_load('profile', $user->uid);
 
-  if ( (empty($profile) || !$profile) && isset($_SESSION['order_id'])) {
+  if (empty($profile) || !$profile) {
 
-    // Load orders for this user.
-    $order = uc_order_load($_SESSION['order_id']);
+    if (isset($_SESSION['order_id'])) {
 
-    $state = db_result(db_query("SELECT zone_code FROM {uc_zones} WHERE zone_id=%d AND zone_country_id=%d", $order->billing_zone, $order->billing_country));
-    $country = db_result(db_query("SELECT country_name country FROM {uc_countries} WHERE country_id=%d", $order->billing_country));
+      // Load orders for this user.
+      $order = uc_order_load($_SESSION['order_id']);
 
-    // Create a profile for the user.
-    $profile_attributes = array(
-      'nid' => NULL, // NULL creates a new node.
-      // 'title' => $new_user->name .'\'s Profile',
-      'body' => NULL, // Defaults to no body.
-      'type' => 'profile',
-      'teaser' => NULL,
-      'log' => '',
-      'created' => '',
-      'format' => FILTER_FORMAT_DEFAULT,
-      'uid' => $user->uid,
-      'field_profile_firstname' => array(array('value' => ccc_strtot($order->billing_first_name, TRUE))),
-      'field_profile_surname' => array(array('value' => ccc_strtot($order->billing_last_name, TRUE))),
-      'field_profile_organisation' => array(array('value' => ccc_strtot($order->billing_company, TRUE))),
-      'field_profile_phone' => array(array('value' => $order->billing_phone)),
-      'field_profile_address' => array(array('value' => $order->billing_street1)),
-      'field_profile_city' => array(array('value' => ccc_strtot($order->billing_city))),
-      'field_profile_postcode' => array(array('value' => $order->billing_postal_code)),
+      $state = db_result(db_query("SELECT zone_code FROM {uc_zones} WHERE zone_id=%d AND zone_country_id=%d", $order->billing_zone, $order->billing_country));
+      $country = db_result(db_query("SELECT country_name country FROM {uc_countries} WHERE country_id=%d", $order->billing_country));
 
-      'field_profile_state' => array(array('value' => $state)),
-      'field_profile_country' => array(array('value' => $country)),
-    );
 
-    // Save the profile.
-    $new_profile = (object) $profile_attributes;
-    node_save($new_profile);
+      // Create a profile for the user.
+      $profile_attributes = array(
+        'nid' => NULL, // NULL creates a new node.
+        // 'title' => $new_user->name .'\'s Profile',
+        'body' => NULL, // Defaults to no body.
+        'type' => 'profile',
+        'teaser' => NULL,
+        'log' => '',
+        'created' => '',
+        'format' => FILTER_FORMAT_DEFAULT,
+        'uid' => $user->uid,
+        'field_profile_firstname' => array(array('value' => ccc_strtot($order->billing_first_name, TRUE))),
+        'field_profile_surname' => array(array('value' => ccc_strtot($order->billing_last_name, TRUE))),
+        'field_profile_organisation' => array(array('value' => ccc_strtot($order->billing_company, TRUE))),
+        'field_profile_phone' => array(array('value' => $order->billing_phone)),
+        'field_profile_address' => array(array('value' => $order->billing_street1)),
+        'field_profile_city' => array(array('value' => ccc_strtot($order->billing_city))),
+        'field_profile_postcode' => array(array('value' => $order->billing_postal_code)),
 
-    // Remove the session variable.
-    unset($_SESSION['order_id']);
+        'field_profile_state' => array(array('value' => $state)),
+        'field_profile_country' => array(array('value' => $country)),
+      );
+
+      // Save the profile.
+      $new_profile = (object) $profile_attributes;
+      node_save($new_profile);
+
+      // Remove the session variable.
+      unset($_SESSION['order_id']);
+    }
+    else {
+      drupal_set_message(t('Could not create a new user profile for you. Please go to !profile to create it!', array('!profile' => l('myACEC', 'user/'. $user->uid . '/profile/edit'))), 'warning');
+    }
   }
 
   drupal_goto('thank-you');
@@ -1142,6 +1149,7 @@ function register_list_overview() {
     $data[] = $row;
   }
   $output .= '<h3>Tickets Sold</h3>';
+  $output .= '<p>These numbers are incorrect. in_checkout orders need to be REMOVED from this count.';
   $output .= theme('table', array('Ticket', 'Sold Qty'), $data);
   $output .= '<hr size="1" />';
 
