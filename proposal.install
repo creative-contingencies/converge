@@ -8,15 +8,50 @@
  * Implementation of hook_install()
  */
 function proposal_install() {
-  return;
+  $ret = array();
+  // Make sure we run *AFTER* the form module, so we can disable
+  // the proposal submission form if we need to.
+  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'form'")));
+  $ret[] = update_sql("UPDATE {system} SET weight = %d WHERE name = 'proposal'", $weight + 1);
+  _proposal_taxonomy_init();
+  return $ret;
+}
+
+/**
+ * Helper to create a taxonomy.
+ */
+function _proposal_taxonomy_init() {
+  $vocab = array(
+    'name' => t('Conference'),
+    'description' => t('Automatically created by the proposal module'),
+    'multiple' => '0',
+    'required' => '1',
+    'hierarchy' => '0',
+    'relations' => '0',
+    'module' => 'proposal',
+  );
+  taxonomy_save_vocabulary($vocab);
+  variable_set('proposal_conference_vid', $vocab['vid']);
+  drupal_set_message('Created vocabulary ' . $vocab['vid'] . ' for the conference modules.', 'info');
 }
 
 /**
  * Make sure we run after the form module.
  */
 function proposal_update_6001() {
+  $ret = array();
   // Make sure we run *AFTER* the form module, so we can disable
   // the proposal submission form if we need to.
   $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'form'")));
-  db_query("UPDATE {system} SET weight = %d WHERE name = 'proposal'", $weight + 1);
+  $ret[] = update_sql("UPDATE {system} SET weight = %d WHERE name = 'proposal'", $weight + 1);
+  return $ret;
+}
+
+/**
+ * Create a Conference Taxonomy, so we cna be re-used on many events.
+ */
+function proposal_update_6002() {
+  $ret = array();
+  _proposal_taxonomy_init();
+  return $ret;
 }
