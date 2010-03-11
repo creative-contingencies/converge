@@ -610,8 +610,15 @@ function proposal_node_form_submit($form, &$form_state) {
     // Add the new user as presenters[0] in this proposal.
     $form_state['values']['field_proposal_presenters'][0]['uid'] = $new_user->uid;
 
+    // If we have a newsletter, subscribe the user.
+    //
+    if (module_exists('simplenews') && ($tid = variable_get('register_newsletter_tid', 0))) {
+      simplenews_subscribe_user($new_user->mail, $tid, FALSE);
+    }
+
     // And login as the new user.
     $user = $new_user; 
+
   } // endif uid
 }
 
@@ -959,6 +966,12 @@ function proposal_copresenter_create($params) {
 
     // Prepare and send e-mail.
     drupal_mail('proposal', 'new_user_notify', $new_user->mail, $language, $params);
+  }
+
+  // If we have a newsletter, subscribe the user.
+  //
+  if (module_exists('simplenews') && ($tid = variable_get('register_newsletter_tid', 0))) {
+    simplenews_subscribe_user($new_user->mail, $tid, FALSE);
   }
 
   return $new_user->uid;

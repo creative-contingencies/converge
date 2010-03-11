@@ -140,6 +140,28 @@ function register_admin_settings() {
     '#default_value' => variable_get('register_continue_shopping', 'Continue shopping'),
   );
 
+  // Get a list of newsletter tid/names.
+  //
+  $options = array(0 => 'None');
+  $terms = taxonomy_get_tree(variable_get('simplenews_vid', ''));
+  foreach ($terms as $term) {
+    $options[$term->tid] = $term->name;
+  }
+
+  // Sign a user up to the newsletter?
+  //
+  $form['register_newsletter_tid'] = array(
+    '#title' => 'Newsletter',
+    '#description' => 'Select a newsletter that all new users should be automatically subscribed to.',
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => variable_get('register_newsletter_tid', 0),
+  );
+  if (!module_exists('simplenews')) {
+    $form['register_newsletter_tid']['#description'] = 'The simplenews module is not installed.';
+    $form['register_newsletter_tid']['#active'] = FALSE;
+  }
+
   return system_settings_form($form);
 }
 
@@ -801,6 +823,12 @@ function register_thankyou() {
       // Save the profile.
       $new_profile = (object) $profile_attributes;
       node_save($new_profile);
+
+      // If we have a newsletter, subscribe the user.
+      //
+      if (module_exists('simplenews') && ($tid = variable_get('register_newsletter_tid', 0))) {
+        simplenews_subscribe_user($user->mail, $tid, FALSE);
+      }
 
       // Remove the session variable.
       unset($_SESSION['order_id']);
