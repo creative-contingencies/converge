@@ -1169,7 +1169,7 @@ function register_list_overview() {
   // Number of people with each ticket type.
   //
   $data = array();
-  $query = "SELECT DISTINCT(op.nid) AS nid, op.title AS ticket, SUM(op.qty) AS sold FROM {uc_order_products} AS op LEFT JOIN {uc_orders} AS o ON (o.order_id=op.order_id) WHERE o.order_status IN ('" . implode("', '", sessions_valid_order()) . "') GROUP BY op.nid";
+  $query = "SELECT DISTINCT(op.nid) AS nid, op.title AS ticket, SUM(op.qty) AS sold FROM {uc_order_products} AS op LEFT JOIN {uc_orders} AS o ON (o.order_id=op.order_id) WHERE o.order_status IN ('" . implode("', '", sessions_valid_order()) . "') AND op.nid <> 0 GROUP BY op.nid";
   $result = db_query($query);
 
   while($row = db_fetch_array($result)) {
@@ -1177,14 +1177,14 @@ function register_list_overview() {
     $data[] = $row;
   }
   $output .= '<h3>Tickets Sold</h3>';
-  $output .= '<p>These numbers are incorrect. in_checkout orders need to be REMOVED from this count.';
+  $output .= '<p>These numbers include only tickets from orders with status ' . implode(', ', sessions_valid_order()) . '.');
   $output .= theme('table', array('Ticket', 'Sold Qty'), $data);
   $output .= '<hr size="1" />';
 
   // Allocated tickets.
   //
   $data = array();
-  $query = "SELECT DISTINCT(uc_op.nid) AS nid, uc_op.title AS title, COUNT(ccc_ta.uid) AS allocated FROM {uc_order_products} AS uc_op JOIN {ccc_ticket_allocation} AS ccc_ta ON (uc_op.order_product_id = ccc_ta.order_product_id) GROUP BY uc_op.nid";
+  $query = "SELECT DISTINCT(uc_op.nid) AS nid, uc_op.title AS title, COUNT(ccc_ta.uid) AS allocated FROM {uc_order_products} AS uc_op JOIN {ccc_ticket_allocation} AS ccc_ta ON (uc_op.order_product_id = ccc_ta.order_product_id) WHERE op.nid <> 0 GROUP BY uc_op.nid";
   $result = db_query($query);
 
   while($row = db_fetch_array($result)) {
