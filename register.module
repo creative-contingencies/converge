@@ -1177,7 +1177,7 @@ function register_list_overview() {
     $data[] = $row;
   }
   $output .= '<h3>Tickets Sold</h3>';
-  $output .= '<p>These numbers include only tickets from orders with status ' . implode(', ', sessions_valid_order()) . '.');
+  $output .= '<p>These numbers include only tickets from orders with status ' . implode(', ', sessions_valid_order()) . '.';
   $output .= theme('table', array('Ticket', 'Sold Qty'), $data);
   $output .= '<hr size="1" />';
 
