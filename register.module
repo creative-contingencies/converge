@@ -1388,11 +1388,23 @@ function register_get_tickets($uid) {
  * Wrapper to display badge data.
  */
 function register_export_badges() {
+  global $tickets_allocated;
+  $tickets_allocated = array();
+
   // Fetch the data.
   $badges = register_export_badge_data();
 
   drupal_set_title('Badge Data ACEC2010 ' . date('Ymd'));
-  return theme('table', $badges['header'], $badges['data']);
+  $output = theme('table', $badges['header'], $badges['data']);
+
+  $data = array();
+  foreach ($tickets_allocated as $key => $val) {
+    $data[] = array($key, $val);
+  }
+
+  $output .= theme('table', array('Type', 'Count'), $data);
+
+  return $output;
 }
 
 /**
@@ -1412,6 +1424,8 @@ function register_export_badges_csv() {
  *   An keyed array cotaining 'header' and 'data' arrays.
  */
 function register_export_badge_data() {
+
+  global $tickets_allocated;
 
 // Select all users with an assigned ticket, order by surname, firstname.\
 // But not dinner tix. These get no badges.
@@ -1532,25 +1546,39 @@ WHERE
  * Check a list of tickets for a set of data that needs to go on their badge.
  */
 function register_export_badges_format_ticket_colour($tickets) {
+
+  global $tickets_allocated;
+
   // Expo only.
   if ($tickets[4942] || $tickets[4944] || $tickets[4946])
     return 'yellow';
 
   // 3 dailies
-  if ($tickets[122] && $tickets[124] && $tickets[126])
+  if ($tickets[122] && $tickets[124] && $tickets[126]) {
+    if ($tickets[122]) $tickets_allocated['wednesday']++;
+    if ($tickets[124]) $tickets_allocated['thursday']++;
+    if ($tickets[126]) $tickets_allocated['friday']++;
     return '';
+  }
 
   // 3 dailies students
   if ($tickets[4036] && $tickets[4042] && $tickets[4044])
+    if ($tickets[4046]) $tickets_allocated['student_wednesday']++;
+    if ($tickets[4042]) $tickets_allocated['student_thursday']++;
+    if ($tickets[4044]) $tickets_allocated['student_friday']++;
     return '';
 
   // full conf
-  if ($tickets[114] || $tickets[1590])
+  if ($tickets[114] || $tickets[1590]) {
+    $tickets_allocated['fullconf']++;
     return '';
+  }
 
   // full conf student
-  if ($tickets[4046])
+  if ($tickets[4046]) {
+    $tickets_allocated['student_fullconf']++;
     return '';
+  }
 
   // If we got to here, the user needs a combo-colour badge.
   $colours = array();
@@ -1581,54 +1609,83 @@ function register_export_badges_format_ticket_colour($tickets) {
  * Check a list of tickets for a set of data that needs to go on their badge.
  */
 function register_export_badges_format_ticket_flags($tickets) {
+
+  global $tickets_allocated;
+
   // See what's in here and make a string.
   // 
   // L, T1, T2, 6, 7, 8, 9
   $flags = array();
 
   // Gary
-  if ($tickets[3656])
+  if ($tickets[3656]) {
     $flags[] = 'G';
+    $tickets_allocated['breakfast']++;
+  }
+
 
   // Leadership.
-  if ($tickets[116])
+  if ($tickets[116]) {
     $flags[] = 'L';
+    $tickets_allocated['leadership']++;
+  }
 
   // Teamboard begin
-  if ($tickets[3722])
+  if ($tickets[3722]) {
     $flags[] = 'B';
+    $tickets_allocated['teamboard_beginner']++;
+  }
 
   // Teamboard intermediate
-  if ($tickets[3724])
+  if ($tickets[3724]) {
     $flags[] = 'T';
+    $tickets_allocated['teamboard_intermediate']++;
+  }
 
   // Lego robotics
-  if ($tickets[3726])
+  if ($tickets[3726]) {
     $flags[] = 'R';
+    $tickets_allocated['lego_robotics']++;
+  }
 
   // Lego science
-  if ($tickets[3728])
+  if ($tickets[3728]) {
     $flags[] = 'S';
+    $tickets_allocated['lego_science']++;
+  }
 
   // Tour all day
-  if ($tickets[4800] || ($tickets[4796] && $tickets[4789]))
+  if ($tickets[4800] || ($tickets[4796] && $tickets[4789])) {
     $flags[] =  'D';
+    if ($tickets[4800])
+      $tickets_allocated['tour_day']++;
+  }
 
   // Tour AM
-  elseif ($tickets[4796])
+  elseif ($tickets[4796]) {
     $flags[] = 'A';
+    $tickets_allocated['tour_am']++;
+  }
 
   // Tour PM
-  elseif ($tickets[4789])
+  elseif ($tickets[4789]) {
     $flags[] = 'P';
+    $tickets_allocated['tour_pm']++;
+  }
 
   // Expo only?
-  if ($tickets[4942])
+  if ($tickets[4942]) {
     $flags[] = '7';
-  if ($tickets[4944])
+    $tickets_allocated['expo_wed']++;
+  }
+  if ($tickets[4944]) {
     $flags[] = '8';
-  if ($tickets[4946])
+    $tickets_allocated['expo_thu']++;
+  }
+  if ($tickets[4946]) {
     $flags[] = '9';
+    $tickets_allocated['expo_fri']++;
+  }
 
   return implode(' ', $flags);
 }
