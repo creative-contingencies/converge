@@ -72,6 +72,22 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  $items['admin/store/reports/custom/badges'] = array(
+    'title' => 'View Badge Data',
+    'description' => 'View badge data.',
+    'page callback' => 'register_export_badges',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/store/reports/custom/badges/csv'] = array(
+    'title' => 'Export Badges as CSV',
+    'description' => 'Export badge data in CSV format.',
+    'page callback' => 'register_export_badges_csv',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
   $items['admin/store/reports/custom/dinner'] = array(
     'title' => 'Dinner Registration Report',
     'description' => 'List an overview of dinner registrations.',
@@ -207,7 +223,11 @@ function register_theme() {
     'register_allocations_form_table' => array(
       'arguments' => array('element' => NULL),
     ),
+    'register_badges' => array(
+      'arguments' => array('header' => NULL, 'data' => NULL, 'separator' => ',', 'quote' => '"', 'mime' => 'text/csv; charset=utf-8', 'filename' => 'export.csv'),
+    ),
   );
+
 }
 
 /**
@@ -1364,3 +1384,321 @@ function register_get_tickets($uid) {
 //   link to ccc_ta
 //   link to ccc_ss
 
+/**
+ * Wrapper to display badge data.
+ */
+function register_export_badges() {
+  // Fetch the data.
+  $badges = register_export_badge_data();
+
+  drupal_set_title('Badge Data ACEC2010 ' . date('Ymd'));
+  return theme('table', $badges['header'], $badges['data']);
+}
+
+/**
+ * Wrapper to spit out badge data in CSV format.
+ */
+function register_export_badges_csv() {
+  // Fetch the data.
+  $badges = register_export_badge_data();
+
+  print theme('register_badges', $badges['header'], $badges['data'], ',', '"', 'text/csv; charset=utf-8', 'ACEC2010_Badges_' . date('Ymd') . '.csv');
+}
+
+/**
+ * Create badge data.
+ *
+ * @return
+ *   An keyed array cotaining 'header' and 'data' arrays.
+ */
+function register_export_badge_data() {
+
+// Select all users with an assigned ticket, order by surname, firstname.\
+// But not dinner tix. These get no badges.
+//
+$query = "
+SELECT
+  DISTINCT(ta.uid) AS uid,
+  pro.field_profile_firstname_value AS firstname,
+  pro.field_profile_surname_value AS surname,
+  pro.field_profile_position_value AS position,
+  pro.field_profile_organisation_value AS organisation
+FROM
+  {ccc_ticket_allocation} AS ta
+LEFT JOIN
+  {node} AS n ON (n.uid = ta.uid AND n.type = 'profile')
+LEFT JOIN
+  {content_type_profile} AS pro ON (n.nid = pro.nid)
+LEFT JOIN
+  {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
+LEFT JOIN
+  {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+WHERE
+    uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+  AND
+    uc_op.nid <> %d
+ORDER BY
+  surname ASC, firstname ASC
+";
+
+  $result = db_query($query, DINNER_TICKET_NID);
+
+  $header = array('Uid', 'Surname', 'Firstname', 'Organisation', 'Position', 'Label', 'Colour', 'Flags', 'Dinners');
+
+  $data = array();
+
+  while ($row = db_fetch_object($result)) {
+    $account = user_load($row->uid);
+
+    $tuple = array($row->uid, $row->surname, $row->firstname, $row->organisation, $row->position);
+
+    // For each of these people, check their ticket type(s). leadership, tour, dinner, wed, thu, fri, expo.
+    $query = "
+SELECT 
+  uc_op.nid, uc_op.title
+FROM
+  {ccc_ticket_allocation} AS ta
+LEFT JOIN
+  {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
+LEFT JOIN
+  {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+WHERE
+    ta.uid = %d
+  AND
+    uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+";
+    $tickets = db_query($query, $account->uid);
+
+    $list = array();
+    while ($tix = db_fetch_object($tickets)) {
+      $list[$tix->nid] = $tix->title;
+    }
+
+    // For each of these people, check whether they are speaking, a sponsor, a volunteer or an ACCE boarder.
+    $tuple[] = register_export_badges_format_roles($account, $list);
+
+    $tuple[] = register_export_badges_format_ticket_colour($list);
+    $tuple[] = register_export_badges_format_ticket_flags($list);
+
+    $tuple[] = register_export_badges_format_dinners($account);
+
+    $data[] = $tuple;
+  }
+
+  return array('header' => $header, 'data' => $data);
+}
+
+/**
+ * Check a user for a highest role that needs to be printed on their badge.
+ */
+function register_export_badges_format_roles($account, $tickets) {
+
+  if (in_array('acce board', $account->roles))
+    return 'ACCE';
+
+  // Is this person a speaker?
+  //
+  $query = "
+SELECT
+  COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM
+  {content_field_proposal_presenters} AS cfpp
+LEFT JOIN
+  {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid)
+WHERE
+    ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
+  AND
+    cfpp.field_proposal_presenters_uid = %d";
+  $presenter = db_result(db_query($query, $account->uid));
+
+  if ($presenter)
+    return 'PRESENTER';
+
+  if (in_array('volunteer', $account->roles))
+    return 'VOLUNTEER';
+
+  if (in_array('sponsor', $account->roles))
+    return 'SPONSOR';
+
+  if ($tickets[4942] || $tickets[4944] || $tickets[4946])
+    return 'EXPO';
+
+  if (in_array('attendee', $account->roles))
+    return 'DELEGATE';
+
+  return 'FAIL WHALE';
+}
+
+/**
+ * Check a list of tickets for a set of data that needs to go on their badge.
+ */
+function register_export_badges_format_ticket_colour($tickets) {
+  // Expo only.
+  if ($tickets[4942] || $tickets[4944] || $tickets[4946])
+    return 'yellow';
+
+  // 3 dailies
+  if ($tickets[122] && $tickets[124] && $tickets[126])
+    return '';
+
+  // 3 dailies students
+  if ($tickets[4036] && $tickets[4042] && $tickets[4044])
+    return '';
+
+  // full conf
+  if ($tickets[114] || $tickets[1590])
+    return '';
+
+  // full conf student
+  if ($tickets[4046])
+    return '';
+
+  // If we got to here, the user needs a combo-colour badge.
+  $colours = array();
+
+  // Something on tuesday
+  if ($tickets[3656] || $tickets[116] || $tickets[3722] || $tickets[3724] || $tickets[3726] || $tickets[3728] || $tickets[4800] || $tickets[4796] && $tickets[4789])
+    $colours[] = 'orange';
+
+  // Something on wednesday
+  if ($tickets[4942] || $tickets[4036] || $tickets[122])
+    $colours[] = 'red';
+
+  // Something on thursday
+  if ($tickets[4944] || $tickets[4042] || $tickets[124])
+    $colours[] = 'green';
+
+  // Something on friday
+  if ($tickets[4946] || $tickets[4044] || $tickets[126])
+    $colours[] = 'purple';
+
+  if (count($colours) == 4)
+    return '';
+
+  return implode(' + ', $colours);
+}
+
+/**
+ * Check a list of tickets for a set of data that needs to go on their badge.
+ */
+function register_export_badges_format_ticket_flags($tickets) {
+  // See what's in here and make a string.
+  // 
+  // L, T1, T2, 6, 7, 8, 9
+  $flags = array();
+
+  // Gary
+  if ($tickets[3656])
+    $flags[] = 'G';
+
+  // Leadership.
+  if ($tickets[116])
+    $flags[] = 'L';
+
+  // Teamboard begin
+  if ($tickets[3722])
+    $flags[] = 'B';
+
+  // Teamboard intermediate
+  if ($tickets[3724])
+    $flags[] = 'T';
+
+  // Lego robotics
+  if ($tickets[3726])
+    $flags[] = 'R';
+
+  // Lego science
+  if ($tickets[3728])
+    $flags[] = 'S';
+
+  // Tour all day
+  if ($tickets[4800] || ($tickets[4796] && $tickets[4789]))
+    $flags[] =  'D';
+
+  // Tour AM
+  elseif ($tickets[4796])
+    $flags[] = 'A';
+
+  // Tour PM
+  elseif ($tickets[4789])
+    $flags[] = 'P';
+
+  // Expo only?
+  if ($tickets[4942])
+    $flags[] = '7';
+  if ($tickets[4944])
+    $flags[] = '8';
+  if ($tickets[4946])
+    $flags[] = '9';
+
+  return implode(' ', $flags);
+}
+
+/*
+ * Return the number of dinner tickets we need for this badge.
+ *
+ * Must check if any extras are bought and IF these extra allocees have other events too.
+ */
+function register_export_badges_format_dinners($account) {
+  // Check if this user has bought additional dinner tickets that are assigned to users
+  // who do NOT have other tickets assigned to them *or* dinner tickets that just haven't
+  // been assigned at all.
+
+  $dinner_tickets = 0;
+
+  foreach ($account->orders as $order) {
+    if ($order->nid == DINNER_TICKET_NID) {
+      foreach ($order->tickets as $ticket) {
+        if ($ticket->uid == $account->uid) {
+          $dinner_tickets++;
+        }
+        else {
+          // Does the uid have *any* other tickets assigned to them?
+          $query = "SELECT COUNT(uc_op.nid) AS num FROM {ccc_ticket_allocation} AS ta LEFT JOIN {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id) WHERE ta.uid = %d AND uc_op.nid <> %d";
+          $num = db_result(db_query($query, $account->uid, DINNER_TICKET_NID));
+          if ($num) {
+            $dinner_tickets++;
+          }
+        }
+      }
+    }
+  }
+
+  return $dinner_tickets;
+}
+
+/**
+ * Theme function to CSV export data.
+ */
+function theme_register_badges($header, $data, $separator, $quote, $mime, $filename) {
+  drupal_set_header('Content-type: ' . $mime);
+  drupal_set_header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+  // Special handling when quoted values are involved.
+  if ($quote == '"') {
+    $wrap = '"';
+    $replace_value = '""';
+  }
+  else {
+    $wrap = '';
+    $replace_value = '';
+  }
+
+  // Format header values.
+  foreach ($header as $key => $value) {
+    $header[$key] = $wrap . str_replace('"', $replace_value, decode_entities(strip_tags($value))) . $wrap;
+  }
+  // Format row values.
+  foreach ($data as $i => $values) {
+    foreach ($values as $j => $value) {
+      if (!is_numeric($data[$i][$j]))
+        $data[$i][$j] = $wrap . str_replace('"', $replace_value, decode_entities(strip_tags($value))) . $wrap;
+    }
+  }
+
+  $output = implode($separator, $header) . "\r\n";
+  foreach ($data as $count => $row) {
+    $output .= implode($separator, $row) . "\r\n";
+  }
+
+  return $output;
+}
