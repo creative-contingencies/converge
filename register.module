@@ -1395,15 +1395,14 @@ function register_export_badges() {
   $badges = register_export_badge_data();
 
   drupal_set_title('Badge Data ACEC2010 ' . date('Ymd'));
-  $output = theme('table', $badges['header'], $badges['data']);
+
+  $output  = t('Badge data for !num attendees.', array('!num' => count($badges['data'])));
+  $output .= theme('table', $badges['header'], $badges['data']);
 
   $data = array();
   foreach ($tickets_allocated as $key => $val) {
     $data[] = array($key, $val);
   }
-
-  $output .= theme('table', array('Type', 'Count'), $data);
-
   return $output;
 }
 
@@ -1601,6 +1600,9 @@ function register_export_badges_format_ticket_colour($tickets) {
 
   if (count($colours) == 4)
     return '';
+
+  if (!count($colours))
+    return 'WAHOONIE';
 
   return implode(' + ', $colours);
 }
