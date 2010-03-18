@@ -50,8 +50,8 @@ function proposal_menu() {
     'description' => 'Export all proposals',
     'page callback' => 'proposal_export_csv',
     'page arguments' => array(3),
+    'access callback' => 'user_access',
     'access arguments' => array('export proposals'),
-    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
   $items['proposal/export/csv/refereed'] = array(
@@ -59,8 +59,8 @@ function proposal_menu() {
     'description' => 'Export all proposals',
     'page callback' => 'proposal_export_csv',
     'page arguments' => array(3),
+    'access callback' => 'user_access',
     'access arguments' => array('export proposals'),
-    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
 
