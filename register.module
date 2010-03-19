@@ -1215,7 +1215,7 @@ function register_list_overview() {
   // Allocated tickets.
   //
   $data = array();
-  $query = "SELECT DISTINCT(uc_op.nid) AS nid, uc_op.title AS title, COUNT(ccc_ta.uid) AS allocated FROM {uc_order_products} AS uc_op JOIN {ccc_ticket_allocation} AS ccc_ta ON (uc_op.order_product_id = ccc_ta.order_product_id) WHERE op.nid <> 0 GROUP BY uc_op.nid";
+  $query = "SELECT DISTINCT(uc_op.nid) AS nid, uc_op.title AS title, COUNT(ccc_ta.uid) AS allocated FROM {uc_order_products} AS uc_op JOIN {ccc_ticket_allocation} AS ccc_ta ON (uc_op.order_product_id = ccc_ta.order_product_id) WHERE uc_op.nid <> 0 GROUP BY uc_op.nid";
   $result = db_query($query);
 
   while($row = db_fetch_array($result)) {
@@ -1231,7 +1231,8 @@ function register_list_overview() {
   $data = array();
 
   $presenters_total = db_result(db_query("SELECT COUNT(DISTINCT(field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp
-LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')"));
+LEFT JOIN {node} AS n ON (n.nid = cfpp.nid)
+LEFT JOIN {content_type_proposal} AS ctp ON (ctp.vid = n.vid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')"));
   $data[] = array(
     'Total presenters',
     $presenters_total,
@@ -1241,7 +1242,8 @@ LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field
   // Presenters who have an allocated ticket.
   //
   $presenters_ticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp JOIN {ccc_ticket_allocation} AS ccc_ta ON (cfpp.field_proposal_presenters_uid = ccc_ta.uid)
-LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')"));
+LEFT JOIN {node} AS n ON (n.nid = cfpp.nid)
+LEFT JOIN {content_type_proposal} AS ctp ON (ctp.vid = n.vid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')"));
   $data[] = array(
     'Presenters with allocated ticket',
     $presenters_ticket,
@@ -1251,7 +1253,8 @@ LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field
   // Presenters who do not have an allocated ticket.
   //
   $presenters_noticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp
-LEFT JOIN {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
+LEFT JOIN {node} AS n ON (n.nid = cfpp.nid)
+LEFT JOIN {content_type_proposal} AS ctp ON (ctp.vid = n.vid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
 AND cfpp.field_proposal_presenters_uid NOT IN (SELECT uid FROM {ccc_ticket_allocation})"));
   $data[] = array(
     'Presenters without allocated ticket',
@@ -1292,8 +1295,6 @@ WHERE
     uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
   AND
     uc_op.nid = %d
-ORDER BY
-  surname ASC, firstname ASC
 ";
 
   $header = array(
@@ -1312,7 +1313,8 @@ ORDER BY
     $data[] = $row;
   }
 
-  $output = theme('table', $header, $data);
+  $output  = t('<p>Listing !num attendees.', array('!num' => count($data)));
+  $output .= theme('table', $header, $data);
 
   drupal_set_title('Dinner Ticket List');
   return $output;
