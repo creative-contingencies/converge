@@ -35,6 +35,7 @@ function register_menu() {
     'description' => 'Change configuration settings for Registration.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('register_admin_settings'),
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -43,6 +44,7 @@ function register_menu() {
     'title' => 'Attendee Registration Report',
     'description' => 'List all known attendees.',
     'page callback' => 'register_list_attendees',
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -52,6 +54,7 @@ function register_menu() {
     'title' => 'Presenter Registration Report',
     'description' => 'List the registration status for presenters with accepted proposals.',
     'page callback' => 'register_list_presenter_payment_status',
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -60,6 +63,7 @@ function register_menu() {
     'title' => 'Coupon usage list with names',
     'description' => 'List coupon usage',
     'page callback' => 'register_list_coupon_status',
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -68,14 +72,26 @@ function register_menu() {
     'title' => 'Registration Overview Report',
     'description' => 'List an overview of registration info.',
     'page callback' => 'register_list_overview',
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/store/reports/custom/overview/%'] = array(
+    'title' => 'Registration Report of Orders by Ticket',
+    'description' => 'List which orders included a specific ticket type.',
+    'page callback' => 'register_list_order_by_ticket',
+    'page arguments' => array(5),
+    'access callback' => 'user_access',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_CALLBACK,
   );
 
   $items['admin/store/reports/custom/badges'] = array(
     'title' => 'View Badge Data',
     'description' => 'View badge data.',
     'page callback' => 'register_export_badges',
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -84,6 +100,7 @@ function register_menu() {
     'title' => 'Export Badges as CSV',
     'description' => 'Export badge data in CSV format.',
     'page callback' => 'register_export_badges_csv',
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -92,6 +109,7 @@ function register_menu() {
     'title' => 'Dinner Registration Report',
     'description' => 'List an overview of dinner registrations.',
     'page callback' => 'register_list_dinner',
+    'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -1204,6 +1222,7 @@ function register_list_overview() {
   $result = db_query($query);
 
   while($row = db_fetch_array($result)) {
+    $row['sold'] = l($row['sold'], 'admin/store/reports/custom/overview/' . $row['nid']);
     unset($row['nid']);
     $data[] = $row;
   }
@@ -1269,6 +1288,63 @@ AND cfpp.field_proposal_presenters_uid NOT IN (SELECT uid FROM {ccc_ticket_alloc
   drupal_set_title('Registration Overview');
   return $output;
 }
+
+/**
+ * Show a list of orders that include a specific ticket type.
+ */
+function register_list_order_by_ticket($nid) {
+  if (empty($nid) || !($ticket = node_load($nid)) )
+    return;
+
+  $header = array(
+    array('data' => t('Order ID'),   'field' => 'o.order_id'),
+    array('data' => t('First name'), 'field' => 'pro.field_profile_firstname_value'),
+    array('data' => t('Surname'),    'field' => 'pro.field_profile_surname_value'),
+    array('data' => t('Date'),       'field' => 'o.created'),
+    array('data' => t('Status'),     'field' => 'o.order_status'),
+  );
+
+  $query = "
+SELECT
+  o.order_id,
+  o.uid,
+  pro.field_profile_firstname_value AS firstname,
+  pro.field_profile_surname_value AS surname,
+  o.created AS date,
+  o.order_status
+FROM
+  {uc_order_products} AS op
+LEFT JOIN
+  {uc_orders} AS o ON (op.order_id = o.order_id)
+LEFT JOIN
+  {node} AS n ON (o.uid = n.uid AND n.type = 'profile')
+LEFT JOIN
+  {content_type_profile} AS pro ON (n.vid = pro.vid)
+WHERE
+    op.nid = %d
+  AND
+    o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+";
+
+  $query .= tablesort_sql($header);
+  $result = db_queryd($query, $ticket->nid);
+
+  $data = array();
+  while ($row = db_fetch_array($result)) {
+    $row['firstname'] = l($row['firstname'], 'user/' . $row['uid']);
+    $row['surname'] = l($row['surname'], 'user/' . $row['uid']);
+    $row['date'] = date('Y-m-d', $row['date']);
+    unset($row['uid']);
+    $data[] = $row;
+  }
+
+  $output  = t('<p>Listing !num orders.', array('!num' => count($data)));
+  $output .= theme('table', $header, $data);
+
+  drupal_set_title(t('!ticket Ticket List', array('!ticket' => $ticket->title)));
+  return $output;
+}
+
 
 function register_list_dinner() {
 
