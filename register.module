@@ -1327,10 +1327,11 @@ WHERE
 ";
 
   $query .= tablesort_sql($header);
-  $result = db_queryd($query, $ticket->nid);
+  $result = db_query($query, $ticket->nid);
 
   $data = array();
   while ($row = db_fetch_array($result)) {
+    $row['order_id'] = l($row['order_id'], 'admin/store/orders/' . $row['order_id']);
     $row['firstname'] = l($row['firstname'], 'user/' . $row['uid']);
     $row['surname'] = l($row['surname'], 'user/' . $row['uid']);
     $row['date'] = date('Y-m-d', $row['date']);
