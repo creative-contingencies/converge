@@ -1302,6 +1302,8 @@ function register_list_order_by_ticket($nid) {
     array('data' => t('Surname'),    'field' => 'pro.field_profile_surname_value'),
     array('data' => t('Date'),       'field' => 'o.created'),
     array('data' => t('Status'),     'field' => 'o.order_status'),
+    array('data' => t('Qty'),        'field' => 'op.qty'),
+    array('data' => t('Unallocated')),
   );
 
   $query = "
@@ -1311,7 +1313,9 @@ SELECT
   pro.field_profile_firstname_value AS firstname,
   pro.field_profile_surname_value AS surname,
   o.created AS date,
-  o.order_status
+  o.order_status,
+  op.order_product_id,
+  op.qty
 FROM
   {uc_order_products} AS op
 LEFT JOIN
@@ -1335,11 +1339,23 @@ WHERE
     $row['firstname'] = l($row['firstname'], 'user/' . $row['uid']);
     $row['surname'] = l($row['surname'], 'user/' . $row['uid']);
     $row['date'] = date('Y-m-d', $row['date']);
+
+    // Check if this order has unallocated tickets.
+    //
+    $allocated = db_result(db_query("SELECT COUNT(uid) FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $row['order_product_id']));
+    if ($allocated != $row['qty']) {
+      $row[] = l('unallocated', 'user/' . $row['uid'] . '/tickets');
+    }
+
+    // Don't need these anymore.
+    //
     unset($row['uid']);
+    unset($row['order_product_id']);
+
     $data[] = $row;
   }
 
-  $output  = t('<p>Listing !num orders.', array('!num' => count($data)));
+  $output  = t('<p>Listing !num orders that contain one or more of this ticket.', array('!num' => count($data)));
   $output .= theme('table', $header, $data);
 
   drupal_set_title(t('!ticket Ticket List', array('!ticket' => $ticket->title)));
