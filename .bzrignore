@@ -798,6 +798,26 @@ cli/cdroot/html/list/type-workshop.html
 cli/a
 a
 badges.csv
+<<<<<<< TREE
+presenters_not_registered.csv
+presenters_ticket_no_sessions_selected.csv
+presenters_ticket_not_allocated.csv
+users_order_ticket_not_allocated.csv
+users_without_ticket.csv
+users_with_special_needs.csv
+users_with_ticket_and_sessions.csv
+users_with_ticket.csv
+users_with_ticket_no_sessions.csv
+users_with_ticket_type_116.csv
+users_with_ticket_type_118.csv
+users_with_ticket_type_3656.csv
+users_with_ticket_type_3722.csv
+users_with_ticket_type_3724.csv
+users_with_ticket_type_3726.csv
+users_with_ticket_type_3728.csv
+users_with_ticket_type_4796.csv
+users_with_ticket_type_4798.csv
+users_with_ticket_type_4800.csv
 cli/merge/presenters_not_registered.csv
 cli/merge/presenters_ticket_no_sessions_selected.csv
 cli/merge/presenters_ticket_not_allocated.csv
@@ -817,4 +837,4 @@ cli/merge/users_with_ticket_type_4796.csv
 cli/merge/users_with_ticket_type_4798.csv
 cli/merge/users_with_ticket_type_4800.csv
 cli/merge/users_without_ticket.csv
-apple.csv
+cli/apple.csv
