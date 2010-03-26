@@ -218,7 +218,7 @@ function register_admin_settings() {
   // Volunteer invitations.
   $form['volunteer_invitation'] = array(
     '#type' => 'fieldset',
-    '#title' => 'Reviewer Invitations',
+    '#title' => 'Volunteer Notifications',
     '#description' => t('Configure the notification email that is sent to volunteers. Note, they will also receive an email with new account details.'),
   );
   $form['volunteer_invitation']['register_mail_volunteer_invite_subject'] = array(
