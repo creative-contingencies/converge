@@ -155,6 +155,14 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  $items['register/invite_volunteers'] = array(
+    'title' => 'Invite volunteers',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('register_volunteer_csv'),
+    'access arguments' => array('send authors their status'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -206,6 +214,31 @@ function register_admin_settings() {
     $form['register_newsletter_tid']['#description'] = 'The simplenews module is not installed.';
     $form['register_newsletter_tid']['#active'] = FALSE;
   }
+
+  // Volunteer invitations.
+  $form['volunteer_invitation'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Reviewer Invitations',
+    '#description' => t('Configure the notification email that is sent to volunteers. Note, they will also receive an email with new account details.'),
+  );
+  $form['volunteer_invitation']['register_mail_volunteer_invite_subject'] = array(
+    '#title' => 'Subject',
+    '#description' => t('The subject line to appear on the email.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('register_mail_volunteer_invite_subject', ''),
+  );
+  $form['volunteer_invitation']['register_mail_volunteer_invite_body'] = array(
+    '#title' => 'Body',
+    '#description' => t('The body for the email.'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('register_mail_volunteer_invite_body', ''),
+    '#rows' => 12,
+  );
+  $form['volunteer_invitation']['vars'] = array(
+    '#type' => 'markup',
+    '#value' => t('The following substitution variables are available in this email: !volunteer_firstname, !volunteer_surname, !volunteer_email, !site, !site_url, !site_mail'),
+  );
+
 
   return system_settings_form($form);
 }
@@ -1859,4 +1892,140 @@ function theme_register_badges($header, $data, $separator, $quote, $mime, $filen
   }
 
   return $output;
+}
+
+/**
+ * Form to read a CVS file.
+ */
+function register_volunteer_csv() {
+  drupal_set_message('TODO: Data verification step.');
+  $form['invite'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Create Volunteers',
+    '#description' => 'Upload a file with volunteer contact details and automatically create Drupal accounts for them.',
+  );
+  $form['invite']['explanation'] = array(
+    '#type' => 'markup',
+    '#value' => '<p>The CSV file must contain exactly 5 columns and the first row must not be headers.<p>The structure of the file is:<pre>Firstname,Surname,"Organisation",Position,Email</pre><p>If an email address is not valid, that volunteer will not be added.',
+  );
+  $form['invite']['file'] = array(
+    '#type' => 'file',
+    '#title' => 'Select CSV File',
+    '#description' => 'Please select the properly formatted CSV file with volunteer details.',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Upload and Invite',
+  );
+
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+  return $form;
+}
+
+function register_volunteer_csv_validate($form, &$form_state) {
+
+  // dpm($form_state);
+
+  $file = file_save_upload('file');
+  if (!$file) {
+    drupal_set_message('You must select a CSV file to upload.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  $fp = fopen($file->filepath, 'r');
+  if ($fp) {
+    $line = fgetcsv($fp);
+    fclose($fp);
+  } else {
+    drupal_set_message('Unable to access uploaded file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  if (count($line) != 5) {
+    drupal_set_message('The uploaded file is not a valid CSV file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+}
+
+function register_volunteer_csv_submit($form, &$form_state) {
+
+  global $language;
+
+  $file = file_save_upload('file');
+  if (!$file) {
+    drupal_set_message('Unable to access uploaded file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  $fp = fopen($file->filepath, 'r');
+  if (!$fp) {
+    drupal_set_message('Unable to access uploaded file.', 'error');
+    form_set_error('file');
+    return;
+  }
+
+  $i = 0;
+  while (!feof($fp)) {
+    $i++;
+
+    $data = array();
+    $line = fgetcsv($fp);
+
+    if (!count($line)) {
+      // Last line will be empty...
+      continue;
+    }
+
+    // User with this email?
+    if (!valid_email_address($line[4])) {
+      drupal_set_message(t('Invalid email adress "@mail" on line !num. Line skipped.', array('!num' => $i, '@mail' => $line[4])), 'warning');
+      continue;
+    }
+
+    $params = array();
+
+    $uid = db_result(db_query("SELECT uid FROM users WHERE LCASE(mail) = '%s'", strtolower(trim($line[4]))));
+    if ($uid > 0) {
+      $volunteer = user_load(array('uid' => $uid));
+      $profile = content_profile_load('profile', $volunteer->uid);
+    } else {
+      $data['firstname'] = $line[0];
+      $data['surname'] = $line[1];
+      $data['organisation'] = $line[2];
+      $data['position'] = $line[3];
+      $data['mail'] = $line[4];
+
+      $new_uid = proposal_copresenter_create($data);
+      $volunteer = user_load(array('uid' => $new_uid));
+      $profile = content_profile_load('profile', $volunteer->uid);
+    }
+
+    // Give the buggers the volunteer role.
+    //
+    $rid = db_result(db_query("SELECT rid FROM {role} WHERE name = '%s'", 'volunteer'));
+    $roles = $volunteer->roles + array($rid => 'volunteer');
+    user_save($volunteer, array('roles' => $roles));
+
+    // Make email vars.
+    //
+    $params['!volunteer_firstname'] = $profile->field_profile_firstname[0]['value'];
+    $params['!volunteer_surname'] = $profile->field_profile_surname[0]['value'];
+    $params['!volunteer_lastname'] = $profile->field_profile_surname[0]['value'];
+    $params['!volunteer_user'] = $volunteer->mail;
+    $params['!volunteer_email'] = $volunteer->mail;
+
+    // Email this user.
+    drupal_mail('register', 'volunteer_invite', $volunteer->mail, $language, $params);
+
+    // Message on screen.
+    drupal_set_message(t('Sent notification to @firstname @surname &lt;@mail&gt;.', array('@firstname' => $profile->field_profile_firstname[0]['value'], '@surname' => $profile->field_profile_surname[0]['value'], '@mail' => $reviewer->mail)));
+
+  }
+  fclose($fp);
+
 }
