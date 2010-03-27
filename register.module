@@ -221,6 +221,16 @@ function register_admin_settings() {
     '#title' => 'Volunteer Notifications',
     '#description' => t('Configure the notification email that is sent to volunteers. Note, they will also receive an email with new account details.'),
   );
+  $form['volunteer_invitation']['register_mail_volunteer_invite'] = array(
+    '#title' => 'Send Mail',
+    '#description' => t('Should the volunteer import send notifications emails in addition to the automatic new account email?.'),
+    '#type' => 'radios',
+    '#options' => array(
+      0 => 'Do not send notifications emails.',
+      1 => 'Send notifications emails.',
+    ),
+    '#default_value' => variable_get('register_mail_volunteer_invite', 0),
+  );
   $form['volunteer_invitation']['register_mail_volunteer_invite_subject'] = array(
     '#title' => 'Subject',
     '#description' => t('The subject line to appear on the email.'),
@@ -2011,20 +2021,23 @@ function register_volunteer_csv_submit($form, &$form_state) {
     $roles = $volunteer->roles + array($rid => 'volunteer');
     user_save($volunteer, array('roles' => $roles));
 
-    // Make email vars.
-    //
-    $params['!volunteer_firstname'] = $profile->field_profile_firstname[0]['value'];
-    $params['!volunteer_surname'] = $profile->field_profile_surname[0]['value'];
-    $params['!volunteer_lastname'] = $profile->field_profile_surname[0]['value'];
-    $params['!volunteer_user'] = $volunteer->mail;
-    $params['!volunteer_email'] = $volunteer->mail;
+    drupal_set_message(t('Added volunteer role to @mail.', array('@mail' => $volunteer->mail)));
 
-    // Email this user.
-    drupal_mail('register', 'volunteer_invite', $volunteer->mail, $language, $params);
+    if (variable_get('register_mail_volunteer_invite', 0)) {
+      // Make email vars.
+      //
+      $params['!volunteer_firstname'] = $profile->field_profile_firstname[0]['value'];
+      $params['!volunteer_surname'] = $profile->field_profile_surname[0]['value'];
+      $params['!volunteer_lastname'] = $profile->field_profile_surname[0]['value'];
+      $params['!volunteer_user'] = $volunteer->mail;
+      $params['!volunteer_email'] = $volunteer->mail;
 
-    // Message on screen.
-    drupal_set_message(t('Sent notification to @firstname @surname &lt;@mail&gt;.', array('@firstname' => $profile->field_profile_firstname[0]['value'], '@surname' => $profile->field_profile_surname[0]['value'], '@mail' => $reviewer->mail)));
+      // Email this user.
+      drupal_mail('register', 'volunteer_invite', $volunteer->mail, $language, $params);
 
+      // Message on screen.
+      drupal_set_message(t('Sent notification to @firstname @surname &lt;@mail&gt;.', array('@firstname' => $profile->field_profile_firstname[0]['value'], '@surname' => $profile->field_profile_surname[0]['value'], '@mail' => $volunteer->mail)));
+    }
   }
   fclose($fp);
 
