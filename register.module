@@ -1632,6 +1632,8 @@ WHERE
 
     $tuple[] = register_export_badges_format_ticket_flags($list);
 
+    $tuple[] = register_export_badges_format_vip($account);
+
     $tuple[] = register_export_badges_format_dinners($account);
 
     $data[] = $tuple;
@@ -1845,6 +1847,14 @@ function register_export_badges_format_ticket_flags($tickets) {
   }
 
   return implode(' ', $flags);
+}
+
+/**
+ * Return the user's special badge VIP string (if set)
+ */
+function register_export_badges_format_vip($account) {
+  $profile = content_profile_load('profile', $account->uid);
+  return $profile->field_profile_vip[0]['value'];
 }
 
 /*
