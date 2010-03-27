@@ -1594,14 +1594,14 @@ ORDER BY
 
   $result = db_query($query, DINNER_TICKET_NID);
 
-  $header = array('Uid', 'Surname', 'Firstname', 'Organisation', 'Position', 'Label', 'Colour', 'Flags', 'Dinners');
+  $header = array('Uid', 'Surname', 'Firstname', 'Organisation', 'Role', 'Colour', 'PCA', 'VIP Insert', 'Dinners');
 
   $data = array();
 
   while ($row = db_fetch_object($result)) {
     $account = user_load($row->uid);
 
-    $tuple = array($row->uid, $row->surname, $row->firstname, $row->organisation, $row->position);
+    $tuple = array($row->uid, $row->surname, $row->firstname, $row->organisation);
 
     // For each of these people, check their ticket type(s). leadership, tour, dinner, wed, thu, fri, expo.
     $query = "
@@ -1629,6 +1629,7 @@ WHERE
     $tuple[] = register_export_badges_format_roles($account, $list);
 
     $tuple[] = register_export_badges_format_ticket_colour($list);
+
     $tuple[] = register_export_badges_format_ticket_flags($list);
 
     $tuple[] = register_export_badges_format_dinners($account);
@@ -1649,6 +1650,9 @@ function register_export_badges_format_roles($account, $tickets) {
 
   if (in_array('acce board', $account->roles))
     return 'ACCE';
+
+  if (in_array('ictev board', $account->roles))
+    return 'ICTEV';
 
   if (in_array('site administrator', $account->roles))
     return 'ORGANISER';
