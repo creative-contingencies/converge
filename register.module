@@ -1644,8 +1644,17 @@ WHERE
  */
 function register_export_badges_format_roles($account, $tickets) {
 
+  if (in_array('keynote', $account->roles))
+    return 'KEYNOTE';
+
   if (in_array('acce board', $account->roles))
     return 'ACCE';
+
+  if (in_array('site administrator', $account->roles))
+    return 'ORGANISER';
+
+  if (in_array('papers chair', $account->roles))
+    return 'ORGANISER';
 
   // Is this person a speaker?
   //
@@ -1667,12 +1676,6 @@ WHERE
     user_save($account, array('roles' => $roles));
     return 'PRESENTER';
   }
-
-  if (in_array('site administrator', $account->roles))
-    return 'ORGANISER';
-
-  if (in_array('papers chair', $account->roles))
-    return 'ORGANISER';
 
   if (in_array('volunteer', $account->roles))
     return 'VOLUNTEER';
