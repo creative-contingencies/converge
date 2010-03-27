@@ -96,7 +96,7 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/store/reports/custom/badges/csv'] = array(
+  $items['admin/store/reports/custom/eadges/csv'] = array(
     'title' => 'Export Badges as CSV',
     'description' => 'Export badge data in CSV format.',
     'page callback' => 'register_export_badges_csv',
@@ -1668,6 +1668,9 @@ WHERE
     return 'PRESENTER';
   }
 
+  if (in_array('papers chair', $account->roles))
+    return 'ORGANISER';
+
   if (in_array('volunteer', $account->roles))
     return 'VOLUNTEER';
 
@@ -1680,7 +1683,7 @@ WHERE
   if (in_array('attendee', $account->roles))
     return 'DELEGATE';
 
-  return 'FAIL WHALE';
+  return 'WAHOONIE';
 }
 
 /**
@@ -2066,7 +2069,7 @@ function register_mail($key, &$message, $params) {
       break;
     default:
       $message['subject'] = strtr(variable_get('register_mail_'. $key .'_subject'), $params);
-      $message['body'][] = strtr(variable_get('register_mail_'. $key .'_body'), $params);
+      $message['body'][] = strtr(variable_get('registerster_export_badges_mail_'. $key .'_body'), $params);
   }
 }
 
