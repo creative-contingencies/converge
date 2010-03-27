@@ -2040,5 +2040,33 @@ function register_volunteer_csv_submit($form, &$form_state) {
     }
   }
   fclose($fp);
-
 }
+
+/**
+ * Implementation of hook_mail().
+ */
+function register_mail($key, &$message, $params) {
+
+  if(empty($params['!login_url']))
+     $params['!login_url'] = url('user', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!edit_url']))
+     $params['!edit_url'] = url('user-profile', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!site_url']))
+     $params['!site_url'] = url('<front>', array('absolute' => TRUE, 'alias' => TRUE));
+  if(empty($params['!site']))
+     $params['!site'] = variable_get('site_name', '');
+  $params['!site_name'] = $params['!site'];
+  if(empty($params['!site_mail']))
+     $params['!site_mail'] = variable_get('site_mail', '');
+
+  switch ($key) {
+    case 'volunteer_invite':
+      $message['subject'] = strtr(variable_get('register_mail_volunteer_invite_subject'), $params);
+      $message['body'][] = strtr(variable_get('register_mail_volunteer_invite_body'), $params);
+      break;
+    default:
+      $message['subject'] = strtr(variable_get('register_mail_'. $key .'_subject'), $params);
+      $message['body'][] = strtr(variable_get('register_mail_'. $key .'_body'), $params);
+  }
+}
+
