@@ -1606,16 +1606,27 @@ ORDER BY
   surname ASC, firstname ASC
 ";
 
-  $result = db_queryd($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
+  $header = array(
+    array('data' => 'Uid'         , 'field' => 'ta.uid'),
+    array('data' => 'Firstname'   , 'field' => 'pro.field_profile_firstname_value'),
+    array('data' => 'Surname'     , 'field' => 'pro.field_profile_surname_value', 'sort' => 'asc'),
+    array('data' => 'Organisation', 'field' => 'pro.field_profile_organisation_value'),
+    array('data' => 'Role'),
+    array('data' => 'Colour'),
+    array('data' => 'PCA'),
+    array('data' => 'VIP Insert'),
+    array('data' => 'Dinner'),
+  );
 
-  $header = array('Uid', 'Surname', 'Firstname', 'Organisation', 'Role', 'Colour', 'PCA', 'VIP Insert', 'Dinners');
+  $query .= tablesort_sql($header);
+  $result = db_queryd($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
 
   $data = array();
 
   while ($row = db_fetch_object($result)) {
     $account = user_load($row->uid);
 
-    $tuple = array($row->uid, $row->surname, $row->firstname, $row->organisation);
+    $tuple = array($row->uid, $row->firstname, $row->surname, $row->organisation);
 
     // For each of these people, check their ticket type(s). leadership, tour, dinner, wed, thu, fri, expo.
     $query = "
