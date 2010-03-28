@@ -1909,7 +1909,7 @@ function theme_register_badges($header, $data, $separator, $quote, $mime, $filen
 
   // Format header values.
   foreach ($header as $key => $value) {
-    $header[$key] = $wrap . str_replace('"', $replace_value, decode_entities(strip_tags($value))) . $wrap;
+    $header[$key] = $wrap . str_replace('"', $replace_value, decode_entities(strip_tags($value['data']))) . $wrap;
   }
   // Format row values.
   foreach ($data as $i => $values) {
