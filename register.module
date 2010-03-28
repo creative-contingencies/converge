@@ -1599,12 +1599,14 @@ WHERE
   OR
     (
       r.rid = %d
+    AND
+      uc_op.nid <> %d
     )
 ORDER BY
   surname ASC, firstname ASC
 ";
 
-  $result = db_queryd($query, DINNER_TICKET_NID, $rid);
+  $result = db_queryd($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
 
   $header = array('Uid', 'Surname', 'Firstname', 'Organisation', 'Role', 'Colour', 'PCA', 'VIP Insert', 'Dinners');
 
