@@ -1676,6 +1676,9 @@ function register_export_badges_format_roles($account, $tickets) {
   if (in_array('papers chair', $account->roles))
     return 'ORGANISER';
 
+  if (in_array('sponsor', $account->roles))
+    return 'SPONSOR';
+
   // Is this person a speaker?
   //
   $query = "
@@ -1699,9 +1702,6 @@ WHERE
 
   if (in_array('volunteer', $account->roles))
     return 'VOLUNTEER';
-
-  if (in_array('sponsor', $account->roles))
-    return 'SPONSOR';
 
   if ($tickets[4942] || $tickets[4944] || $tickets[4946])
     return 'EXPO';
