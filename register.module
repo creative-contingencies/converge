@@ -1564,35 +1564,47 @@ function register_export_badge_data() {
 
   global $tickets_allocated;
 
+  $rid = db_result(db_query("SELECT rid FROM {role} WHERE name='attendee'"));
+
 // Select all users with an assigned ticket, order by surname, firstname.\
 // But not dinner tix. These get no badges.
 //
 $query = "
 SELECT
-  DISTINCT(ta.uid) AS uid,
+  DISTINCT(u.uid) AS uid,
   pro.field_profile_firstname_value AS firstname,
   pro.field_profile_surname_value AS surname,
   pro.field_profile_position_value AS position,
   pro.field_profile_organisation_value AS organisation
 FROM
-  {ccc_ticket_allocation} AS ta
+  {users} AS u
 LEFT JOIN
-  {node} AS n ON (n.uid = ta.uid AND n.type = 'profile')
+  {users_roles} AS r ON (r.uid = u.uid)
+LEFT JOIN
+  {node} AS n ON (n.uid = u.uid AND n.type = 'profile')
 LEFT JOIN
   {content_type_profile} AS pro ON (n.nid = pro.nid)
+LEFT JOIN
+  {ccc_ticket_allocation} AS ta ON (ta.uid = u.uid)
 LEFT JOIN
   {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
 LEFT JOIN
   {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
 WHERE
-    uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
-  AND
-    uc_op.nid <> %d
+    (
+      uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+    AND
+      uc_op.nid <> %d
+    )
+  OR
+    (
+      r.rid = %d
+    )
 ORDER BY
   surname ASC, firstname ASC
 ";
 
-  $result = db_query($query, DINNER_TICKET_NID);
+  $result = db_queryd($query, DINNER_TICKET_NID, $rid);
 
   $header = array('Uid', 'Surname', 'Firstname', 'Organisation', 'Role', 'Colour', 'PCA', 'VIP Insert', 'Dinners');
 
