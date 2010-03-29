@@ -1280,6 +1280,7 @@ function register_list_overview() {
   }
   $output .= '<h3>Tickets Sold</h3>';
   $output .= '<p>These numbers include only tickets from orders with status ' . implode(', ', sessions_valid_order()) . '.';
+  $output .= t('<p>To view lists of people with each of these ticket types assigned to them, please visit the !list.', array('!list' => l('mail merge lists', 'news/mail-merge-lists')));
   $output .= theme('table', array('Ticket', 'Sold Qty'), $data);
   $output .= '<hr size="1" />';
 
@@ -1572,7 +1573,7 @@ function register_export_badges_csv() {
  * Create badge data.
  *
  * @return
- *   An keyed array cotaining 'header' and 'data' arrays.
+ *   A keyed array cotaining 'header' and 'data' arrays.
  */
 function register_export_badge_data() {
 
@@ -1698,6 +1699,118 @@ WHERE
 }
 
 /**
+/**
+ * Create badge data.
+ *
+ * @return
+ *   A keyed array cotaining 'header' and 'data' arrays.
+ */
+function register_export_itouch_data() {
+
+  global $tickets_allocated;
+
+  $rid = db_result(db_query("SELECT rid FROM {role} WHERE name='attendee'"));
+
+// Select all users with an assigned ticket, order by surname, firstname.\
+// But not dinner tix. These get no badges.
+//
+$query = "
+SELECT
+  DISTINCT(u.uid) AS uid,
+  pro.field_profile_firstname_value AS firstname,
+  pro.field_profile_surname_value AS surname,
+  pro.field_profile_organisation_value AS organisation,
+  pro.field_profile_city_value AS suburb,
+  pro.field_profile_state_value AS state,
+  u.mail AS mail
+FROM
+  {users} AS u
+LEFT JOIN
+  {users_roles} AS r ON (r.uid = u.uid)
+LEFT JOIN
+  {node} AS n ON (n.uid = u.uid AND n.type = 'profile')
+LEFT JOIN
+  {content_type_profile} AS pro ON (n.nid = pro.nid)
+LEFT JOIN
+  {ccc_ticket_allocation} AS ta ON (ta.uid = u.uid)
+LEFT JOIN
+  {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
+LEFT JOIN
+  {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+WHERE
+  (
+    (
+      uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+    AND
+      uc_op.nid <> %d
+    )
+  OR
+    r.rid = %d
+  OR
+    (
+        u.uid IN (
+          SELECT DISTINCT(cfpp.field_proposal_presenters_uid) FROM content_field_proposal_presenters AS cfpp JOIN {node} AS np ON (cfpp.vid = np.vid) JOIN {content_type_proposal} AS ctp ON (np.vid = ctp.vid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) ."')
+        )
+      AND
+        pro.field_profile_ignore_value <> 1
+    )
+  )
+";
+
+  $header = array(
+    array('data' => 'Uid'          , 'field' => 'ta.uid'),
+    array('data' => 'Firstname'    , 'field' => 'pro.field_profile_firstname_value'),
+    array('data' => 'Surname'      , 'field' => 'pro.field_profile_surname_value', 'sort' => 'asc'),
+    array('data' => 'Organisation' , 'field' => 'pro.field_profile_organisation_value'),
+    array('data' => 'City/Suburb'  , 'field' => 'pro.field_profile_city_value'),
+    array('data' => 'State'        , 'field' => 'pro.field_profile_state_value'),
+    array('data' => 'Email Address', 'field' => 'u.mail'),
+  );
+
+  $query .= tablesort_sql($header);
+  $result = db_query($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
+
+  $data = array();
+
+  while ($row = db_fetch_object($result)) {
+    $account = user_load($row->uid);
+
+    // For each of these people, check their ticket type(s). leadership, tour, dinner, wed, thu, fri, expo.
+    $query = "
+SELECT 
+  uc_op.nid, uc_op.title
+FROM
+  {ccc_ticket_allocation} AS ta
+LEFT JOIN
+  {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
+LEFT JOIN
+  {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+WHERE
+    ta.uid = %d
+  AND
+    uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+";
+    $tickets = db_query($query, $account->uid);
+
+    $list = array();
+    while ($tix = db_fetch_object($tickets)) {
+      $list[$tix->nid] = $tix->title;
+    }
+
+    // if they *only* have a dinner ticket, do not include them.
+    //
+    if (count($list) == 1 && $list[118])
+      continue;
+
+    $tuple = array($row->uid, $row->firstname, $row->surname, $row->organisation, $row->suburb, $row->state, $row->mail);
+
+    $data[] = $tuple;
+  }
+
+  return array('header' => $header, 'data' => $data);
+}
+
+ /**
  * Check a user for a highest role that needs to be printed on their badge.
  */
 function register_export_badges_format_roles($account, $tickets) {
