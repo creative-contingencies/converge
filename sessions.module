@@ -101,6 +101,18 @@ function sessions_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  // Session selections - print view.
+  $items['user/%user/sessions/print'] = array(
+    'title' => 'Print My Program',
+    'description' => 'Print conference session selection',
+    'page callback' => 'sessions_list_print',
+    'page arguments' => array(1, 3, 4, 5),
+    'access callback' => 'user_access',
+    'access arguments' => array('choose conference sessions'),
+    'type' => MENU_CALLBACK,
+  );
+
+
   // A redirect item for the navigation menu as well.
   //
   $items['my-program'] = array(
@@ -756,7 +768,7 @@ function sessions_list_goto() {
  * @param session
  *   A session node id.
  */
-function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL) {
+function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NULL) {
 
   drupal_set_title('My Program');
   if ($action && $timeslot && $session) {
@@ -767,10 +779,10 @@ function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL)
       $session = node_load($session);
       if ($session->full == TRUE) {
         drupal_set_message(t('Session "!title" is full, you cannot select it', array('!title' => $session->title)), 'error');
-        return sessions_list_table($user);
+        return sessions_list_table($account);
       }
 
-      $conflicts = sessions_conflicts($user->uid, $timeslot, $session->nid);
+      $conflicts = sessions_conflicts($account->uid, $timeslot, $session->nid);
       // Do not return this form IF we're adding a session an there are NO clashes.
       // dpm("sessions_list({$user->uid}, {$action}, {$timeslot}, {$session})");
       // dpm($conflicts);
@@ -780,31 +792,34 @@ function sessions_list($user, $action = NULL, $timeslot = NULL, $session = NULL)
         // This really needs a function of its own.
         //
         foreach ($timeslots as $t) {
-          db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $user->uid, $t);
+          db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $account->uid, $t);
         }
 
         // Add the new selection to the database.
         //
         $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
-        db_query($query, $user->uid, $session->nid, $timeslot);
+        db_query($query, $account->uid, $session->nid, $timeslot);
 
         drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
 
-        return sessions_list_table($user);
+        return sessions_list_table($account);
       } else {
         $session = $session->nid;
       }
     }
+    else if ($action == 'print') {
+      sessions_list_print($account);
+    }
     // Make a confirmation form.
     //
-    return drupal_get_form('sessions_list_form', $user, $action, $timeslot, $session);
+    return drupal_get_form('sessions_list_form', $account, $action, $timeslot, $session);
   }
   else {
-    return sessions_list_table($user);
+    return sessions_list_table($account);
   }
 }
 
-function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
+function sessions_list_form($form_state, $account, $action, $timeslot, $session) {
   $form = array();
   $items = array();
 
@@ -812,11 +827,11 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
   $session = node_load($session);
 
   $form['#tree'] = TRUE;
-  $form['#redirect'] = 'user/' . $user->uid . '/sessions';
+  $form['#redirect'] = 'user/' . $account->uid . '/sessions';
 
   $form['uid'] = array(
     '#type' => 'hidden',
-    '#value' => $user->uid,
+    '#value' => $account->uid,
   );
   $form['action'] = array(
     '#type' => 'hidden',
@@ -836,7 +851,7 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
       // Remove conflicting session selections.
       // ie: something in a timeslot that starts at or before this one and ends during or with this one.
 
-      $conflicts = sessions_conflicts($user->uid, $timeslot->nid, $session->nid);
+      $conflicts = sessions_conflicts($account->uid, $timeslot->nid, $session->nid);
       if ($conflicts) {
         $sessions  = theme('sessions_conflicts', $conflicts);
         $sessions .= '<p>' . t('If you click <strong>replace</strong>, these earlier selections will be removed from your program.');
@@ -854,7 +869,7 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
       $description = t('<p>Really remove session "!title" from your program?</p><p>&nbsp;</p>', array('!title' => $session->title));
       $submit  = t('Remove');
       $cancel = t('Back to my program');
-      $back = 'user/' . $user->uid . '/sessions';
+      $back = 'user/' . $account->uid . '/sessions';
       break;
   }
 
@@ -874,8 +889,8 @@ function sessions_list_form($form_state, $user, $action, $timeslot, $session) {
 
 function sessions_list_form_validate($form, &$form_state) {
 
-  $user = user_load($form_state['values']['uid']);
-  if (!$user->uid)
+  $account = user_load($form_state['values']['uid']);
+  if (!$account->uid)
     form_set_error('uid', 'You need to be a user');
 
   $action = check_plain($form_state['values']['action']);
@@ -939,15 +954,15 @@ function sessions_list_form_submit($form, &$form_state) {
  * @object user
  *   The user being viewed.
  */
-function sessions_list_table($user) {
+function sessions_list_table($account, $print = FALSE) {
 
   // Do some sanity checking.
-  sessions_presenter_check($user->uid);
-  sessions_presenter_select($user->uid);
+  sessions_presenter_check($account->uid);
+  sessions_presenter_select($account->uid);
 
   $output = '';
-  $days = sessions_get_days($user->uid);
-  $selections = sessions_user_sessions($user->uid);
+  $days = sessions_get_days($account->uid);
+  $selections = sessions_user_sessions($account->uid);
 
   // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
   $offset = variable_get('date_default_timezone', 0);
@@ -957,7 +972,25 @@ function sessions_list_table($user) {
     return t('There are no sessions to be selected. Please check that your order payment status is <en>completed</em> and that a ticket has been assigned to you.');
   }
 
-  $output .= variable_get('sessions_program_header', '');
+  if (!$print) {
+    $output .= '<div style="float: right;">';
+    $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
+    $output .= '</div>';
+    $output .= variable_get('sessions_program_header', '');
+  }
+
+  $data = array();
+
+  $headers = array(
+    array('data' => 'Time'),
+    array('data' => 'Room'),
+    array('data' => 'Presenter'),
+    array('data' => 'Selected Session'),
+  );
+  if (!$print) {
+    $headers[] = array('data' => 'Change');
+    $headers[] = array('data' => 'Remove');
+  }
 
   // Now, loop through the list of day nids.
   foreach ($days as $day_nid) {
@@ -967,11 +1000,8 @@ function sessions_list_table($user) {
     // Set the first timeslot to the day.
     $timeslot = $day;
 
-    $data = array();
-    $headers = array('Time', 'Room', 'Presenter', 'Selected Session', 'Change', 'Remove');
-
-    $output .= '<h3>' . $day->title . '</h3>';
-    $output .= '<p>' .  t('These are your session selections for !day.', array('!day' => $day->title));
+    $data[] = array(array('data' => '<h3>' . check_plain($day->title) . '</h3>', 'colspan' => (!$print) ? 6 : 4));
+    $data[] = array(array('data' => '<p>' .  t('These are your session selections for !day.', array('!day' => $day->title)), 'colspan' => (!$print) ? 6 : 4));
 
     // Get the timeslots that are "up next". On the first run this function accepts a day node.
     //
@@ -989,11 +1019,11 @@ function sessions_list_table($user) {
 
         $tuple = array(
           'timeslot' => $timeslot->between,
-          'room' => l($room->title, 'program/schedule/room/' . $room->nid),
+          'room' => (!$print) ? l($room->title, 'program/schedule/room/' . $room->nid) : check_plain($room->title),
           'presenter' => theme('username', user_load($session->uid)),
-          'session' => l($session->title, 'node/' . $session->nid),
+          'session' => (!$print) ? l($session->title, 'node/' . $session->nid) : check_plain($session->title),
           'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
-          'remove' => theme('sessions_form', 'Remove', url('user/' . $user->uid . '/sessions/remove/' . $timeslot->nid . '/' . $session->nid), NULL, 'form-submit-red'),
+          'remove' => theme('sessions_form', 'Remove', url('user/' . $account->uid . '/sessions/remove/' . $timeslot->nid . '/' . $session->nid), NULL, 'form-submit-red'),
         );
 
         // Remove the remove button (yes) if the user is presenting this session.
@@ -1011,10 +1041,20 @@ function sessions_list_table($user) {
           $tuple['action'] = theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids)), NULL, 'form-submit-red');
         }
 
+        // Remove the action buttons in the print view.
+        // This is somewhat ugly and i should really do it in the theme layer.
+        //
+        if ($print) {
+          $tuple['presenter'] = strip_tags($tuple['presenter']);
+          unset($tuple['action']);
+          unset($tuple['remove']);
+        }
+
         $data[] = $tuple;
 
         // Start again at the next session with a start time that is equal to or larger than the current one.
         // $timeslot = node_load(session_);
+
       }
       else {
         // No selection, display a list of timeslots and jump to the associated sessions.
@@ -1037,20 +1077,77 @@ function sessions_list_table($user) {
           'action' => theme('sessions_form', 'Sessions...', url('program/schedule/timeslot/' . implode('+', $nids))),
           'remove'=> null,
         );
+
+        // Remove the action buttons in the print view.
+        // This is somewhat ugly and i should really do it in the theme layer.
+        //
+        if ($print) {
+          unset($tuple['action']);
+          unset($tuple['remove']);
+        }
+
         $data[] = $tuple;
         $timeslot = node_load($nids[0]);
       } // endif
     } // end while nids
-
-    // Add a table with timeslots and selections for today.
-    //
-    $output .= theme('table', $headers, $data);
-
   } // end foreach days
 
-  $output .= variable_get('sessions_program_footer', '');
+  // Add a table with timeslots and selections for the lot.
+  //
+  $output .= theme('table', $headers, $data, array('cellpadding' => 8, 'cellspacing' => 0) );
+
+  if (!$print)
+    $output .= variable_get('sessions_program_footer', '');
 
   return $output;
+}
+
+/**
+ * Helper to display a print formatted session selection list.
+ *
+ * Yes, this should go in a theme file. So sue me.
+ */
+function sessions_list_print($account) {
+  $content = sessions_list_table($account, TRUE);
+  print theme('sessions_print', $account, $content);
+  return;
+
+/*
+  print '
+<html>
+<head>
+  <title>My Program for ' . strip_tags(theme('username', $account)) . '</title>
+<style type="text/css">
+  table tr th {
+    color: #fff;
+    background: #333;
+  }
+  table tr.even {
+    background: #ccc;
+  }
+  table td {
+    align: left;
+    verical-align: top;
+  }
+  h2, h3 {
+    font-family: sans-serif;
+  }
+  h3 {
+    margin-bottom: 0px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+';
+
+  print '<h2>MyACEC Program for ' . strip_tags(theme('username', $account)) . '</h2>';
+  print sessions_list_table($account, TRUE);
+
+  print '
+</body>
+</html>';
+*/
 }
 
 /**
@@ -1162,6 +1259,11 @@ function sessions_theme() {
     ),
     'sessions_timeslot' => array(
       'arguments' => array('timeslot' => $timeslot, 'fields' => array('value' => 'H:i')),
+    ),
+    'sessions_print' => array(
+      'arguments' => array('account' => $account, 'content' => $content),
+      'template' => 'sessions-print',
+      'path' => "$path/theme",
     ),
   );
 }
