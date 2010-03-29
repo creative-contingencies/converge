@@ -1000,8 +1000,12 @@ function sessions_list_table($account, $print = FALSE) {
     // Set the first timeslot to the day.
     $timeslot = $day;
 
-    $data[] = array(array('data' => '<h3>' . check_plain($day->title) . '</h3>', 'colspan' => (!$print) ? 6 : 4));
-    $data[] = array(array('data' => '<p>' .  t('These are your session selections for !day.', array('!day' => $day->title)), 'colspan' => (!$print) ? 6 : 4));
+    // A little sanity check to make sure we don't get empty day headings.
+    //
+    if ($day->title) {
+      $data[] = array(array('data' => '<h3>' . check_plain($day->title) . '</h3>', 'colspan' => (!$print) ? 6 : 4));
+      $data[] = array(array('data' => '<p>' .  t('These are your session selections for !day.', array('!day' => $day->title)), 'colspan' => (!$print) ? 6 : 4));
+    }
 
     // Get the timeslots that are "up next". On the first run this function accepts a day node.
     //
