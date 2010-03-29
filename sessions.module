@@ -218,6 +218,12 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
       sessions_warn_invalid_selections($account);
       sessions_autoselect_sessions($account);
       break;
+
+    case 'delete':
+      drupal_set_message(t('The user\'s session selections have been deleted'));
+      db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d", $account->uid);
+      break;
+
   }
 }
 

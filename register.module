@@ -96,7 +96,7 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/store/reports/custom/eadges/csv'] = array(
+  $items['admin/store/reports/custom/badges/csv'] = array(
     'title' => 'Export Badges as CSV',
     'description' => 'Export badge data in CSV format.',
     'page callback' => 'register_export_badges_csv',
@@ -393,6 +393,11 @@ function register_user($op, &$edit, &$account, $category = NULL) {
     case 'login':
       register_toggle_attendee_role($account);
       break;
+
+    case 'delete':
+      drupal_set_message(t('The user\'s ticket allocations have been deleted'));
+      db_query("DELETE FROM {ccc_ticket_allocation} WHERE uid=%d", $account->uid);
+      break;
   }
 }
 
@@ -401,7 +406,11 @@ function register_toggle_attendee_role(&$account) {
 
   // Check for allocated tickets.
   //
-  $ticket = db_result(db_query("SELECT COUNT(order_product_id) FROM {ccc_ticket_allocation} WHERE uid=%d", $account->uid));
+  $ticket = db_result(db_query("SELECT COUNT(ta.order_product_id) FROM {ccc_ticket_allocation} AS ta
+    JOIN {uc_order_products} AS op ON (ta.order_product_id = op.order_product_id)
+    JOIN {uc_orders} AS o ON (op.order_id = o.order_id)
+    WHERE o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+    AND ta.uid=%d", $account->uid));
 
   // Attendee rid.
   //
@@ -419,7 +428,7 @@ function register_toggle_attendee_role(&$account) {
   // If a ticket is allocated to user but attendee role is NOT set ... add it.
   // If user has no ticket allocation but DOES have the attendee role set ... remove it.
   //
-  if ($ticket && !in_array('attendee', $victim->roles)) {
+  if (($ticket || in_array('sponsor', $victim->roles) || in_array('volunteer', $victim->roles)) && !in_array('attendee', $victim->roles)) {
     $roles = $victim->roles + array($rid => 'attendee');
     user_save($victim, array('roles' => $roles));
   }
@@ -1534,7 +1543,12 @@ function register_export_badges() {
 
   drupal_set_title('Badge Data ACEC2010 ' . date('Ymd'));
 
-  $output  = t('Badge data for !num attendees.', array('!num' => count($badges['data'])));
+  $dinners = 0;
+  foreach ($badges['data'] as $row) {
+    $dinners += $row[8];
+  }
+
+  $output  = t('Badge data for !num attendees, including !dinners dinner tickets.', array('!num' => count($badges['data']), '!dinners' => $dinners));
   $output .= theme('table', $badges['header'], $badges['data']);
 
   $data = array();
@@ -1591,19 +1605,23 @@ LEFT JOIN
 LEFT JOIN
   {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
 WHERE
+  (
     (
       uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
     AND
       uc_op.nid <> %d
     )
   OR
+    r.rid = %d
+  OR
     (
-      r.rid = %d
-    AND
-      uc_op.nid <> %d
+        u.uid IN (
+          SELECT DISTINCT(cfpp.field_proposal_presenters_uid) FROM content_field_proposal_presenters AS cfpp JOIN {node} AS np ON (cfpp.vid = np.vid) JOIN {content_type_proposal} AS ctp ON (np.vid = ctp.vid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) ."')
+        )
+      AND
+        pro.field_profile_ignore_value <> 1
     )
-ORDER BY
-  surname ASC, firstname ASC
+  )
 ";
 
   $header = array(
@@ -1619,14 +1637,12 @@ ORDER BY
   );
 
   $query .= tablesort_sql($header);
-  $result = db_queryd($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
+  $result = db_query($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
 
   $data = array();
 
   while ($row = db_fetch_object($result)) {
     $account = user_load($row->uid);
-
-    $tuple = array($row->uid, $row->firstname, $row->surname, $row->organisation);
 
     // For each of these people, check their ticket type(s). leadership, tour, dinner, wed, thu, fri, expo.
     $query = "
@@ -1650,10 +1666,24 @@ WHERE
       $list[$tix->nid] = $tix->title;
     }
 
+    // If they have no tickets allocated AND are not a special role, ignore them!
+
+    // if they *only* have a dinner ticket, do not include them.
+    //
+    if (count($list) == 1 && $list[118])
+      continue;
+
+    $tuple = array($row->uid, $row->firstname, $row->surname, $row->organisation);
+
     // For each of these people, check whether they are speaking, a sponsor, a volunteer or an ACCE boarder.
     $tuple[] = register_export_badges_format_roles($account, $list);
 
     $tuple[] = register_export_badges_format_ticket_colour($list);
+
+    if (register_export_badges_format_ticket_colour($list) == 'WAHOONIE') {
+      dpm($account);
+      dpm($list);
+    }
 
     $tuple[] = register_export_badges_format_ticket_flags($list);
 
@@ -1743,11 +1773,12 @@ function register_export_badges_format_ticket_colour($tickets) {
   }
 
   // 3 dailies students
-  if ($tickets[4036] && $tickets[4042] && $tickets[4044])
+  if ($tickets[4036] && $tickets[4042] && $tickets[4044]) {
     if ($tickets[4046]) $tickets_allocated['student_wednesday']++;
     if ($tickets[4042]) $tickets_allocated['student_thursday']++;
     if ($tickets[4044]) $tickets_allocated['student_friday']++;
     return '';
+  }
 
   // full conf
   if ($tickets[114] || $tickets[1590]) {
@@ -1769,22 +1800,24 @@ function register_export_badges_format_ticket_colour($tickets) {
     $colours[] = 'orange';
 
   // Something on wednesday
-  if ($tickets[4942] || $tickets[4036] || $tickets[122])
+  if ($tickets[4942] || $tickets[4036] || $tickets[122] || $tickets[4936]) {
     $colours[] = 'red';
+  }
 
   // Something on thursday
-  if ($tickets[4944] || $tickets[4042] || $tickets[124])
+  if ($tickets[4944] || $tickets[4042] || $tickets[124] || $tickets[4938])
     $colours[] = 'green';
 
   // Something on friday
-  if ($tickets[4946] || $tickets[4044] || $tickets[126])
+  if ($tickets[4946] || $tickets[4044] || $tickets[126] || $tickets[4940])
     $colours[] = 'purple';
 
   if (count($colours) == 4)
     return '';
 
-  if (!count($colours))
-    return 'WAHOONIE';
+  if (!count($colours)) {
+    return '';
+  }
 
   return implode(' + ', $colours);
 }
@@ -1902,16 +1935,21 @@ function register_export_badges_format_dinners($account) {
         }
         else {
           // Does the uid have *any* other tickets assigned to them?
-          $query = "SELECT COUNT(uc_op.nid) AS num FROM {ccc_ticket_allocation} AS ta LEFT JOIN {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id) WHERE ta.uid = %d AND uc_op.nid <> %d";
-          $num = db_result(db_query($query, $account->uid, DINNER_TICKET_NID));
-          if ($num) {
+          //
+          $query = "SELECT COUNT(uc_op.nid) AS num FROM {ccc_ticket_allocation} AS ta JOIN {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id) JOIN {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id) WHERE ta.uid = %d AND uc_op.nid <> %d AND uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')";
+          $num = db_result(db_query($query, $ticket->uid, DINNER_TICKET_NID));
+
+          // If the uid we're looking at does NOT have any other tickets assigned to it, we need
+          // to increment the number of dinner tickets for the $account->uid by one.
+          // If it does have other tickets, it'll get allocated to the person themselves.
+          //
+          if (!$num) {
             $dinner_tickets++;
           }
         }
       }
     }
   }
-
   return $dinner_tickets;
 }
 
