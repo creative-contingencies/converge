@@ -1400,7 +1400,8 @@ function sessions_report_session($proposal) {
     ctp.field_profile_firstname_value AS firstname,
     ctp.field_profile_surname_value AS surname,
     u.mail AS mail,
-    UNIX_TIMESTAMP(ccc_ss.modified) AS modified
+    UNIX_TIMESTAMP(ccc_ss.modified) AS modified,
+    uc_o.order_status AS order_status
   FROM
     {ccc_session_selection} AS ccc_ss
   LEFT JOIN
@@ -1409,14 +1410,23 @@ function sessions_report_session($proposal) {
     {node} AS n ON (n.uid = u.uid AND n.type = 'profile')
   LEFT JOIN
     {content_type_profile} AS ctp ON (ctp.vid = n.vid)
-  WHERE
-    ccc_ss.nid = %d";
+JOIN
+  {ccc_ticket_allocation} AS ta ON (ta.uid = ccc_ss.uid)
+JOIN
+  {uc_order_products} AS uc_op ON (uc_op.order_product_id = ta.order_product_id)
+JOIN
+  {uc_orders} AS uc_o ON (uc_o.order_id = uc_op.order_id)
+WHERE
+  uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+AND
+  ccc_ss.nid = %d";
 
   $data = array();
   $header[] = array('data' => t('Firstname'), 'field' => 'firstname');
   $header[] = array('data' => t('Surname'),   'field' => 'surname');
   $header[] = array('data' => t('Email'),     'field' => 'mail');
   $header[] = array('data' => t('Selected'),  'field' => 'modified', 'sort' => 'desc');
+  $header[] = array('data' => t('Order'),     'field' => 'uc_o.order_status');
 
   $result = db_query($query . tablesort_sql($header), $proposal->nid);
   while ($row = db_fetch_array($result)) {
@@ -1425,6 +1435,7 @@ function sessions_report_session($proposal) {
       'surname' => $row['surname'],
       'mail' => l($row['mail'], 'user/' . $row['uid']),
       'modified' => format_date($row['modified'], 'long'),
+      'order' => $row['order_status'],
     );
     $data[] = $tuple;
   }
