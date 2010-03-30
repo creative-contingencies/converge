@@ -1396,7 +1396,7 @@ function sessions_report($nid = 0) {
 function sessions_report_session($proposal) {
 
   $query = "SELECT
-    u.uid AS uid,
+    DISTINCT(u.uid) AS uid,
     ctp.field_profile_firstname_value AS firstname,
     ctp.field_profile_surname_value AS surname,
     u.mail AS mail,
