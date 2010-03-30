@@ -1232,10 +1232,26 @@ function sessions_places($nid) {
 
 /**
  * Return a list of attendees for a session.
+ *
+ * This should list attendees who are on a VALID ticket only.
  */
 function sessions_attendees($nid) {
   $users = array();
-  $result = db_query("SELECT uid FROM {ccc_session_selection} WHERE nid = %d", $nid);
+  $result = db_query("
+SELECT
+  DISTINCT(ss.uid) AS uid
+FROM
+  {ccc_session_selection} AS ss
+JOIN
+  {ccc_ticket_allocation} AS ta ON (ta.uid = ss.uid)
+JOIN
+  {uc_order_products} AS uc_op ON (uc_op.order_product_id = ta.order_product_id)
+JOIN
+  {uc_orders} AS uc_o ON (uc_o.order_id = uc_op.order_id)
+WHERE
+  uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+AND
+  ss.nid = %d", $nid);
   while ($row = db_fetch_array($result)) {
     $users[] = $row['uid'];
   }
