@@ -899,6 +899,18 @@ function register_order($op, $order, $a) {
     // and update the ccc_ticket_allocation table with the new order_product_id.
     //
     case 'save':
+      // If the order is no longer valid, remove its allocations.
+      //
+      if (!in_array($order->order_status, sessions_valid_order())) {
+        foreach ($order->products as $id => $product) {
+           db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $product->order_product_id);
+           drupal_set_message(t('Removed ticket allocations for !status !ticket on this order.', array('!status' => $order->order_status, '!ticket' => $product->title)));
+        }
+      }
+
+      // If the order was saved, the order_product_id on each product has been changed. Updated
+      // any allocatiosn that may have been attached.
+      //
       if (!empty($register_order) && $register_order->order_id == $order->order_id) {
         $new_products = array();
         $old_products = array();
@@ -1620,10 +1632,15 @@ function register_export_badges_csv() {
 /**
  * Create badge data.
  *
+ * @param $needs
+ *   Boolean - include special needs, or not.
+ * @param $users
+ *   A list of user uids that should NOT be included (presumably because they were in a previous badge run)
+ *
  * @return
  *   A keyed array containing 'header' and 'data' arrays.
  */
-function register_export_badge_data($needs = FALSE) {
+function register_export_badge_data($needs = FALSE, $users = array()) {
 
   global $tickets_allocated;
 
@@ -1674,6 +1691,9 @@ WHERE
     )
   )
 ";
+  if (count($users)) {
+    $query .= " AND u.uid NOT IN (" . implode(',', $users) . ")";
+  }
 
   $header = array(
     array('data' => 'Uid'         , 'field' => 'ta.uid'),
