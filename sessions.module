@@ -1046,7 +1046,7 @@ function sessions_list_table($account, $print = FALSE) {
 
         // Remove the remove button (yes) if the user is presenting this session.
         foreach ($session->field_proposal_presenters as $presenter) {
-          if ($presenter['uid'] == $user->uid) {
+          if ($presenter['uid'] == $account->uid) {
             $tuple['action'] = null;
             $tuple['remove'] = theme('sessions_form', 'My Session', '#', NULL, 'form-submit-green');
           }
@@ -1121,6 +1121,8 @@ function sessions_list_table($account, $print = FALSE) {
  */
 function sessions_list_view($account) {
 
+  global $user;
+
   // If not the current user and not admin, go away.
   //
   if ($user->uid != $account->uid && !user_access('view session reports')) {
@@ -1158,6 +1160,8 @@ function sessions_list_view($account) {
  * Helper to display a print formatted session selection list.
  */
 function sessions_list_print($account) {
+
+  global $user;
 
   // If not the current user and not admin, go away.
   //
