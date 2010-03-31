@@ -112,6 +112,17 @@ function sessions_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  // Session selections - iCal view.
+  // This is referenced by uuid, so no auth check!
+  $items['myacec/%/ical'] = array(
+    'title' => 'My Program - iCal',
+    'description' => 'iCal conference session selection',
+    'page callback' => 'sessions_list_ical',
+    'page arguments' => array(1, 2, 3),
+    'access callback' => 'user_access',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
 
   // A redirect item for the navigation menu as well.
   //
@@ -770,6 +781,15 @@ function sessions_list_goto() {
  */
 function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NULL) {
 
+  global $user;
+
+  // If not the current user and not admin, go away.
+  //
+  if ($user->uid != $account->uid && !user_access('view session reports')) {
+    drupal_access_denied();
+    return;
+  }
+
   drupal_set_title('My Program');
   if ($action && $timeslot && $session) {
 
@@ -779,7 +799,7 @@ function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NU
       $session = node_load($session);
       if ($session->full == TRUE) {
         drupal_set_message(t('Session "!title" is full, you cannot select it', array('!title' => $session->title)), 'error');
-        return sessions_list_table($account);
+        return sessions_list_view($account);
       }
 
       $conflicts = sessions_conflicts($account->uid, $timeslot, $session->nid);
@@ -802,7 +822,7 @@ function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NU
 
         drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
 
-        return sessions_list_table($account);
+        return sessions_list_view($account);
       } else {
         $session = $session->nid;
       }
@@ -815,7 +835,7 @@ function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NU
     return drupal_get_form('sessions_list_form', $account, $action, $timeslot, $session);
   }
   else {
-    return sessions_list_table($account);
+    return sessions_list_view($account);
   }
 }
 
@@ -947,12 +967,13 @@ function sessions_list_form_submit($form, &$form_state) {
 }
 
 /**
- * Show the user which sessions they've selected sofar.
+ * Create a list of sessions the user has selected sofar.
  *
- * @array form_state
- *   The current state of the form.
- * @object user
+ * @object account
  *   The user being viewed.
+ *
+ * @return array
+ *   A keyed array with keys 'header' and 'rows' that can be tabulated.
  */
 function sessions_list_table($account, $print = FALSE) {
 
@@ -960,7 +981,6 @@ function sessions_list_table($account, $print = FALSE) {
   sessions_presenter_check($account->uid);
   sessions_presenter_select($account->uid);
 
-  $output = '';
   $days = sessions_get_days($account->uid);
   $selections = sessions_user_sessions($account->uid);
 
@@ -972,12 +992,6 @@ function sessions_list_table($account, $print = FALSE) {
     return t('There are no sessions to be selected. Please check that your order payment status is <en>completed</em> and that a ticket has been assigned to you.');
   }
 
-  if (!$print) {
-    $output .= '<div style="float: right;">';
-    $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
-    $output .= '</div>';
-    $output .= variable_get('sessions_program_header', '');
-  }
 
   $data = array();
 
@@ -1052,6 +1066,10 @@ function sessions_list_table($account, $print = FALSE) {
           $tuple['presenter'] = strip_tags($tuple['presenter']);
           unset($tuple['action']);
           unset($tuple['remove']);
+          $tuple['date_from'] = $timeslot->field_timeslot_date[0]['value'];
+          $tuple['date_to'] = $timeslot->field_timeslot_date[0]['value2'];
+          $tuple['nid'] = $session->nid;
+          $tuple['uuid'] = $session->uuid;
         }
 
         $data[] = $tuple;
@@ -1096,62 +1114,85 @@ function sessions_list_table($account, $print = FALSE) {
     } // end while nids
   } // end foreach days
 
+  return array('header' => $headers, 'rows' => $data);
+}
+
+/**
+ * Helper to just display the selected sessions list.
+ */
+function sessions_list_view($account) {
+
+  // If not the current user and not admin, go away.
+  //
+  if ($user->uid != $account->uid && !user_access('view session reports')) {
+    drupal_access_denied();
+    return;
+  }
+
+  // Add a link to this user's myACEC iCal feed, if it has a uuid.
+  //
+  if ($account->uuid) {
+    drupal_set_html_head('<link rel="alternate" type="application/rss+xml" href="' . url('myacec/' . $account->uuid. '/ical', array('absolute' => TRUE)) . '" title="myACEC iCal" />');
+  }
+
+  $table = sessions_list_table($account);
+
+  $output = '';
+  $output .= '<div style="float: right;">';
+  $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
+  if ($account->uuid) {
+    $output .= '<a href="' . url('myacec/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/feed.png" height="16" width="16" alt="iCal" align="right" /></a>';
+  }
+  $output .= '</div>';
+  $output .= variable_get('sessions_program_header', '');
+
   // Add a table with timeslots and selections for the lot.
   //
-  $output .= theme('table', $headers, $data, array('cellpadding' => 8, 'cellspacing' => 0) );
+  $output .= theme('table', $table['header'], $table['rows'], array('cellpadding' => 8, 'cellspacing' => 0));
 
-  if (!$print)
-    $output .= variable_get('sessions_program_footer', '');
+  $output .= variable_get('sessions_program_footer', '');
 
   return $output;
 }
 
 /**
  * Helper to display a print formatted session selection list.
- *
- * Yes, this should go in a theme file. So sue me.
  */
 function sessions_list_print($account) {
-  $content = sessions_list_table($account, TRUE);
-  print theme('sessions_print', $account, $content);
+
+  // If not the current user and not admin, go away.
+  //
+  if ($user->uid != $account->uid && !user_access('view session reports')) {
+    drupal_access_denied();
+    return;
+  }
+
+  $data = sessions_list_table($account, TRUE);
+
+  $username = strip_tags(theme('username', $account));
+
+  print theme('sessions_print', $username, $data);
   return;
+}
 
-/*
-  print '
-<html>
-<head>
-  <title>My Program for ' . strip_tags(theme('username', $account)) . '</title>
-<style type="text/css">
-  table tr th {
-    color: #fff;
-    background: #333;
-  }
-  table tr.even {
-    background: #ccc;
-  }
-  table td {
-    align: left;
-    verical-align: top;
-  }
-  h2, h3 {
-    font-family: sans-serif;
-  }
-  h3 {
-    margin-bottom: 0px;
-    margin-top: 8px;
-  }
-</style>
-</head>
-<body>
-';
+/**
+ * Helper to display an iCal formatted session selection list.
+ */
+function sessions_list_ical($uuid) {
 
-  print '<h2>MyACEC Program for ' . strip_tags(theme('username', $account)) . '</h2>';
-  print sessions_list_table($account, TRUE);
+  $account = user_get_by_uuid($uuid);
 
-  print '
-</body>
-</html>';
-*/
+  if (empty($account) || $account->uid == 0) {
+    // drupal_access_denied();
+    print 'Oops!';
+  }
+
+
+  $content = sessions_list_table($account, TRUE);
+  $username = strip_tags(theme('username', $account));
+
+  print theme('sessions_ical', $username, $content);
+  return;
 }
 
 /**
@@ -1281,8 +1322,13 @@ function sessions_theme() {
       'arguments' => array('timeslot' => $timeslot, 'fields' => array('value' => 'H:i')),
     ),
     'sessions_print' => array(
-      'arguments' => array('account' => $account, 'content' => $content),
+      'arguments' => array('username' => $username, 'content' => $content),
       'template' => 'sessions-print',
+      'path' => "$path/theme",
+    ),
+    'sessions_ical' => array(
+      'arguments' => array('username' => $username, 'content' => $content),
+      'template' => 'sessions-ical',
       'path' => "$path/theme",
     ),
   );

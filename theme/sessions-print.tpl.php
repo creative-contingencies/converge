@@ -1,14 +1,25 @@
 <?php
  /**
   * Variables:
-  *  - $account: A valid user object.
-  *  - $content: The session selection table do be displayed.
+  *  - $account: A valid username string.
+  *  - $content: A keyed array containing data to be tabulated.
+  *    'header' - The table headers.
+  *    'rows'   - The table rows.
   */
+
+  foreach ($content['rows'] as $idx => $row) {
+    unset($content['rows'][$idx]['date_from']);
+    unset($content['rows'][$idx]['date_to']);
+    unset($content['rows'][$idx]['nid']);
+    unset($content['rows'][$idx]['uuid']);
+  }
+
+  $table = theme('table', $content['header'], $content['rows'], array('cellpadding' => 8, 'cellspacing' => 0));
 ?>
 
 <html>
 <head>
-  <title>My Program for <?php print strip_tags(theme('username', $account)); ?></title>
+  <title>My Program for <?php print $username; ?></title>
 <style type="text/css">
   table tr th {
     color: #fff;
@@ -32,9 +43,9 @@
 </head>
 <body>
 
-  <h2>MyACEC Program for <?php print strip_tags(theme('username', $account)); ?></h2>
+  <h2>MyACEC Program for <?php print $username; ?></h2>
 
-  <?php print $content; ?>
+  <?php print $table; ?>
 
 </body>
 </html>
