@@ -1395,7 +1395,7 @@ function sessions_report($nid = 0) {
     LEFT JOIN
       {node} AS nr ON (ctp.field_proposal_room_nid = nr.nid AND nr.type = 'room')
     LEFT JOIN
-      {content_type_room} AS ctr ON (ctr.nid = nr.nid)
+      {content_type_room} AS ctr ON (ctr.vid = nr.vid)
     LEFT JOIN
       {ccc_session_selection} AS ccc_ss ON (ccc_ss.nid = n.nid)
     WHERE
@@ -1411,7 +1411,7 @@ function sessions_report($nid = 0) {
   $header[] = array('data' => t('ID'),       'field' => 'n.nid');
   $header[] = array('data' => t('Title'),    'field' => 'n.title');
   $header[] = array('data' => t('Timeslot'), 'field' => 'ctt.field_timeslot_date_value', 'sort' => 'asc');
-  $header[] = array('data' => t('Room'),     'field' => 'rn.title');
+  $header[] = array('data' => t('Room'),     'field' => 'nr.title');
   $header[] = array('data' => t('Attendee'), 'field' => 'attendees');
   $header[] = array('data' => t('Capacity'), 'field' => 'ctr.field_room_capacity_value');
   $header[] = array('data' => t('Available'), 'field' => 'available');
