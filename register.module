@@ -1613,9 +1613,9 @@ function register_export_badges_csv() {
  * Create badge data.
  *
  * @return
- *   A keyed array cotaining 'header' and 'data' arrays.
+ *   A keyed array containing 'header' and 'data' arrays.
  */
-function register_export_badge_data() {
+function register_export_badge_data($needs = FALSE) {
 
   global $tickets_allocated;
 
@@ -1630,7 +1630,9 @@ SELECT
   pro.field_profile_firstname_value AS firstname,
   pro.field_profile_surname_value AS surname,
   pro.field_profile_position_value AS position,
-  pro.field_profile_organisation_value AS organisation
+  pro.field_profile_organisation_value AS organisation,
+  pro.field_profile_dietary_value AS diet,
+  pro.field_profile_accessibility_value AS access
 FROM
   {users} AS u
 LEFT JOIN
@@ -1669,16 +1671,26 @@ WHERE
     array('data' => 'Uid'         , 'field' => 'ta.uid'),
     array('data' => 'Firstname'   , 'field' => 'pro.field_profile_firstname_value'),
     array('data' => 'Surname'     , 'field' => 'pro.field_profile_surname_value', 'sort' => 'asc'),
+    array('data' => 'Position'    , 'field' => 'pro.field_profile_position_value'),
     array('data' => 'Organisation', 'field' => 'pro.field_profile_organisation_value'),
+    array('data' => 'Dietary'),
+    array('data' => 'Accessibility'),
     array('data' => 'Role'),
     array('data' => 'Colour'),
     array('data' => 'PCA'),
     array('data' => 'VIP Insert'),
     array('data' => 'Dinner'),
+    array('data' => 'Tuesday'),
+    array('data' => 'Wednesday'),
+    array('data' => 'Thursday'),
+    array('data' => 'Friday'),
   );
 
   $query .= tablesort_sql($header);
-  $result = db_query($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
+  if ($needs)
+    $result = db_query($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
+  else
+    $result = db_query($query, DINNER_TICKET_NID, $rid, DINNER_TICKET_NID);
 
   $data = array();
 
@@ -1714,23 +1726,37 @@ WHERE
     if (count($list) == 1 && $list[118])
       continue;
 
-    $tuple = array($row->uid, $row->firstname, $row->surname, $row->organisation);
+    $tuple = array(
+      'uid' => $row->uid,
+      'firstname' => $row->firstname,
+      'surname' => $row->surname,
+      'position' => $row->position,
+      'organisation' => $row->organisation,
+      'diet' => $row->diet,
+      'access' => $row->access
+    );
 
     // For each of these people, check whether they are speaking, a sponsor, a volunteer or an ACCE boarder.
-    $tuple[] = register_export_badges_format_roles($account, $list);
+    $tuple['role'] = register_export_badges_format_roles($account, $list);
 
-    $tuple[] = register_export_badges_format_ticket_colour($list);
+    $tuple['colour'] = register_export_badges_format_ticket_colour($list);
 
     if (register_export_badges_format_ticket_colour($list) == 'WAHOONIE') {
       dpm($account);
       dpm($list);
     }
 
-    $tuple[] = register_export_badges_format_ticket_flags($list);
+    $tuple['pca'] = register_export_badges_format_ticket_flags($list);
 
-    $tuple[] = register_export_badges_format_vip($account);
+    $tuple['vip'] = register_export_badges_format_vip($account);
 
-    $tuple[] = register_export_badges_format_dinners($account);
+    $tuple['dinner'] = register_export_badges_format_dinners($account);
+
+    $days = register_export_badges_format_ticket_days($list);
+
+    foreach ($days as $key => $value) {
+      $tuple[$key] = $value;
+    }
 
     $data[] = $tuple;
   }
@@ -1739,8 +1765,7 @@ WHERE
 }
 
 /**
-/**
- * Create badge data.
+ * Create itouch data.
  *
  * @return
  *   A keyed array cotaining 'header' and 'data' arrays.
@@ -1974,6 +1999,66 @@ function register_export_badges_format_ticket_colour($tickets) {
 
   return implode(' + ', $colours);
 }
+
+/**
+ * Check a list of tickets for a set of data that needs to go on their badge.
+ */
+function register_export_badges_format_ticket_days($tickets) {
+
+  $days = array(
+    'tuesday' => 0,
+    'wednesday' => 0,
+    'thursday' => 0,
+    'friday' => 0,
+  );
+
+  // Expo only.
+  if ($tickets[4942]) $days['wednesday'] = 1;
+  if ($tickets[4944]) $days['thursday'] = 1;
+  if ($tickets[4946]) $days['friday'] = 1;
+
+  // 3 dailies
+  if ($tickets[122]) $days['wednesday'] = 1;
+  if ($tickets[124]) $days['thursday'] = 1;
+  if ($tickets[126]) $days['friday'] = 1;
+
+  // 3 dailies students
+  if ($tickets[4046]) $days['wednesday'] = 1;
+  if ($tickets[4042]) $days['thursday'] = 1;
+  if ($tickets[4044]) $days['friday'] = 1;
+
+  // full conf
+  if ($tickets[114] || $tickets[1590] || $tickets[4096]) {
+    $days['wednesday'] = 1;
+    $days['thursday'] = 1;
+    $days['friday'] = 1;
+  }
+
+  // Something on tuesday
+  if ($tickets[3656] || $tickets[116] || $tickets[3722] || $tickets[3724] || $tickets[3726] || $tickets[3728] || $tickets[4800] || $tickets[4796] && $tickets[4789])
+    $days['tuesday'] = 1;
+
+  // Something on wednesday
+  if ($tickets[4942] || $tickets[4036] || $tickets[122] || $tickets[4936])
+    $days['wednesday'] = 1;
+
+  // Something on thursday
+  if ($tickets[4944] || $tickets[4042] || $tickets[124] || $tickets[4938])
+    $days['thursday'] = 1;
+
+  // Something on friday
+  if ($tickets[4946] || $tickets[4044] || $tickets[126] || $tickets[4940])
+    $days['friday'] = 1;
+
+  if(!in_array(1, $days)) {
+    $days['wednesday'] = 1;
+    $days['thursday'] = 1;
+    $days['friday'] = 1;
+  }
+
+  return $days;
+}
+
 
 /**
  * Check a list of tickets for a set of data that needs to go on their badge.

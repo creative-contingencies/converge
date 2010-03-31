@@ -34,7 +34,7 @@
     print "SUMMARY:{$row['session']}\n";
     print strftime('DTSTAMP;TZID=Australia/Melbourne;VALUE=DATE-TIME:%Y%m%dT%H%M%S', time()) ."\n";
     print strftime('DTSTART;TZID=Australia/Melbourne;VALUE=DATE-TIME:%Y%m%dT%H%M%S', ($date_from + $offset)) ."\n";
-    print strftime('DTEND;TZID=Australia/Melbourne;VALUE=DATE-TIME:;%Y%m%dT%H%M%S', ($date_to + $offset)) ."\n";
+    print strftime('DTEND;TZID=Australia/Melbourne;VALUE=DATE-TIME:%Y%m%dT%H%M%S', ($date_to + $offset)) ."\n";
     print "URL;VALUE=URI:" . url('node/' . $row['nid'], array('absolute' => TRUE)) ."\n";
     print "LOCATION:{$row['room']}\n";
     print "END:VEVENT\n";
