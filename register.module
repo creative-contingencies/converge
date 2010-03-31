@@ -357,6 +357,14 @@ function register_user($op, &$edit, &$account, $category = NULL) {
         $orders = register_get_orders($account->uid);
 
         foreach ($orders as $key => $order) {
+          // If this order is not valid; ie: cancelled or somesuch, remove the allocations under the
+          // order_product_ids associated with this order.
+          //
+          if (!in_array($order->order_status, sessions_valid_order())) {
+            db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $order->order_product_id);
+            continue;
+          }
+
           if (!$order->some_user_allocated && $order->qty == 1) {
             // No-one is allocated to this ticket, we could allocate them here.
             if (register_allocate_ticket($order->order_product_id, $account->uid)) {
