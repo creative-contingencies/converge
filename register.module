@@ -904,7 +904,7 @@ function register_order($op, $order, $a) {
       if (!in_array($order->order_status, sessions_valid_order())) {
         foreach ($order->products as $id => $product) {
            db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $product->order_product_id);
-           drupal_set_message(t('Removed ticket allocations for !status !ticket on this order.', array('!status' => $order->order_status, '!ticket' => $product->title)));
+           // drupal_set_message(t('Removed ticket allocations for !status !ticket on this order.', array('!status' => $order->order_status, '!ticket' => $product->title)));
         }
       }
 
@@ -960,46 +960,53 @@ function register_order($op, $order, $a) {
  */
 function register_uc_checkout_complete($order, $account) {
 
-  $profile = content_profile_load('profile', $account->uid);
+  // It seems $account is only set if a new user was just created, so lets not bother
+  // if it's not set eh.
+  //
+  if (!empty($account) && $account->uid != 0) {
+    $profile = content_profile_load('profile', $account->uid);
 
-  if (empty($profile) || !$profile) {
+    if (empty($profile) || !$profile || $profile->uid == 0) {
 
-    $state = db_result(db_query("SELECT zone_code FROM {uc_zones} WHERE zone_id=%d AND zone_country_id=%d", $order->billing_zone, $order->billing_country));
-    $country = db_result(db_query("SELECT country_name country FROM {uc_countries} WHERE country_id=%d", $order->billing_country));
+      $state = db_result(db_query("SELECT zone_code FROM {uc_zones} WHERE zone_id=%d AND zone_country_id=%d", $order->billing_zone, $order->billing_country));
+      $country = db_result(db_query("SELECT country_name country FROM {uc_countries} WHERE country_id=%d", $order->billing_country));
 
-    // Create a profile for the user.
-    $profile_attributes = array(
-      'nid' => NULL, // NULL creates a new node.
-      // 'title' => $new_user->name .'\'s Profile',
-      'body' => NULL, // Defaults to no body.
-      'type' => 'profile',
-      'teaser' => NULL,
-      'log' => '',
-      'created' => '',
-      'format' => FILTER_FORMAT_DEFAULT,
-      'uid' => $account->uid,
-      'field_profile_firstname' => array(array('value' => $order->billing_first_name)),
-      'field_profile_surname' => array(array('value' => $order->billing_last_name)),
-      'field_profile_organisation' => array(array('value' => $order->billing_company)),
-      'field_profile_phone' => array(array('value' => $order->billing_phone)),
-      'field_profile_address' => array(array('value' => $order->billing_street1)),
-      'field_profile_city' => array(array('value' => $order->billing_city)),
-      'field_profile_postcode' => array(array('value' => $order->billing_postal_code)),
+      // Create a profile for the user.
+      $profile_attributes = array(
+        'nid' => NULL, // NULL creates a new node.
+        // 'title' => $new_user->name .'\'s Profile',
+        'body' => NULL, // Defaults to no body.
+        'type' => 'profile',
+        'teaser' => NULL,
+        'log' => '',
+        'created' => '',
+        'format' => FILTER_FORMAT_DEFAULT,
+        'uid' => $account->uid,
+        'field_profile_firstname' => array(array('value' => $order->billing_first_name)),
+        'field_profile_surname' => array(array('value' => $order->billing_last_name)),
+        'field_profile_organisation' => array(array('value' => $order->billing_company)),
+        'field_profile_phone' => array(array('value' => $order->billing_phone)),
+        'field_profile_address' => array(array('value' => $order->billing_street1)),
+        'field_profile_city' => array(array('value' => $order->billing_city)),
+        'field_profile_postcode' => array(array('value' => $order->billing_postal_code)),
 
-      'field_profile_state' => array(array('value' => $state)),
-      'field_profile_country' => array(array('value' => $country)),
-    );
+        'field_profile_state' => array(array('value' => $state)),
+        'field_profile_country' => array(array('value' => $country)),
+      );
 
-    // Save the profile.
-    $new_profile = (object) $profile_attributes;
-    node_save($new_profile);
+      // Save the profile.
+      $new_profile = (object) $profile_attributes;
+      node_save($new_profile);
+
+    } // empty($profile)
 
     // If we have a newsletter, subscribe the user.
     //
     if (module_exists('simplenews') && ($tid = variable_get('register_newsletter_tid', 0))) {
       simplenews_subscribe_user($account->mail, $tid, FALSE);
     }
-  }
+
+  } // empty($account)
 }
 
 /**
