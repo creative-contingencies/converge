@@ -8,7 +8,7 @@
   */
 
   $offset = variable_get('date_default_timezone', 0);
-  $offset -= 3600;
+  // $offset -= 3600;
 
   header('Content-Type: text/Calendar');
   header('Content-Disposition: inline; filename=MyACEC.ics');
