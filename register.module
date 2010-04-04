@@ -1331,7 +1331,7 @@ function register_list_overview() {
   //
   $attendees = db_result(db_query("SELECT COUNT(DISTINCT(uid)) FROM {ccc_ticket_allocation}"));
   $output .= '<h3>Overview</h3>';
-  $output .= t('<p>There are !num distinct people who have a ticket of any kind allocated to them', array('!num' => $attendees));
+  $output .= t('<p>There are !num distinct people who have a ticket of any kind allocated to them. Note that this may include allocations from cancelled tickets!', array('!num' => $attendees));
   $output .= '<hr size="1" />';
 
   // Number of people with each ticket type.

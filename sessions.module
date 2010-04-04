@@ -1142,7 +1142,7 @@ function sessions_list_view($account) {
   $output .= '<div style="float: right;">';
   $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
   if ($account->uuid) {
-    $output .= '<a href="' . url('myacec/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/feed.png" height="16" width="16" alt="iCal" align="right" /></a>';
+    $output .= '<a href="' . url('myacec/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/ical-64x64.png" height="64" width="64" alt="iCal" align="right" /></a>';
   }
   $output .= '</div>';
   $output .= variable_get('sessions_program_header', '');
@@ -1380,14 +1380,17 @@ function sessions_report($nid = 0) {
 
   // 
   $query = "SELECT n.nid AS nid, n.title AS title,
-      nt.nid AS tnid, nt.title AS ttitle,
-      nr.nid AS rnid, nr.title AS rtitle,
-      ctr.field_room_capacity_value AS capacity, COUNT(ccc_ss.uid) AS attendees,
+      nt.nid AS tnid,
+      nt.title AS ttitle,
+      nr.nid AS rnid,
+      nr.title AS rtitle,
+      ctr.field_room_capacity_value AS capacity,
+      COUNT(ccc_ss.uid) AS attendees,
       ctr.field_room_capacity_value - COUNT(ccc_ss.uid) AS available
     FROM
       {node} AS n
     LEFT JOIN
-      {content_type_proposal} AS ctp ON (n.nid = ctp.nid)
+      {content_type_proposal} AS ctp ON (n.vid = ctp.vid)
     LEFT JOIN
       {node} AS nt ON (ctp.field_proposal_scheduled_nid = nt.nid AND nt.type = 'timeslot')
     LEFT JOIN
@@ -1445,12 +1448,11 @@ function sessions_report($nid = 0) {
 function sessions_report_session($proposal) {
 
   $query = "SELECT
-    DISTINCT(u.uid) AS uid,
+    DISTINCT(ccc_ss.uid) AS uid,
     ctp.field_profile_firstname_value AS firstname,
     ctp.field_profile_surname_value AS surname,
     u.mail AS mail,
-    UNIX_TIMESTAMP(ccc_ss.modified) AS modified,
-    uc_o.order_status AS order_status
+    UNIX_TIMESTAMP(ccc_ss.modified) AS modified
   FROM
     {ccc_session_selection} AS ccc_ss
   LEFT JOIN
@@ -1459,23 +1461,14 @@ function sessions_report_session($proposal) {
     {node} AS n ON (n.uid = u.uid AND n.type = 'profile')
   LEFT JOIN
     {content_type_profile} AS ctp ON (ctp.vid = n.vid)
-JOIN
-  {ccc_ticket_allocation} AS ta ON (ta.uid = ccc_ss.uid)
-JOIN
-  {uc_order_products} AS uc_op ON (uc_op.order_product_id = ta.order_product_id)
-JOIN
-  {uc_orders} AS uc_o ON (uc_o.order_id = uc_op.order_id)
-WHERE
-  uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
-AND
-  ccc_ss.nid = %d";
+  WHERE
+    ccc_ss.nid = %d";
 
   $data = array();
   $header[] = array('data' => t('Firstname'), 'field' => 'firstname');
   $header[] = array('data' => t('Surname'),   'field' => 'surname');
   $header[] = array('data' => t('Email'),     'field' => 'mail');
   $header[] = array('data' => t('Selected'),  'field' => 'modified', 'sort' => 'desc');
-  $header[] = array('data' => t('Order'),     'field' => 'uc_o.order_status');
 
   $result = db_query($query . tablesort_sql($header), $proposal->nid);
   while ($row = db_fetch_array($result)) {
@@ -1484,13 +1477,15 @@ AND
       'surname' => $row['surname'],
       'mail' => l($row['mail'], 'user/' . $row['uid']),
       'modified' => format_date($row['modified'], 'long'),
-      'order' => $row['order_status'],
     );
     $data[] = $tuple;
   }
 
-  drupal_set_title(t('Attendees for !title', array('!title' => $proposal->title)));
-  return theme('table', $header, $data);
+  drupal_set_title($proposal->title);
+  $output  = t('<p>!num people have selected !title', array('!num' => count($data), '!title' => $proposal->title));
+  $output .= t('<p>Note that people who bought a ticket for this session, but didn\'t selected it are not listed here.');
+  $output .= theme('table', $header, $data);
+  return $output;
 }
 
 /**
