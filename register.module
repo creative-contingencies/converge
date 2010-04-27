@@ -1616,7 +1616,7 @@ function register_export_badges() {
     $dinners += $row[8];
   }
 
-  $output  = t('Badge data for !num attendees, including !dinners dinner tickets.', array('!num' => count($badges['data']), '!dinners' => $dinners));
+  $outpute = t('Badge data for !num attendees, including !dinners dinner tickets.', array('!num' => count($badges['data']), '!dinners' => $dinners));
   $output .= theme('table', $badges['header'], $badges['data']);
 
   $data = array();
@@ -1663,6 +1663,7 @@ SELECT
   pro.field_profile_surname_value AS surname,
   pro.field_profile_position_value AS position,
   pro.field_profile_organisation_value AS organisation,
+  u.mail AS mail,
   pro.field_profile_dietary_value AS diet,
   pro.field_profile_accessibility_value AS access
 FROM
@@ -1708,6 +1709,7 @@ WHERE
     array('data' => 'Surname'     , 'field' => 'pro.field_profile_surname_value', 'sort' => 'asc'),
     array('data' => 'Position'    , 'field' => 'pro.field_profile_position_value'),
     array('data' => 'Organisation', 'field' => 'pro.field_profile_organisation_value'),
+    array('data' => 'Email'       , 'field' => 'u.mail'),
     array('data' => 'Dietary'),
     array('data' => 'Accessibility'),
     array('data' => 'Role'),
