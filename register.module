@@ -1769,6 +1769,7 @@ WHERE
       'surname' => $row->surname,
       'position' => $row->position,
       'organisation' => $row->organisation,
+      'mail' => $row->mail,
       'diet' => $row->diet,
       'access' => $row->access
     );
