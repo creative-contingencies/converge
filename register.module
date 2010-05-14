@@ -1796,6 +1796,8 @@ WHERE
       $tuple[$key] = $value;
     }
 
+    $tuple['hours'] = register_export_badges_format_hours($list);
+
     $data[] = $tuple;
   }
 
@@ -2036,6 +2038,82 @@ function register_export_badges_format_ticket_colour($tickets) {
   }
 
   return implode(' + ', $colours);
+}
+
+
+/**
+ * Check a list of tickets for a set of data that needs to go on their badge.
+ */
+function register_export_badges_format_hours($tickets) {
+
+  $hours = 0;
+
+  // Expo only.
+  if ($tickets[4942]) $hours += 8;
+  if ($tickets[4944]) $hours += 8;
+  if ($tickets[4946]) $hours += 8;
+
+  // Dailies.
+  if ($tickets[122]) $hours += 8;
+  if ($tickets[124]) $hours += 8;
+  if ($tickets[126]) $hours += 8;
+
+  // Dailies students
+  if ($tickets[4036]) $hours += 8;
+  if ($tickets[4042]) $hours += 8;
+  if ($tickets[4044]) $hours += 8;
+
+  // full conf
+  if ($tickets[114])
+    $hours += 24;
+  if ($tickets[1590])
+    $hours += 24;
+
+  // full conf student
+  if ($tickets[4046])
+    $hours += 24;
+
+  // half days.
+  if ($tickets[4046])
+    $hours += 4;
+
+  // Breakfast
+  if ($tickets[3656])
+    $hours += 4;
+
+  // leadership
+  if ($tickets[116])
+    $hours += 4.5;
+
+  // IWB Begin
+  if ($tickets[3722])
+    $hours +=2;
+
+  // IWB intermediate
+  if ($tickets[3724])
+    $hours +=2;
+
+  // Lego Robot
+  if ($tickets[3726])
+    $hours += 2;
+
+  // Lego Sci
+  if ($tickets[3728])
+    $hours +=2;
+
+  // All day bus
+  if ($tickets[4800])
+    $hours += 8;
+
+  // Bus AM
+  if ($tickets[4796])
+    $hours += 3.5;
+
+  // Bus PM
+  if ($tickets[4789])
+    $hours += 4.5;
+
+  return $hours;
 }
 
 /**
