@@ -84,7 +84,7 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
       $block = promotion_user_faces();
     }
     if ($delta == 1) {
-      $block = promotion_unused();
+      $block = promotion_certificate();
     }
     if ($delta == 2) {
       $block = promotion_myacec_percentage();
@@ -129,11 +129,20 @@ function promotion_user_faces() {
  *
  * Return a block with info.
  */
-function promotion_unused() {
+function promotion_certificate() {
   $block = array();
 
-  $block['subject'] = t('Unused');
-  $block['content'] = 'Placeholder.';
+  $account = menu_get_object('user');
+  if (!$account->uid)
+    return;
+
+  if (!promotion_certificate_exists($account))
+    return;
+
+  $size = filesize(promotion_certificate_file($account));
+
+  $block['subject'] = t('Certificate');
+  $block['content'] = 'Download your PD attendance certificate. ' . l('ACEC2010_PD_Certificate.pdf', 'user/' . $account->uid . '/certificate') . ' <i>(' . format_size($size) . ')</i>';
 
   return $block;
 }
@@ -384,4 +393,64 @@ new TWTR.Widget({
 </script>";
 
   return $block;
+}
+
+/**
+ * Implementation of hook_menu.
+ *
+ * Provide a callback url for users to fetch their PDF certificates.
+ */
+function promotion_menu() {
+  $items = array();
+
+  $items['user/%user/certificate'] = array(
+    'title' => 'Certificate Download',
+    'description' => t('Download the PD Certificate'),
+    'page callback' => 'promotion_certificate_download',
+    'page arguments' => array(1),
+    'access callback' => 'promotion_certificate_exists',
+    'access arguments' => array(1),
+  );
+
+  return $items;
+}
+
+/**
+ * Access callback function. Return true if there is a certificate for the user.
+ */
+function promotion_certificate_exists($account) {
+  global $user;
+
+  if ($user->uid == $account->uid || user_access('administer users')) {
+    return file_exists( promotion_certificate_file($account) );
+  }
+  return false;
+}
+
+/**
+ * Give us the certificate file for the user.
+ */
+function promotion_certificate_file($account) {
+  return 'files/certificates/' . $account->uid . '.pdf';
+}
+
+/**
+ * Handler to return the PDF to the user.
+ */
+function promotion_certificate_download($account) {
+  $file = promotion_certificate_file($account);
+
+  // Add the response headers.
+  //
+  drupal_set_header('Content-type: application/pdf');
+  drupal_set_header('Content-length: ' . filesize($file));
+  drupal_set_header('Content-disposition: attachment; filename=ACEC2010_PD_Certificate.pdf');
+
+  // Read the file data and spew it out.
+  //
+  @fpassthru($file);
+
+  // Don't do anything else!
+  //
+  die();
 }
