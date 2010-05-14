@@ -133,7 +133,7 @@ function promotion_certificate() {
   $block = array();
 
   $account = menu_get_object('user');
-  if (!$account->uid)
+  if (empty($account) || !$account->uid)
     return;
 
   if (!promotion_certificate_exists($account))
