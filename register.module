@@ -1756,6 +1756,11 @@ WHERE
       $list[$tix->nid] = $tix->title;
     }
 
+if ($account->uid == 752) {
+  print "Tickets";
+  print_r($list);
+}
+
     // If they have no tickets allocated AND are not a special role, ignore them!
 
     // if they *only* have a dinner ticket, do not include them.
@@ -2074,8 +2079,9 @@ function register_export_badges_format_hours($tickets) {
     $hours += 24;
 
   // half days.
-  if ($tickets[4046])
-    $hours += 4;
+  if ($tickets[4936]) $hours += 4;
+  if ($tickets[4938]) $hours += 4;
+  if ($tickets[4940]) $hours += 4;
 
   // Breakfast
   if ($tickets[3656])
@@ -2167,6 +2173,7 @@ function register_export_badges_format_ticket_days($tickets) {
     $days['friday'] = 1;
 
   if(!in_array(1, $days)) {
+    echo "No days at all!";
     $days['wednesday'] = 1;
     $days['thursday'] = 1;
     $days['friday'] = 1;
