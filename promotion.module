@@ -133,9 +133,12 @@ function promotion_user_faces() {
 function promotion_certificate() {
   $block = array();
 
-  $account = menu_get_object('user');
-  if (empty($account) || !$account->uid)
+  if (arg(0) == 'user' && arg(1));
+    $account = user_load(arg(1));
+
+  if (empty($account) || !$account->uid) {
     return;
+  }
 
   if (!promotion_certificate_exists($account))
     return;
@@ -432,7 +435,7 @@ function promotion_certificate_exists($account) {
  * Give us the certificate file for the user.
  */
 function promotion_certificate_file($account) {
-  return file_directory_path() . ' /certificates/' . $account->uid . '.pdf';
+  return file_directory_path() . '/certificates/' . $account->uid . '.pdf';
 }
 
 /**
@@ -449,7 +452,7 @@ function promotion_certificate_download($account) {
 
   // Read the file data and spew it out.
   //
-  @fpassthru($file);
+  @readfile($file);
 
   // Don't do anything else!
   //
