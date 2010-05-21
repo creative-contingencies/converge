@@ -155,6 +155,16 @@ function register_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
+  $items['prizedraw/%'] = array(
+    'title' => 'Prize Draw!',
+    'description' => 'Select random registrants for the prize draw.',
+    'page callback' => 'register_prizedraw',
+    'page arguments' => array(1),
+    'access callback' => 'user_access',
+    'access arguments' => array('view all orders'),
+    'type' => MENU_CALLBACK,
+  );
+
   $items['register/invite_volunteers'] = array(
     'title' => 'Invite volunteers',
     'page callback' => 'drupal_get_form',
@@ -1154,7 +1164,13 @@ function register_list_coupon_status() {
 /**
  * Return a random list of registrees
  */
-function register_prizedraw() {
+function register_prizedraw($limit = 10) {
+
+  $limit = intval($limit);
+  if (!$limit) $limit = 10;
+
+  // Modified so that volunteers, sponsors and organisers cannot win.
+  // Modified so that only people who attended on friday can win.
 
   // Get all users who have a completed or payment received ticket allocated to them.
   $query = "SELECT
@@ -1164,7 +1180,8 @@ function register_prizedraw() {
       uc_o.order_status AS order_status,
       n.title,
       ctp.field_profile_firstname_value AS firstname,
-      ctp.field_profile_surname_value AS surname
+      ctp.field_profile_surname_value AS surname,
+      ctp.field_profile_organisation_value AS organisation
     FROM
       {uc_order_products} AS uc_op
     JOIN
@@ -1178,29 +1195,41 @@ function register_prizedraw() {
     LEFT JOIN
       {content_type_profile} AS ctp ON(np.nid=ctp.nid)
     WHERE
-      uc_o.order_status IN ('completed','payment_received')
+        uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+      AND
+        uc_op.nid IN (114,126,1590,4940,4046,4044)
+      AND
+        ccc_ta.uid NOT IN (SELECT uid FROM {users_roles} WHERE rid IN (24,20,7,26,12,5,28,22))
     GROUP BY
       ccc_ta.uid
     ORDER BY
       RAND()
     LIMIT
-      10";
+      %d";
 
-  $result = db_query($query);
+  $result = db_query($query, $limit);
 
   while ($o = db_fetch_object($result)) {
+    // $tuple = array(
+    //   'user' => ($o->uid) ? l($o->firstname . ' ' . $o->surname, 'user/' . $o->uid) : ($o->firstname . ' ' . $o->surname),
+    //   'oid' => l($o->order_id, 'admin/store/orders/' . $o->order_id),
+    //   'order' => $o->title,
+    //   'status' => $o->order_status,
+    // );
     $tuple = array(
-      'user' => ($o->uid) ? l($o->firstname . ' ' . $o->surname, 'user/' . $o->uid) : ($o->firstname . ' ' . $o->surname),
-      'oid' => l($o->order_id, 'admin/store/orders/' . $o->order_id),
-      'order' => $o->title,
-      'status' => $o->order_status,
+      'user' => ($o->uid) ? '<h4>' . l($o->firstname . ' ' . $o->surname, 'user/' . $o->uid) . '</h4>' : '<h4>' . ($o->firstname . ' ' . $o->surname) . '</h4>',
+      'organisation' => '<h4>' . $o->organisation . '<h4>',
     );
     $data[] = $tuple;
   }
 
-  $headers = array('Name', 'Order', 'Product', 'Status');
+  $headers = array('Name', 'Organisation'); // , 'Product', 'Status');
 
-  $output  = t('<p>Here are 10 random people with tickets from a completed or paid order allocated to them.');
+  // $output  = t('<p>Here are 10 random people with tickets from a completed or paid order allocated to them.');
+  $winner = format_plural( count($data), 'winner', 'winners');
+  $is = format_plural( count($data), 'is', 'are');
+  drupal_set_title('We have a winner!');
+  $output .= t('<p>And the !winner !is ...</p>', array('!winner' => $winner, '!is' => $is));
   $output .= theme('table', $headers, $data);
 
   return $output;

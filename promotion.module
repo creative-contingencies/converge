@@ -13,7 +13,8 @@ function promotion_block($op = 'list', $delta = 0, $edit = array()) {
       'cache' => BLOCK_NO_CACHE,
     );
     $blocks[1] = array(
-      'info' => t('promotion: Unused'),
+      'info' => t('promotion: PD Certificate'),
+      'cache' => BLOCK_NO_CACHE,
     );
     $blocks[2] = array(
       'info' => t('promotion: myACEC Percentage Incentive'),
