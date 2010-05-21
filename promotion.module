@@ -432,7 +432,7 @@ function promotion_certificate_exists($account) {
  * Give us the certificate file for the user.
  */
 function promotion_certificate_file($account) {
-  return 'files/certificates/' . $account->uid . '.pdf';
+  return file_directory_path() . ' /certificates/' . $account->uid . '.pdf';
 }
 
 /**
