@@ -840,3 +840,4 @@ cli/merge/users_without_ticket.csv
 cli/apple.csv
 all-badges.csv
 certs
+cli/certs.tar.bz
