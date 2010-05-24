@@ -15,6 +15,27 @@ It current provides modules for:
 Ticket sales are handled via Ubercart.
 
 
+REQUIREMENTS
+------------
+
+Required 3rd party modules for Converge are:
+
+ - Content				http://drupal.org/project/cck
+ - Content Profile		http://drupal.org/project/content_profile
+ - Date					http://drupal.org/project/date
+ - FileField			http://drupal.org/project/filefield
+ - Fivestar				http://drupal.org/project/fivestar
+ - Logintoboggan		http://drupal.org/project/logintoboggan
+ - Nodereference		http://drupal.org/project/nodereference
+ - Pathauto				http://drupal.org/project/pathauto
+ - Token				http://drupal.org/project/token
+ - Ubercart				http://drupal.org/project/ubercart
+ - UUID					http://drupal.org/project/uuid
+ - Views				http://drupal.org/project/views
+ - Views Customfield	http://http://drupal.org/project/views_customfield
+ - Voting API			http://drupal.org/project/votingapi
+
+
 LICENSE
 -------
 
