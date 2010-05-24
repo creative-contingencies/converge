@@ -1,0 +1,6 @@
+The following functionality is a work in progress in Converge:
+
+ - Multiple events on the same installation.
+ - Full mail merge functionality.
+ - Volunteer registration and management.
+ - Sponsor registration and management.
