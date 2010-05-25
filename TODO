@@ -1,4 +1,0 @@
-Profile percentage block
-  Your myACEC is xx% complete. Add <a href="edit-y">Y</a> to bring it up to yy%.
-Registrant faces block
-  SELECT picture FROM users ORDER BY RANDOM LIMIT X
