@@ -1,0 +1,370 @@
+<?php
+/**
+ * This module allows users to select session preferences and defines
+ * some helpers to assist them selection relevant sessions.
+ */
+
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function program_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'views_exposed_form') {
+    if (strstr($form['#id'], 'views-exposed-form-Program-page') !== FALSE) {
+      $form['submit']['#value'] = t('Search');
+    }
+  }
+}
+
+/**
+ * Implementation of hook_block()
+ */
+function program_block($op = 'view', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks = array();
+    $blocks[0] = array(
+      'info' => t('program: Related proposal suggestions by node'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[1] = array(
+      'info' => t('program: Related keyword suggestions by keyword'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[2] = array(
+      'info' => t('program: Related proposal suggestions by keyword'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[3] = array(
+      'info' => t('program: Proposal suggestions based on preferences'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    return $blocks;
+  }
+
+  if ($op == 'configure' && $delta == 3) {
+    $form['sort'] = array(
+      '#type' => 'radios',
+      '#title' => t('Sort Order'),
+      '#description' => t('How should suggested sessions be sorted?'),
+      '#default_value' => variable_get('program_block_sort', 'random'),
+      '#options' => array(
+        'random' => 'Sort randomly',
+        'relevance' => 'Sort by relevance',
+      ),
+    );
+    $form['limit'] = array(
+      '#type' => 'select',
+      '#title' => t('List Limit'),
+      '#description' => t('How many suggested sessions should be shown? (0 = no limit)'),
+      '#default_value' => variable_get('program_block_limit', 4),
+      '#options' => array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+    );
+    return $form;
+  }
+
+  if ($op == 'save' && $delta == 3) {
+    variable_set('program_block_sort', $edit['sort']);
+    variable_set('program_block_limit', $edit['limit']);
+  }
+
+  if ($op == 'view') {
+    switch ($delta) {
+      case 0:
+        $block = program_block_related_proposals_by_nid( check_plain(arg(1)) );
+        break;
+      case 1:
+        $block = program_block_related_keywords_by_term( check_plain(arg(2)) );
+        break;
+      case 2:
+        $block = program_block_related_proposals_by_term( check_plain(arg(2)) );
+        break;
+      case 3:
+        $block = program_block_suggested_sessions( variable_get('program_block_sort', 'random') );
+        break;
+    }
+    return $block;
+  }
+}
+
+/**
+ * Helper to grab a list of proposals with matching key words.
+ */
+function program_block_related_proposals_by_nid($nid) {
+
+  global $user;
+
+  $proposal = node_load($nid);
+  $terms = taxonomy_node_get_terms($proposal);
+
+  foreach ($terms as $tid => $term) {
+    // Skip type.
+    if ($term->vid == variable_get('proposal_vocabulary_kind'))
+      continue;
+    $tids[] = $tid;
+  }
+
+  // Select all nodes that match one or more terms with he current one.
+  $query = "/* Select nodes with matching terms */
+    SELECT
+      COUNT(tn.tid) AS num,
+      tn.nid AS nid,
+      n.title AS title
+    FROM
+      {term_node} AS tn
+    JOIN
+      {node} AS n ON (tn.nid=n.nid AND n.type='proposal')
+    JOIN
+      {content_type_proposal} AS ctp ON (n.nid = ctp.nid AND  n.vid = ctp.vid)
+    WHERE
+      tn.tid IN (" . implode(',', $tids) . ")
+      AND n.type='proposal'
+      AND n.status <> 0
+      AND ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes')
+      AND tn.tid != 42
+      AND tn.nid != %d
+      AND n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+    GROUP BY
+      tn.tid
+    ORDER BY
+      COUNT(tn.tid) DESC,
+      RAND()
+    LIMIT 4";
+
+  $result = db_query($query, $proposal->nid, $user->uid);
+  while ($row = db_fetch_array($result)) {
+    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
+  }
+
+  // Output.
+  $block = array(
+    'subject' => 'Related sessions',
+    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul>',
+  );
+  return $block;
+}
+
+/**
+ * TODO: Grab (popular) sessions based on user category preferences.
+ */
+
+/**
+ * Helper to grab a list of keywords that are "also used".
+ */
+function program_block_related_keywords_by_term($raw_term) {
+
+  global $user;
+
+  if (!$raw_term)
+    return;
+
+  $term = taxonomy_get_term_by_name($raw_term);
+
+  $vid = variable_get('proposal_vocabulary_keywords', 0);
+
+  if ($term[0]->vid != $vid)
+    return;
+
+  $result = db_query("
+    SELECT
+      tn.nid AS nid
+    FROM
+      {term_node} AS tn
+    JOIN
+      {term_data} AS td ON(tn.tid=td.tid)
+    JOIN
+      {node} AS n ON (tn.nid=n.nid)
+    JOIN
+      {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    LEFT JOIN
+      {term_node} AS tnt ON n.vid = tnt.vid AND tnt.tid = 2
+    WHERE
+      n.type='proposal' AND
+      n.status <> 0 AND
+      ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
+      tnt.tid IS NULL AND
+      td.vid = %d AND
+      tn.tid = %d AND
+      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)", $term[0]->vid, $term[0]->tid, $user->uid);
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
+  }
+
+  // Select and count all other keywords referenced by these nodes.
+  $result = db_query("SELECT COUNT(tn.tid), tn.tid AS tid, td.name AS name FROM {term_node} AS tn JOIN {term_data} AS td ON(tn.tid=td.tid) WHERE td.vid = %d AND tn.tid != %d AND tn.tid != 42 AND tn.nid IN (" . implode(',', $nids) . ") GROUP BY tn.tid ORDER BY COUNT(tn.tid) DESC LIMIT 12", $term[0]->vid, $term[0]->tid);
+  while ($row = db_fetch_array($result)) {
+    $terms[] = l($row['name'], 'program/keyword/' . $row['name']);
+  }
+
+  // Output.
+  if (count($terms)) {
+    $block = array(
+      'subject' => 'Related keywords',
+      'content' => implode(', ', $terms),
+    );
+    return $block;
+  } else {
+    return;
+  }
+}
+
+/**
+ * Helper to grab a list of "related proposals" (ie: share keywords)
+ */
+function program_block_related_proposals_by_term($raw_term) {
+
+  global $user;
+
+  if (!$raw_term)
+    return;
+
+  $term = taxonomy_get_term_by_name($raw_term);
+
+  $vid = variable_get('proposal_vocabulary_keywords', 0);
+
+  if ($term[0]->vid != $vid)
+    return;
+
+  $result = db_query("
+    SELECT
+      tn.nid AS nid,
+      n.title AS title
+    FROM
+      {term_node} AS tn
+    JOIN
+      {term_data} AS td ON(tn.tid=td.tid)
+    JOIN
+      {node} AS n ON (tn.nid=n.nid)
+    JOIN
+      {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    LEFT JOIN
+      {term_node} AS tnt ON n.vid = tnt.vid AND tnt.tid = 2
+    WHERE
+      n.type='proposal' AND
+      n.status <> 0 AND
+      ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
+      tnt.tid IS NULL AND
+      td.vid = %d AND
+      tn.tid = %d AND
+      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)", $term[0]->vid, $term[0]->tid, $user->uid);
+  while ($row = db_fetch_array($result)) {
+    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
+  }
+
+  // Output.
+  $block = array(
+    'subject' => 'Related sessions',
+    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul>',
+  );
+  return $block;
+}
+
+/**
+ * Return a list of suggested sessions based on the user's preferences.
+ *
+ * @param $type
+ *   Can be 'random' or 'relevance' to change sorting order.
+ */
+function program_block_suggested_sessions() {
+  global $user;
+
+  if ($user->uid == 0)
+    return;
+
+  $profile = content_profile_load('profile', $user->uid);
+
+  if (!count($profile->taxonomy)) {
+    return array(
+      'subject' => t('Suggestions'),
+      'content' => t('Please add your interests to your !profile_url, so we can suggest relevant sessions to you.',
+                      array('!profile_url' => l(t('profile'), 'user/' . $user->uid . '/edit/profile'))
+                    ),
+      );
+  }
+
+  $vid = variable_get('proposal_vocabulary_category', 0);
+
+  foreach ($profile->taxonomy as $term) {
+    if ($term->vid == $vid) {
+      $terms[] = $term->tid;
+    }
+  }
+
+  if (variable_get('program_block_sort', 'random') == 'relevance') {
+    $order = 'COUNT(tn.tid) DESC, RAND()';
+  } else {
+    $order = 'RAND()';
+  }
+
+  $limit = variable_get('program_block_limit', 0);
+  if ($limit) {
+    $limit = "LIMIT " . $limit;
+  } else {
+    $limit = '';
+  }
+
+  // I can either sort the nodes randomly, OR list them by relevance (more matching terms)
+  $result = db_query("
+    SELECT
+      tn.nid AS nid,
+      n.title AS title,
+      COUNT(tn.tid)
+    FROM
+      {term_node} AS tn
+    JOIN
+      {term_data} AS td ON(tn.tid=td.tid)
+    JOIN
+      {node} AS n ON (tn.nid=n.nid)
+    JOIN
+      {content_type_proposal} AS ctp ON n.vid = ctp.vid
+    LEFT JOIN
+      {term_node} AS tnt ON n.vid = tnt.vid AND tnt.tid = 2
+    WHERE
+      n.type='proposal' AND
+      n.status <> 0 AND
+      ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes') AND
+      tnt.tid IS NULL AND
+      td.vid = %d AND
+      tn.tid IN (" . implode(',', $terms) . ") AND
+      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+    GROUP BY
+      tn.nid
+    ORDER BY " . $order . " " . $limit, $vid, $user->uid);
+  while ($row = db_fetch_array($result)) {
+    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
+  }
+
+  // Output.
+  $block = array(
+    'subject' => 'Suggested sessions',
+    'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul><p class="note">Based on your interests, we think you might like these sessions.</p>',
+  );
+  return $block;
+
+}
+
+/*
+       Table: term_data
+Create Table: CREATE TABLE `term_data` (
+  `tid` int(10) unsigned NOT NULL auto_increment,
+  `vid` int(10) unsigned NOT NULL default '0',
+  `name` varchar(255) NOT NULL default '',
+  `description` longtext,
+  `weight` tinyint(4) NOT NULL default '0',
+  PRIMARY KEY  (`tid`),
+  KEY `taxonomy_tree` (`vid`,`weight`,`name`),
+  KEY `vid_name` (`vid`,`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=464 DEFAULT CHARSET=utf8
+1 row in set (0.00 sec)
+
+mysql> show create table term_node\G
+*************************** 1. row ***************************
+       Table: term_node
+Create Table: CREATE TABLE `term_node` (
+  `nid` int(10) unsigned NOT NULL default '0',
+  `vid` int(10) unsigned NOT NULL default '0',
+  `tid` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (`tid`,`vid`),
+  KEY `vid` (`vid`),
+  KEY `nid` (`nid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+*/

@@ -1,0 +1,8 @@
+name = Reviews workflow
+description = Manage proposals and reviewers along with scoring.
+package = " Creative Contingencies Conference"
+core = 6.x
+
+dependencies[] = nodereference
+dependencies[] = fivestar
+dependencies[] = proposal

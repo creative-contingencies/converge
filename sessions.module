@@ -1,0 +1,1510 @@
+<?php
+
+/**
+ *
+ * Handle session selection info
+ *
+ * We are coupling a bit with registration. After all, we need to know which ticket
+ * a user has purchased, so we can allow them to pick appropriate sessions.
+ */
+
+/**
+ * Implementation of hook_perm().
+ *
+ */
+function sessions_perm() {
+  return array('choose conference sessions', 'view session reports', 'administer session selection');
+}
+
+/**
+ * Implementation of hook_nodeapi()
+ *
+ * TODO: Select the node type to use as a timeslot.
+ */
+function sessions_nodeapi(&$node, $op) {
+  switch ($op) {
+    case 'load':
+      if ($node->type == 'timeslot') {
+
+        // Create a formatted session time string.
+        //
+        $start = theme('sessions_timeslot', $node, array('value' => 'H:i'));
+        $end = theme('sessions_timeslot', $node, array('value2' => 'H:i'));
+
+        $node->between = t('!start - !end', array('!start' => $start, '!end' => $end));
+
+        // Grab the nid of the day we're attached to.
+        $node->day = db_result(db_query("SELECT nid FROM {content_field_day_timeslots} WHERE field_day_timeslots_nid=%d", $node->nid));
+      }
+
+      if ($node->type == 'proposal') {
+        $node->attendees = count(sessions_attendees($node->nid));
+        $capacity = intval(db_result(db_query("SELECT ctr.field_room_capacity_value FROM {content_type_proposal} AS ctp LEFT JOIN {content_type_room} AS ctr ON (ctp.field_proposal_room_nid = ctr.nid) WHERE ctp.nid = %d", $node->nid)));
+        $node->capacity = $capacity;
+        if ($node->capacity > $node->attendees) {
+          $node->full = FALSE;
+        }
+        else {
+          $node->full = TRUE;
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function sessions_menu() {
+  $items = array();
+
+ // Admin page.
+  $items['admin/settings/sessions'] = array(
+    'title' => 'CCC Session Selection Settings',
+    'description' => 'Change configuration for Session Selection',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sessions_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer session selection'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  // Grid to see which sessions are full.
+  $items['admin/store/reports/sessions'] = array(
+    'title' => 'Session Selection Report',
+    'description' => 'List all sessions and their sizes',
+    'page callback' => 'sessions_report',
+    'access callback' => 'user_access',
+    'access arguments' => array('view session reports'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  // List who is in a particular session.
+  $items['admin/store/reports/sessions/%node'] = array(
+    'title' => 'Session Selection Report',
+    'description' => 'List attendees for a session',
+    'page callback' => 'sessions_report_session',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('view session reports'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // Session selections.
+  $items['user/%user/sessions'] = array(
+    'title' => 'My Program',
+    'description' => 'Conference session selection',
+    'page callback' => 'sessions_list',
+    'page arguments' => array(1, 3, 4, 5),
+    'access callback' => 'user_access',
+    'access arguments' => array('choose conference sessions'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  // Session selections - print view.
+  $items['user/%user/sessions/print'] = array(
+    'title' => 'Print My Program',
+    'description' => 'Print conference session selection',
+    'page callback' => 'sessions_list_print',
+    'page arguments' => array(1, 3, 4, 5),
+    'access callback' => 'user_access',
+    'access arguments' => array('choose conference sessions'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // Session selections - iCal view.
+  // This is referenced by uuid, so no auth check!
+  $items['myacec/%/ical'] = array(
+    'title' => 'My Program - iCal',
+    'description' => 'iCal conference session selection',
+    'page callback' => 'sessions_list_ical',
+    'page arguments' => array(1, 2, 3),
+    'access callback' => 'user_access',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // A redirect item for the navigation menu as well.
+  //
+  $items['my-program'] = array(
+    'title' => 'My Program',
+    'description' => 'Conference session selection',
+    'page callback' => 'sessions_list_goto',
+    'access callback' => 'user_access',
+    'access arguments' => array('choose conference sessions'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Administration settings.
+ */
+function sessions_admin_settings() {
+
+  $form['sessions'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Session Selection',
+    '#description' => t('General session selection settings.'),
+  );
+
+  $form['sessions']['sessions_proposal_status'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Propsal Status'),
+    '#description' => t('Acceptance status a proposal needs before it is scheduled, and can thus be selected.'),
+    '#options' => content_allowed_values(content_fields('field_proposal_status')),
+    '#default_value' => variable_get('sessions_proposal_status', array('accepted')),
+  );
+
+  $statuses = uc_order_state_list();
+  $options = array('pending' => 'Pending');
+  foreach ($statuses as $status) {
+    $options[$status['id']] = $status['title'];
+  }
+  $form['sessions']['sessions_order_status'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Payment Status'),
+    '#description' => t('Payment status needed before sessions can be selected.'),
+    '#options' => $options,
+    '#default_value' => variable_get('sessions_order_status', array('completed')),
+  );
+  unset($options);
+
+  // Add some values. 5 to 25 seems reasonable.
+  for ($i = 0; $i <= 50; $i+=5) {
+    $options[$i] = $i;
+  }
+  $form['sessions']['sessions_available_warning'] = array(
+    '#type' => 'select',
+    '#title' => t('Available Warning'),
+    '#description' => t('Start warning conference organisers when this number of spaces or less is available for a session.'),
+    '#options' => $options,
+    '#default_value' => variable_get('sessions_available_warning', 10),
+  );
+  unset($options);
+
+  $form['sessions_program_header'] = array(
+    '#type' => 'textarea',
+    '#title' => t('My Program Header'),
+    '#description' => t('Enter any instructions or notes that you want displayed at the top of each user\'s "My Program" page.'),
+    '#default_value' => variable_get('sessions_program_header', ''),
+  );
+
+  $form['sessions_program_footer'] = array(
+    '#type' => 'textarea',
+    '#title' => t('My Program Footer'),
+    '#description' => t('Enter any instructions or notes that you want displayed at the bottom of each user\'s "My Program" page.'),
+    '#default_value' => variable_get('sessions_program_footer', ''),
+  );
+
+  $form['sessions_program_select'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Session List Header'),
+    '#description' => t('Enter any instructions or notes that you want displayed at the top of the list of sessions for a timeslot, when the user has to make a choice.'),
+    '#default_value' => variable_get('sessions_program_select', ''),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function sessions_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+  switch ($op) {
+    case 'view':
+      if ($user->uid && (($user->uid == $account->uid && user_access('choose conference sessions')))) {
+
+        // If presenter or co-presenter, select OWN sessions and assign them.
+        //
+        sessions_presenter_select($account->uid);
+
+        // Get a big list of selected sessions.
+        $sessions = sessions_user_sessions($account->uid);
+
+        // The content of this block should depend on the ticket allocation status. register.module should
+        // set a flag on the account if a ticket of any kind has been allocated to it.
+
+        // Show selected sessions (or not ;-)
+        //
+        $account->content['selections'] = theme('user_overview_sessions', $account, $sessions);
+      }
+      break;
+
+    case 'load':
+      $account->selections = sessions_user_sessions($account->uid);
+      break;
+
+    case 'login':
+      sessions_warn_invalid_selections($account);
+      sessions_autoselect_sessions($account);
+      break;
+
+    case 'delete':
+      drupal_set_message(t('The user\'s session selections have been deleted'));
+      db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d", $account->uid);
+      break;
+
+  }
+}
+
+/**
+ * Helper to retrieve a useable array of acceptable proposal statuses.
+ */
+function sessions_valid_status() {
+  // Cache this. Really.
+  //
+  static $proposal_statuses;
+
+  if ($proposal_statuses) {
+    return $proposal_statuses;
+  }
+
+  $proposal_statuses = array();
+  $status = variable_get('sessions_proposal_status', array('accepted'));
+  foreach ($status as $key => $val) {
+    if ($val) {
+      $proposal_statuses[] = $key;
+    }
+  }
+  return $proposal_statuses;
+}
+
+/**
+ * Helper to retrieve a useable array of acceptable order statuses.
+ */
+function sessions_valid_order() {
+  // Cache this. Really.
+  //
+  static $order_statuses;
+
+  if ($order_statuses) {
+    return $order_statuses;
+  }
+
+  $order_statuses = array();
+  $status = variable_get('sessions_order_status', array('completed'));
+  foreach ($status as $key => $val) {
+    if ($val) {
+      $order_statuses[] = $key;
+    }
+  }
+  return $order_statuses;
+}
+
+/**
+ * Helper that automatically selects certain sessions depending
+ * on which tickets a user has assigned to them. We'll do this
+ * if the ticket type has "auto-select session" set on it.
+ *
+ * Yes, this is an ugly-arse hack.
+ *
+ * @param $account
+ *   A valid user account.
+ */
+function sessions_autoselect_sessions($account = NULL) {
+
+  if ($account == NULL) {
+    global $user;
+    $account = $user;
+  }
+
+  // Haha. Anonymous. Go away.
+  //
+  if ($account->uid == 0)
+    return;
+
+  // Check which tickets are assigned to this user.
+  foreach ($account->orders as $order) {
+    foreach ($order->tickets as $ticket) {
+
+      // Check if the ticket is assigned to the current user.
+      //
+      if ($ticket->uid == $account->uid) {
+
+        // Select all sessions (and their timeslots) associated with this ticket
+        // type that have autoselect set.
+        // Doing this via a direct query is much, much quicker than a node_load().
+
+        $query = "
+          SELECT
+            ctp.nid AS nid, ctp.field_proposal_scheduled_nid AS timeslot, n.title AS title
+          FROM
+            {content_field_registration_day} AS cfrd
+          LEFT JOIN
+            {content_field_day_timeslots} AS cfdt ON (cfdt.nid = cfrd.field_registration_day_nid)
+          LEFT JOIN
+            {content_type_proposal} AS ctp ON (ctp.field_proposal_scheduled_nid = cfdt.field_day_timeslots_nid)
+          LEFT JOIN
+            {node} AS n ON (n.nid = ctp.nid)
+          WHERE
+            cfrd.nid = %d AND ctp.field_proposal_autoselect_value=1";
+
+        $result = db_query($query, $order->nid);
+
+        while ($row = db_fetch_array($result)) {
+          db_query("REPLACE INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())",
+            $account->uid, $row['nid'], $row['timeslot']);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper that checks if sessions selections contain invalid choices.
+ *
+ * @param $user
+ *   A valid user account.
+ */
+function sessions_warn_invalid_selections($account = NULL) {
+  if ($account == NULL) {
+    global $user;
+    $account = $user;
+  }
+
+  // Haha. Anonymous. Go away.
+  //
+  if ($account->uid == 0)
+    return;
+
+  // Use a flag variable, so we can print a single link to sessions election IF there was a problem.
+  //
+  $gone = FALSE;
+  $moved = FALSE;
+
+  // Check if any of the user's selections are not in the listing of acceptable proposal statuses.
+  //
+  $query = "SELECT ccc_ss.nid AS nid, n.title AS title, ctp.field_proposal_status_value AS status FROM {ccc_session_selection} AS ccc_ss JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid) JOIN {node} AS n ON (ccc_ss.nid = n.nid) WHERE ccc_ss.uid=%d AND ctp.field_proposal_status_value NOT IN ('" . implode("','", sessions_valid_status()) . "')";
+  $result = db_query($query, $account->uid);
+
+  // Print each proposal title that we found.
+  //
+  while ($row = db_fetch_array($result)) {
+    drupal_set_message(t('!title has been !status', array('!title' => l($row['title'], 'node/' . $row['nid']), '!status' => $row['status'])), 'warning');
+
+    db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
+    $gone = TRUE;
+  }
+
+  // Check if a session that a user has selected has moved timeslots.
+  $query = "
+SELECT
+  ccc_ss.nid AS nid,
+  n.title AS title,
+  ccc_ss.timeslot AS timeslot,
+  ctp.field_proposal_scheduled_nid AS scheduled,
+  nf.title AS from_title,
+  nt.title AS to_title FROM
+{ccc_session_selection} AS ccc_ss
+JOIN {node} AS n ON (ccc_ss.nid = n.nid)
+LEFT JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid)
+LEFT JOIN {node} AS nf ON (nf.nid = ccc_ss.timeslot)
+LEFT JOIN {node} AS nt ON (nt.nid = ctp.field_proposal_scheduled_nid)
+WHERE ccc_ss.uid=%d AND ccc_ss.timeslot <> ctp.field_proposal_scheduled_nid";
+
+  $result = db_query($query, $account->uid);
+
+  // Print each proposal title that we found.
+  while ($row = db_fetch_array($result)) {
+    drupal_set_message(t('!title has been moved from !from to !to', array('!title' => l($row['title'], 'node/' . $row['nid']), '!from' => $row['from_title'], '!to' => $row['to_title'])), 'warning');
+
+    db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
+    $moved = TRUE;
+  }
+
+  // Ask the user to update their selections.
+  //
+  if ($gone) {
+    drupal_set_message(t('Some of your selected sessions are no longer available. Please !sessions.', array('!sessions' => l('update your selections', 'user/' . $account->uid . '/sessions'))));
+  }
+
+  // Ask the user to update their selections.
+  //
+  if ($moved) {
+    drupal_set_message(t('Some of your selected sessions have moved to a different timeslot. Please !sessions if you still wish to attend them.', array('!sessions' => l('re-select them', 'user/' . $account->uid . '/sessions'))));
+  }
+
+}
+
+/**
+ * Helper that retrieves ACCEPTED sessions that a user is presenting.
+ *
+ * @param uid
+ *   A user uid.
+ */
+function sessions_presenter($uid) {
+  $nids = array();
+
+  $query = "SELECT
+    n.nid AS nid
+  FROM
+    {node} AS n
+  INNER JOIN
+    {content_type_proposal} AS ctp ON n.vid = ctp.vid
+  LEFT JOIN
+    {content_field_proposal_presenters} AS cfpp ON (n.vid = cfpp.vid)
+  WHERE
+    n.type = 'proposal'
+    AND n.status <> 0
+    AND ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) ."')
+    AND cfpp.field_proposal_presenters_uid = %d
+  ORDER BY nid ASC";
+  $result = db_query($query, $uid);
+
+  while ($nid = db_result($result)) {
+    $nids[] = $nid;
+  }
+
+  return $nids;
+}
+
+/**
+ * Helper that warns presenters who do NOT have a ticket for the day(s) on
+ * which they're presenting.
+ *
+ * @param uid
+ *   A user uid.
+ */
+function sessions_presenter_check($uid) {
+  // Which days am I attending?
+  $days = sessions_get_days($uid);
+
+  // Which sessions am I presenting?
+  $sessions = sessions_presenter($uid);
+
+  if (!$sessions)
+    return;
+
+  // Which days are these sessions scheduled to be on?
+  $query = "SELECT DISTINCT(cfdt.nid) AS nid FROM {content_field_day_timeslots} WHERE cfdt.field_day_timeslots_nid IN (%s)";
+  $result = db_query($query, implode(', ', $days));
+
+  while ($nid = db_result($result)) {
+    if (!in_array($nid, $days)) {
+      $nids[] = $nid;
+    }
+  }
+
+  // I do not have a ticket for any days in $nids.
+  foreach ($nids as $nid) {
+    $day = node_load($nid);
+    drupal_set_message(t('You are presenting a session on !title but have not yet bought a ticket', array('!day' => $day->title)), 'warning');
+  }
+}
+
+/**
+ * Helper that automagically assigns presenters to their own sessions and
+ * keeps checking to make sure they ARE assigned to their own sessions.
+ * It reports if it has detected and removed a clash.
+ *
+ * @param uid
+ *   A user uid.
+ */
+function sessions_presenter_select($uid) {
+  $sessions = sessions_presenter($uid);
+  if (!$sessions)
+    return;
+
+  $selections = sessions_user_sessions($uid);
+
+  foreach ($sessions as $session) {
+    if (!in_array($session, $selections)) {
+      // Need to add $session as a selection.
+      $node = node_load($session);
+      $timeslot = node_load($node->field_proposal_scheduled[0]['nid']);
+      // Is there a conflict?
+      $conflicts = sessions_conflicts($uid, $timeslot->nid, $session);
+      if ($conflicts) {
+        // Display message
+        $warning = t('This choice conflicts with a session you are presenting and it has been removed:<ul>');
+        foreach ($conflicts as $conflict) {
+          $warning .= t('<li>!title</li>', array('!title' => l($conflict['title'], 'node/' . $conflict['nid'])));
+        }
+        $warning .= t('</ul>');
+        drupal_Set_message($warning);
+
+        $timeslots = sessions_overlapping_timeslots($timeslot->nid);
+        foreach ($timeslots as $t) {
+          db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $uid, $t);
+        }
+      }
+      // Add the new selection to the database.
+      //
+      $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot) VALUES (%d, %d, %d)";
+      db_query($query, $uid, $session, $timeslot->nid);
+      drupal_set_message(t('Added "!title", which you are presenting', array('!title' => $node->title)));
+    } // end in_array
+  } // end foreach
+}
+
+/**
+ * Grab all timeslots that are associated with a particular day and order them by date.
+ *
+ * @param nid
+ *   An day node id.
+ */
+function sessions_get_timeslots($nid) {
+  $nids = array();
+  $query = "SELECT ctt.nid FROM {content_field_day_timeslots} AS ctfd LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid) WHERE cfdt.nid = %d ORDER BY ctt.field_timeslot_date_value ASC, ctt.field_timeslot_date_value2 ASC";
+  $result = db_query($query, $nid);
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
+  }
+  return $nids;
+}
+
+/**
+ * Return the timeslots that start next (but are on the same day).
+ *
+ * This should include all concurrent sessions at this time.
+ *
+ * @param nid
+ *   A timeslot or day node id.
+ */
+function sessions_next_timeslots($nid) {
+  $nids = array();
+
+  // Load the timeslot we want data for.
+  $timeslot = node_load($nid);
+
+  if ($timeslot->type == 'day') {
+    // There is no previous timeslot, because we're the first session of the day.
+    // First, grab the first timeslot nid and the lowest start time.
+    $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid) WHERE cfdt.nid = %d", $timeslot->nid));
+
+    // Grab the timeslot nid that goes with this start time on this day.
+    $nid = db_result(db_query("SELECT ctt.nid FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE ctt.field_timeslot_date_value = '%s'", $timeslot->nid, $start));
+    $timeslot = node_load($nid);
+  }
+  else {
+    // $timeslot contains the one we need to start *after*
+    // First, grab the lowest start time *after* the $timeslot start time.
+    // if ($match == 'start') {
+    //   $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE field_timeslot_date_value > '%s'", $timeslot->day, $timeslot->field_timeslot_date[0]['value']));
+    // }
+    // else {
+      $start = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE field_timeslot_date_value >= '%s'", $timeslot->day, $timeslot->field_timeslot_date[0]['value2']));
+    // }
+  }
+
+  // If there is no such start time, just return.
+  if (!$start)
+    return $nids;
+
+  // Then, grab the lowest "next" end time, counting from the lowest next start time.
+  $finish = db_result(db_query("SELECT MIN(ctt.field_timeslot_date_value2) FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE field_timeslot_date_value >= '%s'", $timeslot->day, $start));
+
+  // Now grab all slots that start between these two values and are on the same day nid.
+  $query = "SELECT ctt.nid, ctt.field_timeslot_date_value, ctt.field_timeslot_date_value2 FROM {content_field_day_timeslots} AS cfdt LEFT JOIN {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d) WHERE ctt.field_timeslot_date_value >= '%s' AND field_timeslot_date_value < '%s' ORDER BY field_timeslot_date_value ASC, field_timeslot_date_value2 ASC";
+  $result = db_query($query, $timeslot->day, $start, $finish);
+
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
+    $data[] = $row;
+  }
+
+  return $nids;
+}
+
+/**
+ * Helper to return a list if timeslot nodes that overlap with a given timeslot.
+ * Overlap means timeslots that: simultaneous start time or start whilst the given slot is still going.
+ *   - start at the same time as the given slot, or
+ *   - start before the given slot finishes, but
+ *   - do not start before the given slot, and
+ *   - are on the same day.
+ *
+ * @param nid
+ *   A timeslot node id.
+ */
+function sessions_overlapping_timeslots($nid) {
+  $nids = array();
+
+  $timeslot = node_load($nid);
+  // Select all timeslots that start between the start and end times of this given timeslot. Should ALSO include timeslots that END between these values.
+  $query = "SELECT
+      ctt.nid
+    FROM
+      {content_field_day_timeslots} AS cfdt
+    LEFT JOIN
+      {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid AND cfdt.nid = %d)
+    WHERE (
+       (ctt.field_timeslot_date_value >= '%s' AND ctt.field_timeslot_date_value < '%s')
+     OR
+       (ctt.field_timeslot_date_value <= '%s' AND ctt.field_timeslot_date_value2 > '%s')
+     OR ctt.nid = %d
+     )";
+  $result = db_query($query, $timeslot->day, $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value2'], $timeslot->field_timeslot_date[0]['value'], $timeslot->field_timeslot_date[0]['value'], $nid);
+
+  // B overlaps if
+  //   - It starts at or after A and finishes before A finishes.
+  //   - It starts at or before A and ends after A starts.
+
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
+    $node = node_load($row['nid']);
+  }
+  return $nids;
+}
+
+/**
+ * Grab a list of day nids that a user is attending. These in turn determine the timeslots the
+ * user needs to choose sessions for. List the days by their date value.
+ *
+ * TODO: Return nids only if a ticket has been paid for.
+ *
+ * @integer uid
+ *   The user's uid.
+ */
+function sessions_get_days($uid) {
+  $nids = array();
+
+  $query = "SELECT
+     DISTINCT(cfrd.field_registration_day_nid) AS nid
+   FROM
+     {uc_order_products} AS uc_op
+   LEFT JOIN
+     {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+   LEFT JOIN
+     {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+   LEFT JOIN
+     {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
+   LEFT JOIN
+     {content_type_day} AS ctd ON (cfrd.field_registration_day_nid = ctd.nid)
+   WHERE
+       cccta.uid = %d
+     AND
+       uc_o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) ."')
+   ORDER BY
+     ctd.field_day_date_value ASC";
+  $result = db_query($query, $uid);
+  while ($row = db_fetch_array($result)) {
+    $nids[] = $row['nid'];
+  }
+
+  return $nids;
+}
+
+/**
+ * Retrieve a list of selected sessions for $user.
+ *
+ * @integer uid
+ *   An integer referring to a user.
+ */
+function sessions_user_sessions($uid) {
+  $selections = array();
+
+  $query = "SELECT timeslot, nid FROM {ccc_session_selection} WHERE uid = %d";
+  $result = db_query($query, $uid);
+  while ($row = db_fetch_array($result)) {
+    $selections[$row['timeslot']] = $row['nid'];
+  }
+
+  return $selections;
+}
+
+/**
+ * Return a keyed array of session nid and titles for the selection form.
+ *
+ * @integer nid
+ *   The nid for the timeslot we need a session list for.
+ */
+function sessions_timeslot_sessions($nid) {
+  $options = array(0 => ' No session selected');
+  $query = "SELECT n.nid, n.title
+    FROM
+      {node} AS n
+    JOIN
+      {content_type_proposal} AS ctp ON (n.nid = ctp.nid)
+    WHERE
+      ctp.field_proposal_scheduled_nid = %d";
+  $result = db_query($query, $nid);
+  while ($row = db_fetch_array($result)) {
+    $options[$row['nid']] = $row['title'];
+  }
+  return $options;
+}
+
+/**
+ * Helper that checks if a given user may choose a session for a given timeslot.
+ *
+ * @param user
+ *   User uid.
+ * @param nid
+ *   Timeslot nid.
+ */
+function sessions_user_valid_timeslot($uid, $nid) {
+  $query = "SELECT
+     COUNT(ctt.nid)
+   FROM
+     {uc_order_products} AS uc_op
+   JOIN
+     {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+   JOIN
+     {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
+   JOIN
+     {content_field_day_timeslots} AS cfdt ON (cfdt.nid = cfrd.field_registration_day_nid)
+   JOIN
+     {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid)
+   WHERE
+     cccta.uid = %d AND ctt.nid=%d";
+  return db_result(db_query($query, $uid, $nid));
+}
+
+/**
+ * Redirect the user to their session selection page.
+ */
+function sessions_list_goto() {
+  global $user;
+  if ($user->uid) {
+    drupal_goto('user/' . $user->uid . '/sessions');
+  }
+  else {
+    drupal_access_denied();
+  }
+}
+
+/**
+ * Display the session selection form
+ *
+ * @param user
+ *   The user being viewed.
+ * @param action
+ *   A string indicating the action the user wants to take.
+ * @param timeslot
+ *   A timeslot node id.
+ * @param session
+ *   A session node id.
+ */
+function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NULL) {
+
+  global $user;
+
+  // If not the current user and not admin, go away.
+  //
+  if ($user->uid != $account->uid && !user_access('view session reports')) {
+    drupal_access_denied();
+    return;
+  }
+
+  drupal_set_title('My Program');
+  if ($action && $timeslot && $session) {
+
+    if ($action == 'add') {
+
+      // Tell the user what we did.
+      $session = node_load($session);
+      if ($session->full == TRUE) {
+        drupal_set_message(t('Session "!title" is full, you cannot select it', array('!title' => $session->title)), 'error');
+        return sessions_list_view($account);
+      }
+
+      $conflicts = sessions_conflicts($account->uid, $timeslot, $session->nid);
+      // Do not return this form IF we're adding a session an there are NO clashes.
+      // dpm("sessions_list({$user->uid}, {$action}, {$timeslot}, {$session})");
+      // dpm($conflicts);
+      if (!$conflicts) {
+        $timeslots = sessions_overlapping_timeslots($timeslot);
+
+        // This really needs a function of its own.
+        //
+        foreach ($timeslots as $t) {
+          db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $account->uid, $t);
+        }
+
+        // Add the new selection to the database.
+        //
+        $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
+        db_query($query, $account->uid, $session->nid, $timeslot);
+
+        drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
+
+        return sessions_list_view($account);
+      } else {
+        $session = $session->nid;
+      }
+    }
+    else if ($action == 'print') {
+      sessions_list_print($account);
+    }
+    // Make a confirmation form.
+    //
+    return drupal_get_form('sessions_list_form', $account, $action, $timeslot, $session);
+  }
+  else {
+    return sessions_list_view($account);
+  }
+}
+
+function sessions_list_form($form_state, $account, $action, $timeslot, $session) {
+  $form = array();
+  $items = array();
+
+  $timeslot = node_load($timeslot);
+  $session = node_load($session);
+
+  $form['#tree'] = TRUE;
+  $form['#redirect'] = 'user/' . $account->uid . '/sessions';
+
+  $form['uid'] = array(
+    '#type' => 'hidden',
+    '#value' => $account->uid,
+  );
+  $form['action'] = array(
+    '#type' => 'hidden',
+    '#value' => $action,
+  );
+  $form['timeslot'] = array(
+    '#type' => 'hidden',
+    '#value' => $timeslot->nid,
+  );
+  $form['session'] = array(
+    '#type' => 'hidden',
+    '#value' => $session->nid,
+  );
+
+  switch ($action) {
+    case 'add':
+      // Remove conflicting session selections.
+      // ie: something in a timeslot that starts at or before this one and ends during or with this one.
+
+      $conflicts = sessions_conflicts($account->uid, $timeslot->nid, $session->nid);
+      if ($conflicts) {
+        $sessions  = theme('sessions_conflicts', $conflicts);
+        $sessions .= '<p>' . t('If you click <strong>replace</strong>, these earlier selections will be removed from your program.');
+      }
+
+      $title = t('Add session');
+      $description = t('!conflicts<p>Would you like to add "!title" to your program?</p><p>&nbsp;</p>', array('!conflicts' => $sessions, '!title' => $session->title));
+      $submit = ($conflicts) ? t('Replace earlier selection') : t('Add to my program');
+      $cancel = t('Back to list');
+      $back = $form_state['post']['listing'];
+      break;
+
+    case 'remove':
+      $title = t('Remove session');
+      $description = t('<p>Really remove session "!title" from your program?</p><p>&nbsp;</p>', array('!title' => $session->title));
+      $submit  = t('Remove');
+      $cancel = t('Back to my program');
+      $back = 'user/' . $account->uid . '/sessions';
+      break;
+  }
+
+  if ($form) {
+    // Set some default form values
+    $form = confirm_form(
+      $form,
+      $title,
+      $back,
+      $description,
+      $submit,
+      $cancel
+    );
+    return $form;
+  }
+}
+
+function sessions_list_form_validate($form, &$form_state) {
+
+  $account = user_load($form_state['values']['uid']);
+  if (!$account->uid)
+    form_set_error('uid', 'You need to be a user');
+
+  $action = check_plain($form_state['values']['action']);
+
+  $timeslot = node_load($form_state['values']['timeslot']);
+  if (!$timeslot->nid || $timeslot->type != 'timeslot')
+    form_set_error('timeslot', 'You need a valid timeslot');
+
+  $session = node_load($form_state['values']['session']);
+  if (!$session->nid || $session->type != 'proposal')
+    form_set_error('session', 'You need a valid proposal');
+
+  if ($session->field_proposal_scheduled[0]['nid'] != $timeslot->nid)
+    form_set_error('session', 'The selected session is not in the selected timeslot');
+
+  if ($action == 'add') {
+    $room = node_load($session->field_proposal_room[0]['nid']);
+    if ($room->field_room_capacity <= count($session->attendees))
+      form_set_error('session', 'The selected session is full');
+  }
+}
+
+function sessions_list_form_submit($form, &$form_state) {
+  $uid = check_plain($form_state['values']['uid']);
+  $action = check_plain($form_state['values']['action']);
+  $timeslot = check_plain($form_state['values']['timeslot']);
+  $session = check_plain($form_state['values']['session']);
+
+  switch ($action) {
+    case 'add':
+      // Remove conflicting session selections.
+      // ie: something in a timeslot that starts at or before this one and ends during or with this one.
+      $timeslots = sessions_overlapping_timeslots($timeslot);
+      foreach ($timeslots as $t) {
+        db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $uid, $t);
+      }
+
+      // Add the new selection to the database.
+      //
+      $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
+      db_query($query, $uid, $session, $timeslot);
+
+      // Tell the user what we did.
+      $session = node_load($session);
+      drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
+      break;
+
+    case 'remove':
+      $session = node_load($session);
+      db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND nid = %d", $uid, $session->nid);
+      drupal_set_message(t('Removed session "!title"', array('!title' => $session->title)));
+      break;
+  }
+}
+
+/**
+ * Create a list of sessions the user has selected sofar.
+ *
+ * @object account
+ *   The user being viewed.
+ *
+ * @return array
+ *   A keyed array with keys 'header' and 'rows' that can be tabulated.
+ */
+function sessions_list_table($account, $print = FALSE) {
+
+  // Do some sanity checking.
+  sessions_presenter_check($account->uid);
+  sessions_presenter_select($account->uid);
+
+  $days = sessions_get_days($account->uid);
+  $selections = sessions_user_sessions($account->uid);
+
+  // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
+  $offset = variable_get('date_default_timezone', 0);
+  // $offset -= 3600;
+
+  if (!$days) {
+    return t('There are no sessions to be selected. Please check that your order payment status is <en>completed</em> and that a ticket has been assigned to you.');
+  }
+
+
+  $data = array();
+
+  $headers = array(
+    array('data' => 'Time'),
+    array('data' => 'Room'),
+    array('data' => 'Presenter'),
+    array('data' => 'Selected Session'),
+  );
+  if (!$print) {
+    $headers[] = array('data' => 'Change');
+    $headers[] = array('data' => 'Remove');
+  }
+
+  // Now, loop through the list of day nids.
+  foreach ($days as $day_nid) {
+    // Load a day nid.
+    $day = node_load($day_nid);
+
+    // Set the first timeslot to the day.
+    $timeslot = $day;
+
+    // A little sanity check to make sure we don't get empty day headings.
+    //
+    if ($day->title) {
+      $data[] = array(array('data' => '<h3>' . check_plain($day->title) . '</h3>', 'colspan' => (!$print) ? 6 : 4));
+      $data[] = array(array('data' => '<p>' .  t('These are your session selections for !day.', array('!day' => $day->title)), 'colspan' => (!$print) ? 6 : 4));
+    }
+
+    // Get the timeslots that are "up next". On the first run this function accepts a day node.
+    //
+    while ($nids = sessions_next_timeslots($timeslot->nid)) {
+
+      // Check if the user has made a selection for one of these timeslots.
+      // Check if any of the values of $nids matches any of the keys of $selected.
+      if (($selected = sessions_check_selected($nids, $selections)) !== FALSE) {
+
+        // dpm('Found selection ' . $selections[$selected] . ' for timeslot ' . $selected);
+
+        $timeslot = node_load($selected);
+        $session = node_load($selections[$selected]);
+        $room = node_load($session->field_proposal_room[0]['nid']);
+
+        $tuple = array(
+          'timeslot' => $timeslot->between,
+          'room' => (!$print) ? l($room->title, 'program/schedule/room/' . $room->nid) : check_plain($room->title),
+          'presenter' => theme('username', user_load($session->uid)),
+          'session' => (!$print) ? l($session->title, 'node/' . $session->nid) : check_plain($session->title),
+          'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
+          'remove' => theme('sessions_form', 'Remove', url('user/' . $account->uid . '/sessions/remove/' . $timeslot->nid . '/' . $session->nid), NULL, 'form-submit-red'),
+        );
+
+        // Remove the remove button (yes) if the user is presenting this session.
+        foreach ($session->field_proposal_presenters as $presenter) {
+          if ($presenter['uid'] == $account->uid) {
+            $tuple['action'] = null;
+            $tuple['remove'] = theme('sessions_form', 'My Session', '#', NULL, 'form-submit-green');
+          }
+        }
+
+        // Mark the session if it is no longer a valid selection!
+        //
+        if (!in_array($session->field_proposal_status[0]['value'], sessions_valid_status())) {
+          $tuple['session'] = l($session->title, 'node/' . $session->nid) . ' <em>(' . $session->field_proposal_status[0]['value'] . ')</em>';
+          $tuple['action'] = theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids)), NULL, 'form-submit-red');
+        }
+
+        // Remove the action buttons in the print view.
+        // This is somewhat ugly and i should really do it in the theme layer.
+        //
+        if ($print) {
+          $tuple['presenter'] = strip_tags($tuple['presenter']);
+          unset($tuple['action']);
+          unset($tuple['remove']);
+          $tuple['date_from'] = $timeslot->field_timeslot_date[0]['value'];
+          $tuple['date_to'] = $timeslot->field_timeslot_date[0]['value2'];
+          $tuple['nid'] = $session->nid;
+          $tuple['uuid'] = $session->uuid;
+        }
+        $data[] = $tuple;
+
+        // Start again at the next session with a start time that is equal to or larger than the current one.
+        // $timeslot = node_load(session_);
+
+      }
+      else {
+        // No selection, display a list of timeslots and jump to the associated sessions.
+        // dpm('No selections found, load up timeslot ' . $nids[0]);
+
+        $timeslot = node_load($nids[count($nids)-1]);
+        $times = sessions_min_max_times($nids);
+        $endtimes = sessions_min_max_end_times($nids);
+
+        $tuple = array(
+          'timeslot' => t('!start - !endmin!endmax',
+             array('!start' => date('H:i', strtotime($times['start'])+$offset),
+                   '!endmin' => date('H:i', strtotime($endtimes['minimum'])+$offset),
+                   '!endmax' => ($endtimes['minimum']!=$endtimes['maximum']) ? '/' . date('H:i', strtotime($endtimes['maximum'])+$offset) : ''
+             )),
+          'room' => null,
+          'presenter' => null,
+          'session' => null,
+          // 'change' => t('!link', array('!link' => l('Choose...', 'program/schedule/timeslot/' . implode('+', $nids)))),
+          'action' => theme('sessions_form', 'Sessions...', url('program/schedule/timeslot/' . implode('+', $nids))),
+          'remove'=> null,
+        );
+
+        // Remove the action buttons in the print view.
+        // This is somewhat ugly and i should really do it in the theme layer.
+        //
+        if ($print) {
+          unset($tuple['action']);
+          unset($tuple['remove']);
+        }
+
+        $data[] = $tuple;
+        $timeslot = node_load($nids[0]);
+      } // endif
+    } // end while nids
+  } // end foreach days
+
+  return array('header' => $headers, 'rows' => $data);
+}
+
+/**
+ * Helper to just display the selected sessions list.
+ */
+function sessions_list_view($account) {
+
+  global $user;
+
+  // If not the current user and not admin, go away.
+  //
+  if ($user->uid != $account->uid && !user_access('view session reports')) {
+    drupal_access_denied();
+    return;
+  }
+
+  // Add a link to this user's myACEC iCal feed, if it has a uuid.
+  //
+  if ($account->uuid) {
+    drupal_set_html_head('<link rel="alternate" type="application/rss+xml" href="' . url('myacec/' . $account->uuid. '/ical', array('absolute' => TRUE)) . '" title="myACEC iCal" />');
+  }
+
+  $table = sessions_list_table($account);
+
+  $output = '';
+  $output .= '<div style="float: right;">';
+  $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
+  if ($account->uuid) {
+    $output .= '<a href="' . url('myacec/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/ical-64x64.png" height="64" width="64" alt="iCal" align="right" /></a>';
+  }
+  $output .= '</div>';
+  $output .= variable_get('sessions_program_header', '');
+
+  // Add a table with timeslots and selections for the lot.
+  //
+  $output .= theme('table', $table['header'], $table['rows'], array('cellpadding' => 8, 'cellspacing' => 0));
+
+  $output .= variable_get('sessions_program_footer', '');
+
+  return $output;
+}
+
+/**
+ * Helper to display a print formatted session selection list.
+ */
+function sessions_list_print($account) {
+
+  global $user;
+
+  // If not the current user and not admin, go away.
+  //
+  if ($user->uid != $account->uid && !user_access('view session reports')) {
+    drupal_access_denied();
+    return;
+  }
+
+  $data = sessions_list_table($account, TRUE);
+
+  $username = strip_tags(theme('username', $account));
+
+  print theme('sessions_print', $username, $data);
+  return;
+}
+
+/**
+ * Helper to display an iCal formatted session selection list.
+ */
+function sessions_list_ical($uuid) {
+
+  $account = user_get_by_uuid($uuid);
+
+  if (empty($account) || $account->uid == 0) {
+    // drupal_access_denied();
+    print 'Oops!';
+  }
+
+
+  $content = sessions_list_table($account, TRUE);
+  $username = strip_tags(theme('username', $account));
+
+  print theme('sessions_ical', $username, $content);
+  return;
+}
+
+/**
+ * Helper to check if the value of array1 is a key in array2.
+ */
+function sessions_check_selected($timeslots, $selections) {
+  foreach ($selections as $timeslot => $session) {
+    if (in_array($timeslot, $timeslots)) {
+      return $timeslot;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Return a list of already selected sessions that conflict with the given one.
+ *
+ * @param uid
+ *   A valid user id.
+ * @param timeslot.
+ *   A timeslot node.
+ *
+ * @return
+ *   An array of conflicting session titles.
+ */
+function sessions_conflicts($uid, $timeslot = 0, $session = 0) {
+
+  // dpm("sessions_conflicts({$uid}, {$timeslot}, {$session})");
+  $conflicts = array();
+  $selections = sessions_user_sessions($uid);
+  $timeslots = sessions_overlapping_timeslots($timeslot);
+
+  foreach ($selections as $slot => $selection) {
+    // A current selection should not clash with itself :-)
+    if ($selection == $session)
+      continue;
+
+    if (in_array($slot, $timeslots)) {
+      $proposal = node_load($selection);
+      $conflicts[$slot] = array('nid' => $proposal->nid, 'title' => $proposal->title);
+    }
+  }
+  return $conflicts;
+}
+
+/**
+ * Helper to retrieve the earliest and latest times from a set of given timeslots.
+ */
+function sessions_min_max_times($nids) {
+  $result = db_query("SELECT MIN(field_timeslot_date_value) AS start, MAX(field_timeslot_date_value2) AS end FROM {content_type_timeslot} WHERE nid IN (" . implode(',', $nids) . ")");
+  return db_fetch_array($result);
+}
+
+/**
+ * Helper to retrieve the earliest and latest *end* times from a set of given timeslots.
+ */
+function sessions_min_max_end_times($nids) {
+  $result = db_query("SELECT MIN(field_timeslot_date_value2) AS minimum, MAX(field_timeslot_date_value2) AS maximum FROM {content_type_timeslot} WHERE nid IN (" . implode(',', $nids) . ")");
+  return db_fetch_array($result);
+}
+
+/**
+ * Helper to retrieve the raw start and end times from a given timeslot.
+ */
+function sessions_raw_end_time($nid) {
+  $result = db_query("SELECT field_timeslot_date_value AS start, field_timeslot_date_value2 AS end FROM {content_type_timeslot} WHERE nid = %d", $nid);
+  return db_fetch_array($result);
+}
+
+/**
+ * Return the number of places available for a session.
+ */
+function sessions_places($nid) {
+  $session = node_load($nid);
+  $room = node_load($session->field_proposal_room[0]['nid']);
+  return $room->field_room_capacity[0]['value'];
+}
+
+/**
+ * Return a list of attendees for a session.
+ *
+ * This should list attendees who are on a VALID ticket only.
+ */
+function sessions_attendees($nid) {
+  $users = array();
+  $result = db_query("
+SELECT
+  DISTINCT(ss.uid) AS uid
+FROM
+  {ccc_session_selection} AS ss
+JOIN
+  {ccc_ticket_allocation} AS ta ON (ta.uid = ss.uid)
+JOIN
+  {uc_order_products} AS uc_op ON (uc_op.order_product_id = ta.order_product_id)
+JOIN
+  {uc_orders} AS uc_o ON (uc_o.order_id = uc_op.order_id)
+WHERE
+  uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
+AND
+  ss.nid = %d", $nid);
+  while ($row = db_fetch_array($result)) {
+    $users[] = $row['uid'];
+  }
+  return $users;
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function sessions_theme() {
+  $path = drupal_get_path('module', 'sessions');
+  return array(
+    'user_overview_sessions' => array(
+      'arguments' => array('account' => $account, $sessions => array()),
+    ),
+    'sessions_form' => array(
+      'arguments' => array('submit' => $submit, 'action' => $action, 'hidden' => array(), 'colour' => $colour),
+      'template' => 'sessions-form',
+      'path' => "$path/theme",
+    ),
+    'sessions_conflicts' => array(
+      'arguments' => array('conflicts' => $conflicts),
+      'template' => 'sessions-conflict',
+      'path' => "$path/theme",
+    ),
+    'sessions_timeslot' => array(
+      'arguments' => array('timeslot' => $timeslot, 'fields' => array('value' => 'H:i')),
+    ),
+    'sessions_print' => array(
+      'arguments' => array('username' => $username, 'content' => $content),
+      'template' => 'sessions-print',
+      'path' => "$path/theme",
+    ),
+    'sessions_ical' => array(
+      'arguments' => array('username' => $username, 'content' => $content),
+      'template' => 'sessions-ical',
+      'path' => "$path/theme",
+    ),
+  );
+}
+
+/**
+ * This is the bit of information on the /user/%user/sessions page.
+ */
+function theme_user_overview_sessions($account, $sessions) {
+  // Check to see if the user has a ticket.
+  //
+  $got_a_ticket = FALSE;
+  foreach ($account->orders as $order) {
+    foreach($order->tickets as $ticket) {
+      if ($ticket->uid == $account->uid) {
+        $got_a_ticket = TRUE;
+      }
+    }
+  }
+
+  if (!$got_a_ticket) {
+    $output = t('You have not yet purchased a ticket.');
+  }
+  else if (!$sessions) {
+    $output = t('You have not selected any conference sessions for your program. Click !link to start selecting sessions.', array('!link' => l('My Program', 'user/' . $account->uid . '/sessions')));
+  }
+  else {
+    $output = t('You have already selected conference sessions for your program. Click !link to review your session selections.', array('!link' => l('My Program', 'user/' . $account->uid . '/sessions')));
+  }
+
+  return array(
+    '#type' => 'user_profile_category',
+    '#weight' => 0,
+    '#title' => t('My Program'),
+    'link' => array(
+      '#type' => 'user_profile_item',
+      '#value' => $output,
+    ),
+  );
+}
+
+/**
+ * Show a grid of sessions and their fullness.
+ */
+function sessions_report($nid = 0) {
+
+  // 
+  $query = "SELECT n.nid AS nid, n.title AS title,
+      nt.nid AS tnid,
+      nt.title AS ttitle,
+      nr.nid AS rnid,
+      nr.title AS rtitle,
+      ctr.field_room_capacity_value AS capacity,
+      COUNT(ccc_ss.uid) AS attendees,
+      ctr.field_room_capacity_value - COUNT(ccc_ss.uid) AS available
+    FROM
+      {node} AS n
+    LEFT JOIN
+      {content_type_proposal} AS ctp ON (n.vid = ctp.vid)
+    LEFT JOIN
+      {node} AS nt ON (ctp.field_proposal_scheduled_nid = nt.nid AND nt.type = 'timeslot')
+    LEFT JOIN
+      {content_type_timeslot} AS ctt ON (ctt.nid = nt.nid)
+    LEFT JOIN
+      {node} AS nr ON (ctp.field_proposal_room_nid = nr.nid AND nr.type = 'room')
+    LEFT JOIN
+      {content_type_room} AS ctr ON (ctr.vid = nr.vid)
+    LEFT JOIN
+      {ccc_session_selection} AS ccc_ss ON (ccc_ss.nid = n.nid)
+    WHERE
+        n.type = 'proposal'
+      AND
+        n.status <> 0
+      AND
+        ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
+    GROUP BY
+      n.nid";
+
+  $data = array();
+  $header[] = array('data' => t('ID'),       'field' => 'n.nid');
+  $header[] = array('data' => t('Title'),    'field' => 'n.title');
+  $header[] = array('data' => t('Timeslot'), 'field' => 'ctt.field_timeslot_date_value', 'sort' => 'asc');
+  $header[] = array('data' => t('Room'),     'field' => 'nr.title');
+  $header[] = array('data' => t('Attendee'), 'field' => 'attendees');
+  $header[] = array('data' => t('Capacity'), 'field' => 'ctr.field_room_capacity_value');
+  $header[] = array('data' => t('Available'), 'field' => 'available');
+  $header[] = array('data' => t('List'));
+
+  $query = $query . tablesort_sql($header);
+  $result = db_query($query);
+
+  while ($row = db_fetch_array($result)) {
+    $tuple = array(
+      'nid' => $row['nid'],
+      'title' => l($row['title'], 'node/' . $row['nid']),
+      'timeslot' => l($row['ttitle'], 'program/schedule/timeslot/' . $row['tnid']),
+      'room' => l($row['rtitle'], 'node/' . $row['rnid']),
+      'attendees' => $row['attendees'],
+      'capacity' => $row['capacity'],
+      'available' => ($row['available'] < variable_get('sessions_available_warning', 10)) ? '<strong>' . $row['available'] . '</strong>' : $row['available'],
+      'list' => l('list', 'admin/store/reports/sessions/' . $row['nid']),
+    );
+    $data[] = $tuple;
+  }
+
+  drupal_set_title('Session Selection Report - ' . count($data) . ' Sessions');
+
+  return theme('table', $header, $data);
+}
+
+/**
+ * Show who has chosen to attend a particular session.
+ */
+function sessions_report_session($proposal) {
+
+  $query = "SELECT
+    DISTINCT(ccc_ss.uid) AS uid,
+    ctp.field_profile_firstname_value AS firstname,
+    ctp.field_profile_surname_value AS surname,
+    u.mail AS mail,
+    UNIX_TIMESTAMP(ccc_ss.modified) AS modified
+  FROM
+    {ccc_session_selection} AS ccc_ss
+  LEFT JOIN
+    {users} AS u ON (ccc_ss.uid = u.uid)
+  LEFT JOIN
+    {node} AS n ON (n.uid = u.uid AND n.type = 'profile')
+  LEFT JOIN
+    {content_type_profile} AS ctp ON (ctp.vid = n.vid)
+  WHERE
+    ccc_ss.nid = %d";
+
+  $data = array();
+  $header[] = array('data' => t('Firstname'), 'field' => 'firstname');
+  $header[] = array('data' => t('Surname'),   'field' => 'surname');
+  $header[] = array('data' => t('Email'),     'field' => 'mail');
+  $header[] = array('data' => t('Selected'),  'field' => 'modified', 'sort' => 'desc');
+
+  $result = db_query($query . tablesort_sql($header), $proposal->nid);
+  while ($row = db_fetch_array($result)) {
+    $tuple = array(
+      'firstname' => $row['firstname'],
+      'surname' => $row['surname'],
+      'mail' => l($row['mail'], 'user/' . $row['uid']),
+      'modified' => format_date($row['modified'], 'long'),
+    );
+    $data[] = $tuple;
+  }
+
+  drupal_set_title($proposal->title);
+  $output  = t('<p>!num people have selected !title', array('!num' => count($data), '!title' => $proposal->title));
+  $output .= t('<p>Note that people who bought a ticket for this session, but didn\'t selected it are not listed here.');
+  $output .= theme('table', $header, $data);
+  return $output;
+}
+
+/**
+ * Theme functions.
+ */
+function theme_sessions_timeslot($timeslot, $fields) {
+  // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
+  $offset = variable_get('date_default_timezone', 0);
+  // $offset -= 3600;
+
+  $output = '';
+
+  foreach ($fields as $field => $format) {
+    $datetime = strtotime($timeslot->field_timeslot_date[0][$field]);
+    $datetime += $offset;
+
+    $output .= '<span class="date date-' . $field. '">';
+    $output .= date($format, $datetime);
+    $output .= '</span>';
+  }
+  return $output;
+}

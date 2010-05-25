@@ -1,0 +1,3 @@
+name = Stickybeak
+description = Allows administrators to view information on active user sessions.
+core = 6.x

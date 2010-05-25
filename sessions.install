@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function sessions_install() {
+  drupal_install_schema('sessions');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function sessions_uninstall() {
+  drupal_uninstall_schema('sessions');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function sessions_schema() {
+  // This field allows users to select sessions to attend.
+  $schema = array();
+
+  $schema['ccc_session_selection'] = array(
+    'description' => t('Store session selections made by users who have registered.'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('User {user}.uid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'nid' => array(
+        'description' => t('Proposal {node}.nid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'timeslot' => array(
+        'description' => t('Timeslot {node}.nid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'modified' => array(
+        'description' => t('Timestamp of when this selection was made'),
+        'type' => 'datetime',
+        'not null' => TRUE),
+      ),
+    'indexes' => array(
+      'user_id' => array('uid'),
+      'node_id' => array('nid'),
+      'timeslot_id' => array('timeslot'),
+      'modified_idx' => array('modified'),
+      ),
+    'unique keys' => array(
+      'user_session' => array('uid', 'nid'),
+      'user_timeslot' => array('uid', 'timeslot'),
+      ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Add the modified field to the database.
+ */
+function sessions_update_6001() {
+  $ret = array();
+  db_add_field($ret, 'ccc_session_selection', 'modified', array('description' => t('Timestamp of when this selection was made'), 'type' => 'datetime', 'not null' => TRUE));
+  db_add_index($ret, 'ccc_session_selection', 'modified_idx', array('modified'));
+  return $ret;
+}
+
+/**
+ * Make sure we run *AFTER* the cck/date module, so we can use its values.
+ */
+function sessions_update_6002() {
+  $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'date'")));
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'sessions'", $weight + 1);
+}

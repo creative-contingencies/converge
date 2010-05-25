@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function register_install() {
+  drupal_install_schema('register');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function register_uninstall() {
+  drupal_uninstall_schema('register');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function register_schema() {
+  // This field allows us to associate users with ticket items in the system.
+  $schema = array();
+
+  $schema['ccc_ticket_allocation'] = array(
+    'description' => t('Associate users directly with event line items in orders.'),
+    'fields' => array(
+      'order_product_id' => array(
+        'description' => t('Unique product line item. Remote key: uc_order_products.order_product_id'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'disp-width' => '11',
+      ),
+      'uid' => array(
+        'description' => t('User ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'disp-width' => '11',
+      ),
+    ),
+  );
+
+  return $schema;
+}

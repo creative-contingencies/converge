@@ -1,0 +1,7 @@
+name = Program tidbits
+description = Provides blocks with proposal and keyword suggestions for users.
+package = " Creative Contingencies Conference"
+core = 6.x
+
+dependencies[] = proposal
+dependencies[] = overrides

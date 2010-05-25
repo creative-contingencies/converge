@@ -1,0 +1,343 @@
+<?php
+
+function overrides_content_allowed_values($field) {
+  // dpm($field);
+}
+
+/**
+ * Add extra menu items to make it easier to edit permissions by role.
+ * Pushed to github as caftools module.
+ */
+function overrides_menu() {
+  $items = array();
+
+  if (module_exists('admin_menu')) {
+    $roles = user_roles();
+
+    foreach($roles as $rid => $role) {
+      $items['admin/user/permissions/edit/' . $rid] = array(
+        'title' => $role,
+        'description' => 'Determine access to features by selecting permissions for ' . $role . '.',
+        'page callback' => 'overrides_user_admin_perm_redir',
+        'page arguments' => array(4),
+        'access callback' => 'user_access',
+        'access arguments' => array('administer permissions'),
+      );
+    }
+  }
+  return $items;
+}
+
+/**
+ * Helper to redirect the user to the correct role based
+ * permissions admin page.
+ */
+function overrides_user_admin_perm_redir($rid) {
+  drupal_goto('admin/user/permissions/'. $rid);
+}
+
+/**
+ * Helper to remove the access permission check on the login url.
+ * This makes already logged-in users redirect to their profiles, it seems.
+ */
+function overrides_menu_alter(&$items) {
+  unset($items['user/login']['access callback']);
+}
+
+/**
+ * Form alter overrides for the conference system.
+ */
+function overrides_form_alter(&$form, $form_state, $form_id) {
+
+  // Because we login via the email address only, hide the username field
+  // on the signup form and do a pre-validate call so we can transpose the
+  // email address into the name field.
+  if($form_id == 'user_register') {
+    if ($form['name']['#type']) {
+      $form['name']['#type'] = 'hidden';
+      unset($form['name']['#required']);
+    }
+    if ($form['account']['name']['#type']) {
+      $form['account']['name']['#type'] = 'hidden';
+      unset($form['account']['name']['#required']);
+    }
+    array_unshift($form['#validate'], 'overrides_user_register_validate');
+  }
+
+  // Turn the cheque description into a 4-line field with preset labels.
+  // Do NOT clear the comment area when check already received is clicked.
+  //
+  if($form_id == 'uc_payment_pack_receive_check_form') {
+    $form['comment']['#type'] = 'textarea';
+    $form['comment']['#rows'] = 4;
+    $form['comment']['#cols'] = 64;
+    $form['comment']['#default_value'] = "Cheque No: \nDrawer: \nBank: \nBranch: ";
+    $form['comment']['#description'] = "Enter all required cheque details such as the number, drawer and bank information on the appropriate line.";
+
+    unset($form['check_exists']['#attributes']);
+  }
+
+  // User profile form.
+  if($form_id == 'profile_node_form') {
+    // Resize the dietary / mobility needs fields on the profile.
+    $form['field_profile_dietary']['#cols'] = 12;
+    $form['field_profile_dietary']['#rows'] = 2;
+
+    $form['field_profile_mobility']['#cols'] = 12;
+    $form['field_profile_mobility']['#rows'] = 2;
+
+    /**
+     * Override interests and make sure the "Other..." option is not listed.
+     * This is now done directly in content_taxonomy.module. Ugly, but there you go.
+     */
+    $form['taxonomy'][4]['#title'] = 'Your Interests';
+    $form['taxonomy'][4]['#description'] = 'Please tell us which topic areas are of interest to you. We can use this information to suggest sessions you may want to attend.';
+    $form['taxonomy'][4]['#required'] = FALSE;
+
+    unset($form['taxonomy']);
+  }
+
+  // Planet feed add.
+  if ($form_id == 'planet_feed_form') {
+    $form['feeds']['title']['#description'] = t('Enter the name or title of your blog.');
+    $form['feeds']['link']['#title'] = 'Feed URL';
+    $form['feeds']['link']['#maxlength'] = 255;
+    $form['feeds']['link']['#description'] = t('Enter the RSS or ATOM feed to syndicate your blog on planetACEC.');
+  }
+
+  // UD Planet feed add/edit.
+  if ($form_id == 'udplanet_feeds_user_edit') {
+    $form['feed']['#collapsed'] = false;
+    $form['feed']['feed_title']['#title'] = t('Title');
+    $form['feed']['feed_title']['#description'] = t('Enter your blog\'s title or a short description.');
+    $form['feed']['feed_url']['#description'] = t('Enter full URL to the ATOM or RSS syndication feed of you blog.');
+    if (user_access('administer udplanet')) {
+      $form['feed']['disabled']['#description'] = t('Tick to disable blog aggregation. (Unchecking this overrides the frozen attribute)');
+    }
+    else {
+      $form['feed']['disabled']['#type'] = 'hidden';
+    }
+  }
+
+  // Change the 'continue shopping' button if required.
+  if(strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE) {
+    $form['continue_shopping'] = array(
+      '#type' => 'submit',
+      '#value' => variable_get('register_continue_shopping', 'Continue shopping'),
+    );
+    array_unshift($form['#validate'], 'overrides_uc_product_add_to_cart_form_validate');
+  }
+
+  // Override address titles on the uc checkout address form.
+  if ($form_id == 'uc_cart_checkout_form') {
+    // dpm($form);
+    $form['panes']['delivery']['#title'] = t('Home Address');
+    $form['panes']['delivery']['#description'] = t('Please enter your home address.');
+
+    unset($form['panes']['delivery']['delivery_company']);
+
+    $form['panes']['billing']['#title'] = t('School / Organisation Address');
+    $form['pages']['billing']['#description'] = t('If your are paying for your own order, please check the box below.');
+    $form['panes']['billing']['copy_address']['#title'] = '<b>' . t('I\'m paying for myself, my home address is the billing address.') .'</b>';
+    $form['panes']['billing']['copy_address']['#description'] = t('If a school or other organisation is paying for this order, please enter the school or organisation\'s billing address here. If not, simply check the box above and the organisation address fields will disappear.');
+
+    // If logged in, use profile fields as default values.
+    global $user;
+
+    if ($user->uid) {
+      $profile = content_profile_load('profile', $user->uid);
+      if ($profile->nid) {
+        foreach($form['panes']['delivery']['delivery_country']['options'] as $key => $val) {
+          if (strtolower($val) == strtolower($profile->field_profile_country[0]['value'])) {
+            $country_id = $key;
+          }
+        }
+
+        // Default to Australia.
+        if (!$country_id)
+          $country_id = 36;
+
+        $form['panes']['delivery']['delivery_first_name']['#default_value'] = $profile->field_profile_firstname[0]['value'];
+        $form['panes']['delivery']['delivery_last_name']['#default_value'] = $profile->field_profile_surname[0]['value'];
+        $form['panes']['delivery']['delivery_street1']['#default_value'] = $profile->field_profile_address[0]['value'];
+        $form['panes']['delivery']['delivery_city']['#default_value'] = $profile->field_profile_city[0]['value'];
+        $form['panes']['delivery']['delivery_country']['#value'] = $country_id;
+        $form['panes']['delivery']['delivery_zone']['#default_value'] = $profile->field_profile_state[0]['value'];
+        $form['panes']['delivery']['delivery_postal_code']['#default_value'] = $profile->field_profile_postcode[0]['value'];
+        $form['panes']['delivery']['delivery_phone']['#default_value'] = $profile->field_profile_phone[0]['value'];
+
+        if ($form_state['post']['panes']['billing']['copy_address']) {
+          $form['panes']['billing']['billing_company']['#required'] = FALSE;
+        }
+        else {
+          $form['panes']['billing']['billing_company']['#required'] = TRUE;
+        }
+
+        // Insert our own validation function first.
+        array_unshift($form['#validate'], 'overrides_uc_cart_checkout_form_validate');
+        array_unshift($form['#submit'], 'overrides_uc_cart_checkout_form_submit');
+      }
+    }
+  }
+
+  // Change address labels on order edit form.
+  if ($form_id == 'uc_order_edit_form') {
+    $form['ship_to']['#title'] = "Modify 'Home' information";
+    $form['bill_to']['#title'] = "Modify 'Organisation' information";
+  }
+
+  // Twiddle the t-shirt submission form.
+  //
+  if ($form_id == 'tshirt_node_form') {
+    $form['title']['#description'] = t('Enter a name for your t-shirt design.');
+    $form['body_field']['body']['#rows'] = 4;
+    $form['body_field']['body']['#description'] = t('Enter an optional description for your design. Maybe explain the design principles or tell us how you created the artwork.');
+  }
+}
+
+/**
+ * Override company name requirement if the address was copied.
+ */
+function overrides_uc_cart_checkout_form_validate($form, &$form_state) {
+  if ($form_state['values']['panes']['billing']['copy_address']) {
+    if (!$form_state['values']['panes']['billing']['billing_company']) {
+      $form_state['values']['panes']['billing']['billing_company'] = 'N/A';
+    }
+  }
+}
+
+/**
+ * Remove company name placeholder before save.
+ */
+function overrides_uc_cart_checkout_form_submit($form, &$form_state) {
+  if ($form_state['values']['panes']['billing']['billing_company'] == 'N/A') {
+    $form_state['values']['panes']['billing']['billing_company'] = '';
+  }
+}
+
+/**
+ * User profile taxonomy data migration.
+ *
+ * Load $node->taxonomy data into the field_profile_interests field.
+ */
+function overrides_nodeapi(&$node, $op, $a1) {
+  if($node->type != 'profile')
+    return;
+
+  switch($op) {
+    case 'load':
+      // If interests are set, do not touch the field.
+      if (!$node->field_profile_interests) {
+        $terms = taxonomy_node_get_terms($node);
+        foreach ($terms as $tid => $term) {
+          $node->field_profile_interests[] = $tid;
+        }
+      }
+      break;
+  }
+}
+
+
+/**
+ * User signup form validation function override.
+ *
+ * Because the username was blank, transpsoe the email address into the username field.
+ */
+function overrides_user_register_validate($form, &$form_state) {
+  if ($form_state['values']['mail']) {
+    $form_state['values']['name'] = $form_state['values']['mail'];
+    $form_state['clicked_button']['#post']['name'] = $form_state['values']['mail'];
+  }
+  if ($form_state['values']['account']['mail']) {
+    $form_state['values']['account']['name'] = $form_state['values']['account']['mail'];
+    $form_state['clicked_button']['#post']['name'] = $form_state['values']['account']['mail'];
+  }
+}
+
+/**
+ * Handle a user clicking 'Continue shopping' on a product page.
+ */
+function overrides_uc_product_add_to_cart_form_validate($form, &$form_state) {
+  if($form_state['values']['op'] == variable_get('register_continue_shopping', 'Continue shopping')) {
+    drupal_goto('register');
+  }
+}
+
+/**
+ * Remove history section from the user profile.
+ */
+function overrides_user($type, &$edit, &$account, $category = NULL) {
+  // remove history and orders from user profile view
+  if ($type == 'view') {
+    unset($account->content['summary']);
+    unset($account->content['orders']);
+
+    $account->name = theme('username', $account, FALSE);
+  }
+}
+
+/**
+ * Return a user's full name, titlecased.
+ */
+function overrides_fullname($uid) {
+  $profile = content_profile_load('profile', $uid);
+  return ccc_strtot($profile->field_profile_firstname[0]['value'] . ' ' . $profile->field_profile_surname[0]['value']);
+}
+
+/**
+ * Titlecase function.
+ */
+function ccc_strtot($s, $only_if_single_case = FALSE) {
+  $smallwordsarray = array( 'of','a','the','and','an','or','nor','but','is','if','then','else','when', 'at','from','by','on','off','for','in','out','over','to','into','with' );
+
+  if($only_if_single_case) {
+    if(strtolower($s) != $s && strtoupper($s) != $s)
+      return $s;
+  }
+
+  $words = explode(' ', $s);
+
+  foreach($words as $key => $word) {
+    if (!$key || !in_array($word, $smallwordsarray))
+      $words[$key] = ucwords($word);
+  }
+  return implode(' ', $words);
+}
+
+
+/**
+ * Re-theme a link to a user so the email address is not truncated.
+ */
+function acec2010_username($object) {
+
+  if ($object->uid && $object->name) {
+    $name = $object->name;
+
+    if (user_access('access user profiles')) {
+      $output = l($name, 'user/'. $object->uid, array('title' => t('View user profile.')));
+    }
+    else {
+      $output = check_plain($name);
+    }
+  }
+  else if ($object->name) {
+    // Sometimes modules display content composed by people who are
+    // not registered members of the site (e.g. mailing list or news
+    // aggregator modules). This clause enables modules to display
+    // the true author of the content.
+    if ($object->homepage) {
+      $output = l($object->name, $object->homepage);
+    }
+    else {
+      $output = check_plain($object->name);
+    }
+
+    $output .= ' ('. t('not verified') .')';
+  }
+  else {
+    $output = variable_get('anonymous', t('Anonymous'));
+  }
+
+  return $output;
+}
+

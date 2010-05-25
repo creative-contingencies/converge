@@ -1,0 +1,8 @@
+name = Overrides
+description = This module provides overrides that make the conference site work more smoothly.
+package = " Creative Contingencies Conference"
+core = 6.x
+
+dependencies[] = user
+dependencies[] = logintoboggan
+dependencies[] = taxonomy_super_select

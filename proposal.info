@@ -1,0 +1,10 @@
+name = Proposals workflow
+description = Users submit proposals, we need to generate a user account for anonymous users. Also to display link of invite with key.
+package = " Creative Contingencies Conference"
+core = 6.x
+
+dependencies[] = content
+dependencies[] = content_permissions
+dependencies[] = logintoboggan
+dependencies[] = uuid
+dependencies[] = content_profile

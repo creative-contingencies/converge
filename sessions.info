@@ -1,0 +1,5 @@
+name = Session Selection
+description = This module implements session selection. Attendees choose which sessions they want to attend.
+package = " Creative Contingencies Conference"
+core = 6.x
+dependencies[] = register

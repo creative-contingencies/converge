@@ -1,0 +1,460 @@
+<?php
+// $id$
+
+/**
+ * Implementation of hook_block()
+ */
+function promotion_block($op = 'list', $delta = 0, $edit = array()) {
+
+  if ($op == 'list') {
+    $blocks = array();
+    $blocks[0] = array(
+      'info' => t('promotion: Who\'s Coming?'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[1] = array(
+      'info' => t('promotion: PD Certificate'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[2] = array(
+      'info' => t('promotion: myACEC Percentage Incentive'),
+      'cache' => BLOCK_NO_CACHE,
+    );
+    $blocks[3] = array(
+      'info' => t('promotion: Twitter Widget'),
+    );
+    return $blocks;
+  }
+
+  if ($op == 'configure' && $delta == 0) {
+    $form['faces'] = array(
+      '#type' => 'radios',
+      '#title' => t('Limit Faces'),
+      '#description' => t('Which faces should be listed in the block?'),
+      '#default_value' => variable_get('promotion_faces', 'all'),
+      '#options' => array(
+        'all' => 'All users',
+        'registered' => 'Registered users only',
+      ),
+    );
+    return $form;
+  }
+
+  if ($op == 'configure' && $delta == 3) {
+    $form['twitter_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Widget Title'),
+      '#description' => t('What widget title do you want to display?'),
+      '#default_value' => variable_get('promotion_twitter_title', 'What\'s happening on twitter?'),
+    );
+    $form['twitter_subject'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Widget Subject'),
+      '#description' => t('What widget subject do you want to display?'),
+      '#default_value' => variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps'),
+    );
+    $form['twitter_search'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Search query'),
+      '#description' => t('What terms do we search twitter for?'),
+      '#default_value' => variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig'),
+      '#required' => TRUE,
+    );
+    $form['twitter_height'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Widget Height'),
+      '#description' => t('How high (in pixels) should the twitter widget be?'),
+      '#default_value' => variable_get('promotion_twitter_height', 150),
+    );
+    return $form;
+  }
+
+  if ($op == 'save' && $delta == 0) {
+    variable_set('promotion_faces', $edit['faces']);
+  }
+
+  if ($op == 'save' && $delta == 3) {
+    variable_set('promotion_twitter_title', $edit['twitter_title']);
+    variable_set('promotion_twitter_subject', $edit['twitter_subject']);
+    variable_set('promotion_twitter_search', $edit['twitter_search']);
+    variable_set('promotion_twitter_height', $edit['twitter_height']);
+  }
+
+  if ($op == 'view') {
+    if ($delta == 0) {
+      $block = promotion_user_faces();
+    }
+    if ($delta == 1) {
+      $block = promotion_certificate();
+    }
+    if ($delta == 2) {
+      $block = promotion_myacec_percentage();
+    }
+    if ($delta == 3) {
+      $block = promotion_tweeps();
+    }
+    return $block;
+  }
+}
+
+/**
+ * Delta = 0
+ *
+ * Return a block that contains a set of user profile pictures - down-sized via imagecache.
+ */
+function promotion_user_faces() {
+  $block = array();
+  $faces = array();
+
+  if (variable_get('promotion_faces', 'all') == 'registered') {
+    $query = "SELECT DISTINCT(u.uid), u.picture FROM {users} AS u JOIN {ccc_ticket_allocation} AS cccta ON (u.uid=cccta.uid AND u.picture <> '') ORDER BY RAND() LIMIT 12";
+  } else {
+    $query = "SELECT DISTINCT(u.uid), u.picture FROM {users} AS u WHERE u.picture <> '' ORDER BY RAND() LIMIT 12";
+  }
+  $result = db_query($query);
+
+  while ($o = db_fetch_object($result)) {
+    // $profile = l('IMAGE', 'user/'. $o->uid);
+    // $faces[] = strtr($profile, array('IMAGE' => theme('imagecache', 'faceblock', $o->picture)));
+    $faces[] = theme('imagecache', 'faceblock', $o->picture);
+  }
+
+  $block['subject'] = t("Who's Coming?");
+  $block['content'] = implode(' ', $faces);
+
+  return $block;
+}
+
+/**
+ * Delta = 1
+ *
+ * Return a block with info.
+ */
+function promotion_certificate() {
+  $block = array();
+
+  if (arg(0) == 'user' && arg(1));
+    $account = user_load(arg(1));
+
+  if (empty($account) || !$account->uid) {
+    return;
+  }
+
+  if (!promotion_certificate_exists($account))
+    return;
+
+  $size = filesize(promotion_certificate_file($account));
+
+  $block['subject'] = t('Certificate');
+  $block['content'] = 'Download your PD attendance certificate. ' . l('ACEC2010_PD_Certificate.pdf', 'user/' . $account->uid . '/certificate') . ' <i>(' . format_size($size) . ')</i>';
+
+  return $block;
+}
+
+/**
+ * Delta = 2
+ *
+ * Return a block with percentage complete - fill out X for the myACEC stuff.
+ */
+function promotion_myacec_percentage() {
+  $block = array();
+
+  global $user;
+
+  if (!$user->uid) {
+    return null;
+  }
+
+  $profile = content_profile_load('profile', $user->uid);
+
+  $todo = array();
+  $percentage = 0;
+
+  $data = array(
+    'user' => array(
+      'interests' => 15,
+      'twitter' => 15,
+      'planet' => 10,
+      'picture' => 10,
+    ),
+    'profile' => array(
+      'firstname' => 5,
+      'surname' => 5,
+      'organisation' => 5,
+      'position' => 5,
+      'address' => 5,
+      'country' => 5,
+      'bio' => 10,
+      'phone' => 5,
+      'blog' => 5,
+    ),
+  );
+
+  // This field should only be used if users can in fact buy tickets.
+  //
+  if (module_exists("uc_order") && user_access("create orders")) {
+    // If users can buy tickets, 10% for having a ticket.
+    $data['user']['twitter'] = 5;
+    $data['custom']['ticket'] = 10;
+
+    // This field should only be shown if users can buy tickets AND select
+    // conference session preferences.
+    //
+    if (module_exists("sessions") && user_access("choose conference sessions")) {
+      $data['user']['planet'] = 5;
+      $data['user']['picture'] = 5;
+      $data['custom']['sessions'] = 10;
+    }
+  }
+
+  foreach ($data as $node => $fields) {
+    foreach ($fields as $name => $value) {
+       if ($node == 'user') {
+         switch($name) {
+           case 'picture':
+             if ($user->picture) {
+               $percentage += $value;
+             } else {
+               $todo[] = array(
+                 'value' => $value,
+                 'field' => t('a profile picture'),
+                 'link' => 'user/' . $user->uid . '/edit',
+               );
+             }
+             break;
+           case 'planet':
+             if (module_exists("udplanet")) {
+               $planet = db_result(db_query("SELECT COUNT(lid) FROM {udplanet_feeds} WHERE uid=%d", $user->uid));
+               if ($planet) {
+                 $percentage += $value;
+               } else {
+                 $todo[] = array(
+                   'value' => $value,
+                   'field' => t('your blog\'s rss feed'),
+                   'link' => 'user/' . $user->uid . '/udplanet/feeds',
+                 );
+               }
+             }
+             else if (module_exists("planet")) {
+               $planet = db_result(db_query("SELECT checked FROM {planet_feeds} WHERE uid=%d", $user->uid));
+               if ($planet) {
+                 $percentage += $value;
+               } else {
+                 $todo[] = array(
+                   'value' => $value,
+                   'field' => t('your blog\'s rss feed'),
+                   'link' => 'user/' . $user->uid . '/planet',
+                 );
+               }
+             }
+             break;
+           case 'twitter':
+             $twitter = db_result(db_query("SELECT import FROM {twitter_user} WHERE uid=%d", $user->uid));
+             if ($twitter) {
+               $percentage += $value;
+             } else {
+               $todo[] = array(
+                 'value' => $value,
+                 'field' => t('your twitter account'),
+                 'link' => 'user/' . $user->uid . '/twitter',
+               );
+             }
+             break;
+           case 'interests':
+             if (is_array($profile->taxonomy)) {
+               $percentage += $value;
+             } else {
+               $todo[] = array(
+                 'value' => $value,
+                 'field' => t('your areas of interest'),
+                 'link' => 'user/' . $user->uid . '/edit',
+               );
+             }
+             break;
+         } // end switch
+       }
+       else if ($node == 'profile') {
+         $cck_field = 'field_profile_' . $name;
+         if ($name == 'blog' && $profile->{$cck_field}[0]['url']) {
+           $percentage += $value;
+         }
+         else if ($profile->{$cck_field}[0]['value']) {
+           $percentage += $value;
+         } else {
+           $todo[] = array(
+             'value' => $value,
+             'field' => t('your !field', array('!field' => ($name != 'blog') ? $name : 'website url')),
+             'link' => 'user/' . $user->uid . '/edit/profile',
+           );
+         }
+       }
+       else if ($node == 'custom') {
+         // Does user have a ticket allocated?
+         if ($name == 'ticket') {
+           $tickets = db_result(db_query("SELECT COUNT(order_product_id) FROM {ccc_ticket_allocation} WHERE uid=%d", $user->uid));
+           if ($tickets) {
+             $percentage += $value;
+           }
+           else {
+             $todo[] = array(
+               'value' => $value,
+               'field' => t('a conference ticket'),
+               'link' => 'register',
+             );
+           }
+         }
+         // Does user have selected sessions?
+         if ($name == 'sessions') {
+           $sessions = db_result(db_query("SELECT COUNT(nid) FROM {ccc_session_selection} WHERE uid=%d", $user->uid));
+           if ($sessions) {
+             $percentage += $value;
+           }
+           else {
+             $todo[] = array(
+               'value' => $value,
+               'field' => t('your personal program'),
+               'link' => 'my-program',
+             );
+           }
+         }
+       }
+       else {
+         // wtf?
+       }
+    } // foreach fields
+  } // foreach data
+
+  // If all fields have been filled out, don't annoy the user with this block.
+  if ($percentage < 100) {
+
+    $block['subject'] = t('Complete myACEC');
+
+    $block['content'] .= '<div class="poll"><div class="bar">';
+    $block['content'] .= t('<div class="foreground" style="width: !percent%"></div>', array('!percent' => $percentage));
+    $block['content'] .= t('</div><div class="percent">myACEC profile !percent% complete</div></div>', array('!percent' => $percentage));
+
+    // Select a random enty from the $todo array and suggest the user completes it.
+    shuffle(&$todo);
+
+    if (($percentage + $todo[0]['value']) == 100) {
+      $block['content'] .= t('<p>!add will complete the myACEC profile!</p>', array(
+        '!add' => l('Adding ' . $todo[0]['field'], $todo[0]['link']),
+        '!total' => ($percentage + $todo[0]['value']))
+      );
+
+    }
+    else {
+      $block['content'] .= t('<p>!add will take you up to !total% complete!</p>', array(
+        '!add' => l('Adding ' . $todo[0]['field'], $todo[0]['link']),
+        '!total' => ($percentage + $todo[0]['value']))
+      );
+    }
+  }
+
+  return $block;
+}
+
+function promotion_tweeps() {
+  $block = array();
+  $title = variable_get('promotion_twitter_title', 'What\'s happening on twitter');
+  $subject = variable_get('promotion_twitter_subject', 'ACEC2010 Tweeps');
+  $search = variable_get('promotion_twitter_search', '#acec OR acec2010 OR #acec2010 -questdig');
+  $height = variable_get('promotion_twitter_height', 150);
+
+  $block['subject'] = 'Twitter Widget';
+  $block['content'] = "<script type='text/javascript' src='http://widgets.twimg.com/j/2/widget.js'></script>
+<script type='text/javascript'>
+new TWTR.Widget({
+  version: 2,
+  type: 'search',
+  search: '" . addslashes($search) . "',
+  interval: 5000,
+  title: '" . addslashes($title) . "',
+  subject: '" . addslashes($subject) . "',
+  width: 250,
+  height: " . $height . ",
+  theme: {
+    shell: {
+      background: '#cc66cc',
+      color: '#ffffff'
+    },
+    tweets: {
+      background: '#ffffff',
+      color: '#333333',
+      links: '#1985b5'
+    }
+  },
+  features: {
+    scrollbar: false,
+    loop: true,
+    live: true,
+    hashtags: true,
+    timestamp: false,
+    avatars: true,
+    behavior: 'default'
+  }
+}).render().start();
+</script>";
+
+  return $block;
+}
+
+/**
+ * Implementation of hook_menu.
+ *
+ * Provide a callback url for users to fetch their PDF certificates.
+ */
+function promotion_menu() {
+  $items = array();
+
+  $items['user/%user/certificate'] = array(
+    'title' => 'Certificate Download',
+    'description' => t('Download the PD Certificate'),
+    'page callback' => 'promotion_certificate_download',
+    'page arguments' => array(1),
+    'access callback' => 'promotion_certificate_exists',
+    'access arguments' => array(1),
+  );
+
+  return $items;
+}
+
+/**
+ * Access callback function. Return true if there is a certificate for the user.
+ */
+function promotion_certificate_exists($account) {
+  global $user;
+
+  if ($user->uid == $account->uid || user_access('administer users')) {
+    return file_exists( promotion_certificate_file($account) );
+  }
+  return false;
+}
+
+/**
+ * Give us the certificate file for the user.
+ */
+function promotion_certificate_file($account) {
+  return file_directory_path() . '/certificates/' . $account->uid . '.pdf';
+}
+
+/**
+ * Handler to return the PDF to the user.
+ */
+function promotion_certificate_download($account) {
+  $file = promotion_certificate_file($account);
+
+  // Add the response headers.
+  //
+  drupal_set_header('Content-type: application/pdf');
+  drupal_set_header('Content-length: ' . filesize($file));
+  drupal_set_header('Content-disposition: attachment; filename=ACEC2010_PD_Certificate.pdf');
+
+  // Read the file data and spew it out.
+  //
+  @readfile($file);
+
+  // Don't do anything else!
+  //
+  die();
+}

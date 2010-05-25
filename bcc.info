@@ -1,0 +1,4 @@
+name = Blind Carbon Copy
+description = Keep blind carbon copies of all emails sent by the site.
+package = " Creative Contingencies Conference"
+core = 6.x
