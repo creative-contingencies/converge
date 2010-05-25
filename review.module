@@ -376,10 +376,12 @@ function review_remind_reviewers_submit($form, &$form_state) {
 
 /*
 function review_theme($existing, $type, $theme, $path) {
+  $path = drupal_get_path('module', 'review');
   return array(
     'reviews_overview' => array(
       'arguments' => array('node' => NULL, 'reviews' => NULL),
-      'template' => 'reviews_overview'
+      'template' => 'reviews_overview',
+      'path' => "$path/theme",
     ),
   );
 
