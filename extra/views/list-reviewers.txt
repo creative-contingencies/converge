@@ -1,0 +1,501 @@
+<?php
+/**
+ * List reviewers for use in the CCK userreference field.
+ */
+
+$view = new view;
+$view->name = 'list_reviewers';
+$view->description = 'List available reviewers';
+$view->tag = 'reviews';
+$view->view_php = '';
+$view->base_table = 'users';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'content_profile_rel' => array(
+    'label' => 'Content Profile',
+    'required' => 1,
+    'type' => 'profile',
+    'id' => 'content_profile_rel',
+    'table' => 'users',
+    'field' => 'content_profile_rel',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'field_profile_firstname_value' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'label_type' => 'none',
+    'format' => 'default',
+    'multiple' => array(
+      'group' => TRUE,
+      'multiple_number' => '',
+      'multiple_from' => '',
+      'multiple_reversed' => FALSE,
+    ),
+    'exclude' => 0,
+    'id' => 'field_profile_firstname_value',
+    'table' => 'node_data_field_profile_firstname',
+    'field' => 'field_profile_firstname_value',
+    'relationship' => 'content_profile_rel',
+  ),
+  'field_profile_surname_value' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'label_type' => 'none',
+    'format' => 'default',
+    'multiple' => array(
+      'group' => TRUE,
+      'multiple_number' => '',
+      'multiple_from' => '',
+      'multiple_reversed' => FALSE,
+    ),
+    'exclude' => 0,
+    'id' => 'field_profile_surname_value',
+    'table' => 'node_data_field_profile_surname',
+    'field' => 'field_profile_surname_value',
+    'relationship' => 'content_profile_rel',
+  ),
+  'mail' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => '<[mail]>',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_user' => '0',
+    'exclude' => 0,
+    'id' => 'mail',
+    'table' => 'users',
+    'field' => 'mail',
+    'relationship' => 'content_profile_rel',
+  ),
+  'tid' => array(
+    'label' => 'Interests',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'type' => 'separator',
+    'separator' => ', ',
+    'empty' => '',
+    'link_to_taxonomy' => 0,
+    'limit' => 1,
+    'vids' => array(
+      '4' => 4,
+      '2' => 0,
+      '6' => 0,
+    ),
+    'exclude' => 1,
+    'id' => 'tid',
+    'table' => 'term_node',
+    'field' => 'tid',
+    'relationship' => 'content_profile_rel',
+  ),
+));
+$handler->override_option('sorts', array(
+  'field_profile_firstname_value' => array(
+    'order' => 'ASC',
+    'delta' => -1,
+    'id' => 'field_profile_firstname_value',
+    'table' => 'node_data_field_profile_firstname',
+    'field' => 'field_profile_firstname_value',
+    'relationship' => 'content_profile_rel',
+  ),
+  'field_profile_surname_value' => array(
+    'order' => 'ASC',
+    'delta' => -1,
+    'id' => 'field_profile_surname_value',
+    'table' => 'node_data_field_profile_surname',
+    'field' => 'field_profile_surname_value',
+    'relationship' => 'content_profile_rel',
+  ),
+));
+$handler->override_option('filters', array(
+  'rid' => array(
+    'operator' => 'or',
+    'value' => array(
+      '14' => '14',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'rid',
+    'table' => 'users_roles',
+    'field' => 'rid',
+    'relationship' => 'none',
+    'reduce_duplicates' => 1,
+  ),
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'profile' => 'profile',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'content_profile_rel',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('items_per_page', 0);
+$handler->override_option('style_plugin', 'grid');
+$handler->override_option('row_options', array(
+  'inline' => array(
+    'field_profile_firstname_value' => 'field_profile_firstname_value',
+    'field_profile_surname_value' => 'field_profile_surname_value',
+    'mail' => 'mail',
+  ),
+  'separator' => '',
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('fields', array(
+  'field_profile_firstname_value' => array(
+    'label' => 'Firstname',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'label_type' => 'custom',
+    'format' => 'default',
+    'multiple' => array(
+      'group' => TRUE,
+      'multiple_number' => '',
+      'multiple_from' => '',
+      'multiple_reversed' => FALSE,
+    ),
+    'exclude' => 0,
+    'id' => 'field_profile_firstname_value',
+    'table' => 'node_data_field_profile_firstname',
+    'field' => 'field_profile_firstname_value',
+    'relationship' => 'content_profile_rel',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+  ),
+  'field_profile_surname_value' => array(
+    'label' => 'Surname',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'label_type' => 'custom',
+    'format' => 'default',
+    'multiple' => array(
+      'group' => TRUE,
+      'multiple_number' => '',
+      'multiple_from' => '',
+      'multiple_reversed' => FALSE,
+    ),
+    'exclude' => 0,
+    'id' => 'field_profile_surname_value',
+    'table' => 'node_data_field_profile_surname',
+    'field' => 'field_profile_surname_value',
+    'relationship' => 'content_profile_rel',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+  ),
+  'mail' => array(
+    'label' => 'Email',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => '<[mail]>',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_user' => 'user',
+    'exclude' => 0,
+    'id' => 'mail',
+    'table' => 'users',
+    'field' => 'mail',
+    'relationship' => 'content_profile_rel',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+  ),
+  'tid' => array(
+    'label' => 'Interests',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'type' => 'separator',
+    'separator' => ', ',
+    'empty' => '',
+    'link_to_taxonomy' => 0,
+    'limit' => 1,
+    'vids' => array(
+      '4' => 4,
+      '2' => 0,
+      '6' => 0,
+    ),
+    'exclude' => 0,
+    'id' => 'tid',
+    'table' => 'term_node',
+    'field' => 'tid',
+    'relationship' => 'content_profile_rel',
+  ),
+  'phpcode' => array(
+    'label' => 'Completed',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'value' => '<?php
+
+  $query = "SELECT COUNT(nid) FROM {content_field_proposal_reviewers} WHERE field_proposal_reviewers_uid = %d";
+  $assigned = db_result(db_query($query, $data->uid));
+
+  $query = "SELECT COUNT(nid) FROM {node} WHERE uid=%d and type=\'%s\'";
+  $completed = db_result(db_query($query, $data->uid, \'paper_review\'));
+
+  print \'<a class="tooltipcontainer">\';
+  print $completed . \'/\' . $assigned;
+  print \'<div class="tooltip" style="display: none">Reviewer has completed \' . $completed . \' of \' . $assigned . \' assigned reviews</div>\';
+  print \'</a>\';
+?>',
+    'exclude' => 0,
+    'id' => 'phpcode',
+    'table' => 'customfield',
+    'field' => 'phpcode',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('sorts', array(
+  'field_profile_surname_value' => array(
+    'order' => 'ASC',
+    'delta' => -1,
+    'id' => 'field_profile_surname_value',
+    'table' => 'node_data_field_profile_surname',
+    'field' => 'field_profile_surname_value',
+    'relationship' => 'content_profile_rel',
+  ),
+  'field_profile_firstname_value' => array(
+    'order' => 'ASC',
+    'delta' => -1,
+    'id' => 'field_profile_firstname_value',
+    'table' => 'node_data_field_profile_firstname',
+    'field' => 'field_profile_firstname_value',
+    'relationship' => 'content_profile_rel',
+  ),
+));
+$handler->override_option('filters', array(
+  'rid' => array(
+    'operator' => 'or',
+    'value' => array(
+      '14' => '14',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'rid',
+    'table' => 'users_roles',
+    'field' => 'rid',
+    'relationship' => 'none',
+    'reduce_duplicates' => 1,
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'role',
+  'role' => array(
+    '10' => 10,
+    '5' => 5,
+  ),
+));
+$handler->override_option('title', 'List of Reviewers');
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'field_profile_firstname_value' => 'field_profile_firstname_value',
+    'field_profile_surname_value' => 'field_profile_surname_value',
+    'mail' => 'mail',
+    'tid' => 'tid',
+  ),
+  'info' => array(
+    'field_profile_firstname_value' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'field_profile_surname_value' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'mail' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'tid' => array(
+      'separator' => '',
+    ),
+  ),
+  'default' => 'field_profile_surname_value',
+));
+$handler->override_option('row_options', array());
+$handler->override_option('path', 'review/reviewers');
+$handler->override_option('menu', array(
+  'type' => 'normal',
+  'title' => 'Reviewer List',
+  'description' => 'List of all reviewers on the system',
+  'weight' => '0',
+  'name' => 'menu-papers',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+

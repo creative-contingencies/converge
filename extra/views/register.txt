@@ -1,0 +1,279 @@
+<?php
+/**
+ * Ubercart view that lists products.
+ */
+
+$view = new view;
+$view->name = 'page_registration_links';
+$view->description = 'Registration products';
+$view->tag = 'Ubercart';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'nid' => array(
+    'label' => 'Nid',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'exclude' => 1,
+    'id' => 'nid',
+    'table' => 'node',
+    'field' => 'nid',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'sell_price' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'exclude' => 0,
+    'id' => 'sell_price',
+    'table' => 'uc_products',
+    'field' => 'sell_price',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'nothing' => array(
+    'label' => '',
+    'alter' => array(
+      'text' => '/cart/add/p[nid]_q1',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'exclude' => 0,
+    'id' => 'nothing',
+    'table' => 'views',
+    'field' => 'nothing',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+));
+$handler->override_option('sorts', array(
+  'ordering' => array(
+    'order' => 'ASC',
+    'id' => 'ordering',
+    'table' => 'uc_products',
+    'field' => 'ordering',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'is_product' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'is_product',
+    'table' => 'uc_products',
+    'field' => 'is_product',
+    'relationship' => 'none',
+  ),
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'product' => 'product',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+  ),
+  'field_registration_hide_value_many_to_one' => array(
+    'operator' => 'not',
+    'value' => array(
+      '1' => '1',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'field_registration_hide_value_many_to_one',
+    'table' => 'node_data_field_registration_hide',
+    'field' => 'field_registration_hide_value_many_to_one',
+    'relationship' => 'none',
+    'reduce_duplicates' => 0,
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Conference Registration');
+$handler->override_option('header', '<?php
+  $placeholder = node_load(716);
+
+  print $placeholder->body;
+?>');
+$handler->override_option('header_format', '5');
+$handler->override_option('header_empty', 1);
+$handler->override_option('footer', '<?php
+include_once drupal_get_path(\'module\', \'uc_cart\') . \'/uc_cart.pages.inc\';
+$cart = uc_cart_view();
+if (!strpos($cart, \'are no products in your shopping\')) {
+  print "<br /><br /><h3>Shopping cart</h3>" . $cart;
+}
+
+
+?>');
+$handler->override_option('footer_format', '5');
+$handler->override_option('footer_empty', 0);
+$handler->override_option('items_per_page', 100);
+$handler->override_option('use_pager', '1');
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'nid' => 'nid',
+    'title' => 'title',
+    'sell_price' => 'sell_price',
+    'nothing' => 'nothing',
+    'field_product_weight_value' => 'field_product_weight_value',
+  ),
+  'info' => array(
+    'nid' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'sell_price' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'nothing' => array(
+      'separator' => '',
+    ),
+    'field_product_weight_value' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('path', 'register');
+$handler->override_option('menu', array(
+  'type' => 'normal',
+  'title' => 'Get a ticket!',
+  'description' => '',
+  'weight' => '0',
+  'name' => 'primary-links',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+

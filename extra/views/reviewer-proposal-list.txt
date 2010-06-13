@@ -1,0 +1,349 @@
+<?php
+/**
+ * Listing of assigned proposals to be used by the reviewers
+ */
+
+$view = new view;
+$view->name = 'Review_Assigned_Papers';
+$view->description = 'A list of proposals you are assigned to review.';
+$view->tag = '';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'field_proposal_reviewers_uid' => array(
+    'label' => 'Reviewers',
+    'required' => 0,
+    'delta' => '-1',
+    'id' => 'field_proposal_reviewers_uid',
+    'table' => 'node_data_field_proposal_reviewers',
+    'field' => 'field_proposal_reviewers_uid',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'tid' => array(
+    'label' => 'Type',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'type' => 'separator',
+    'separator' => ', ',
+    'empty' => '',
+    'link_to_taxonomy' => 0,
+    'limit' => 1,
+    'vids' => array(
+      '2' => 2,
+      '4' => 0,
+      '6' => 0,
+    ),
+    'exclude' => 0,
+    'id' => 'tid',
+    'table' => 'term_node',
+    'field' => 'tid',
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => 'Title',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'relationship' => 'none',
+  ),
+  'phpcode' => array(
+    'label' => 'Recommendation',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'value' => '<?php
+  global $user;
+  $query = "SELECT nid FROM {content_type_paper_review} WHERE field_paper_nid = %d";
+  $result = db_query($query, $data->nid);
+  $recommendation = array();
+
+  $recommendation = \'<i>Unreviewed</i>\';
+  while ( $rid = db_fetch_object($result) ) {
+    $review = node_load($rid->nid);
+    if ( $user->uid == $review->uid ) {
+      $recommendation = l($review->field_review_recommendation[0][\'value\'], \'node/\' . $review->nid);
+    }
+  }
+  print $recommendation;
+?>',
+    'exclude' => 0,
+    'id' => 'phpcode',
+    'table' => 'customfield',
+    'field' => 'phpcode',
+    'relationship' => 'none',
+  ),
+  'nid_4' => array(
+    'label' => 'Nid',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'exclude' => 1,
+    'id' => 'nid_4',
+    'table' => 'node',
+    'field' => 'nid',
+    'relationship' => 'none',
+  ),
+  'nid_2' => array(
+    'label' => 'Review Paper',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => 'Review Paper',
+      'make_link' => 1,
+      'path' => 'node/add/paper-review?nid=[nid_4]',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'exclude' => 1,
+    'id' => 'nid_2',
+    'table' => 'node',
+    'field' => 'nid',
+    'relationship' => 'none',
+  ),
+  'nid_3' => array(
+    'label' => 'Actions',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => '<ul>
+<li>[nid_2]</li>
+</ul>',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'exclude' => 0,
+    'id' => 'nid_3',
+    'table' => 'node',
+    'field' => 'nid',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'proposal' => 'proposal',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+  ),
+  'uid_current' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'uid_current',
+    'table' => 'users',
+    'field' => 'uid_current',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'field_proposal_reviewers_uid',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'role',
+  'role' => array(
+    '14' => 14,
+  ),
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Assigned Proposals');
+$handler->override_option('header', '<fieldset><legend>Editorial Policy</legend>
+<?php
+print nl2br(variable_get(\'review_editorial_policy\', \'\'));
+?></fieldset>
+<br />
+Below is a list of your assigned proposals for blind peer review.<br /><br />
+Click on the title of the paper to read the abstract and download the paper. When you are ready to submit your review click on Review Paper. If you have already submitted a review, you can see it by clicking on your recommendation.<br /><br />');
+$handler->override_option('header_format', '5');
+$handler->override_option('header_empty', 1);
+$handler->override_option('empty', 'You currently have no proposals specifically assigned to you.');
+$handler->override_option('empty_format', '1');
+$handler->override_option('items_per_page', 20);
+$handler->override_option('use_pager', '1');
+$handler->override_option('distinct', 0);
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'tid' => 'tid',
+    'title' => 'title',
+    'field_proposal_presenters_uid' => 'field_proposal_presenters_uid',
+    'field_proposal_status_value' => 'field_proposal_status_value',
+    'value' => 'value',
+    'value_1' => 'value_1',
+    'value_2' => 'value_2',
+    'field_proposal_reviewers_uid' => 'field_proposal_reviewers_uid',
+    'value_3' => 'value_3',
+    'view_node' => 'view_node',
+  ),
+  'info' => array(
+    'tid' => array(
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'field_proposal_presenters_uid' => array(
+      'separator' => '',
+    ),
+    'field_proposal_status_value' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'value' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'value_1' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'value_2' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'field_proposal_reviewers_uid' => array(
+      'separator' => '',
+    ),
+    'value_3' => array(
+      'sortable' => 1,
+      'separator' => '',
+    ),
+    'view_node' => array(
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('path', 'review/assigned_proposals');
+$handler->override_option('menu', array(
+  'type' => 'normal',
+  'title' => 'Assigned Reviews',
+  'description' => '',
+  'weight' => '0',
+  'name' => 'menu-committee',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+
