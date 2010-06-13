@@ -178,7 +178,7 @@ function review_email_authors() {
  * Validate handler for the author bulk-emailer.
  */
 function review_email_authors_validate($form, &$form_state) {
-  if (!valid_email($form_state['values']['review_email_authors_from'])) {
+  if (!valid_email_address($form_state['values']['review_email_authors_from'])) {
     form_set_error('reviewer_email_authors][review_email_authors_from', t('Please enter a valid From email address'));
   }
   if (!$form_state['values']['review_email_authors_body']) {
