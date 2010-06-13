@@ -1,0 +1,668 @@
+<?php
+/**
+ * The 'Day' node type.
+ *
+ * This is the abstraction layer beteween timeslots and registrations.
+ * A 'day' node may share a date with other day nodes, but be linked
+ * only to a specific set of timeslots or registration type.
+ */
+
+$content['type']  = array (
+  'name' => 'Day',
+  'type' => 'day',
+  'description' => 'The <em>day</em> type is used for scheduling. Each session that is to be scheduled for the conference must occur on a particular <em>day</em>.',
+  'title_label' => 'Title',
+  'body_label' => 'Description',
+  'min_word_count' => '0',
+  'help' => '',
+  'input_formats' => 
+  array (
+    1 => true,
+    0 => 1,
+    3 => false,
+    5 => false,
+  ),
+  'node_options' => 
+  array (
+    'status' => true,
+    'promote' => false,
+    'sticky' => false,
+    'revision' => false,
+  ),
+  'upload' => '0',
+  'show_preview_changes' => 0,
+  'ffp_upload' => 
+  array (
+    'file_path' => '',
+    'file_path_cleanup' => 
+    array (
+      'file_path_pathauto' => 0,
+      'file_path_tolower' => 0,
+      'file_path_transliterate' => 0,
+    ),
+    'file_name' => '[filefield-onlyname-original].[filefield-extension-original]',
+    'file_name_cleanup' => 
+    array (
+      'file_name_pathauto' => 0,
+      'file_name_tolower' => 0,
+      'file_name_transliterate' => 0,
+    ),
+    'retroactive_update' => '',
+    'active_updating' => 0,
+  ),
+  'old_type' => 'day',
+  'orig_type' => '',
+  'module' => 'node',
+  'custom' => '1',
+  'modified' => '1',
+  'locked' => '0',
+  'xmlsitemap_node_type_priority' => 0.5,
+  'nodewords_edit_metatags' => 0,
+  'nodewords_basic_use_teaser' => 0,
+  'content_profile_use' => 0,
+  'comment' => '0',
+  'comment_default_mode' => '4',
+  'comment_default_order' => '1',
+  'comment_default_per_page' => '50',
+  'comment_controls' => '3',
+  'comment_anonymous' => 0,
+  'comment_subject_field' => '1',
+  'comment_preview' => '1',
+  'comment_form_location' => '0',
+  'fivestar' => 0,
+  'fivestar_stars' => 5,
+  'fivestar_labels_enable' => 1,
+  'fivestar_label_0' => 'Cancel rating',
+  'fivestar_label_1' => 'Poor',
+  'fivestar_label_2' => 'Okay',
+  'fivestar_label_3' => 'Good',
+  'fivestar_label_4' => 'Great',
+  'fivestar_label_5' => 'Awesome',
+  'fivestar_label_6' => 'Give it @star/@count',
+  'fivestar_label_7' => 'Give it @star/@count',
+  'fivestar_label_8' => 'Give it @star/@count',
+  'fivestar_label_9' => 'Give it @star/@count',
+  'fivestar_label_10' => 'Give it @star/@count',
+  'fivestar_style' => 'average',
+  'fivestar_text' => 'dual',
+  'fivestar_title' => 1,
+  'fivestar_feedback' => 1,
+  'fivestar_unvote' => 0,
+  'fivestar_position_teaser' => 'hidden',
+  'fivestar_position' => 'below',
+  'fivestar_comment' => 0,
+  'ant' => '2',
+  'ant_pattern' => '[field_day_date-day], [field_day_date-d] [field_day_date-month] [field_day_date-yyyy]',
+  'ant_php' => 0,
+  'relatedcontent_enabled' => false,
+  'relatedcontent_length' => 50,
+  'relatedcontent_exclude_teasers' => true,
+  'relatedcontent_output_placing' => 'end',
+  'relatedcontent_output_teasers' => true,
+  'relatedcontent_output_grouped' => 'type',
+  'relatedcontent_links_absolute' => 0,
+  'views' => 
+  array (
+    'enabled' => 
+    array (
+      2 => '0',
+      4 => '0',
+      6 => '0',
+      8 => '0',
+      14 => '0',
+      16 => '0',
+      18 => '0',
+      22 => '0',
+      24 => '0',
+      26 => '0',
+      28 => '0',
+      30 => '0',
+      32 => '0',
+      34 => '0',
+      36 => '0',
+      38 => '0',
+      42 => '0',
+      48 => '0',
+      50 => '0',
+      52 => '0',
+      'uc_products' => '0',
+      'admin_content' => '0',
+    ),
+    'title' => 
+    array (
+      2 => '',
+      4 => '',
+      6 => '',
+      8 => '',
+      14 => '',
+      16 => '',
+      18 => '',
+      22 => '',
+      24 => '',
+      26 => '',
+      28 => '',
+      30 => '',
+      32 => '',
+      34 => '',
+      36 => '',
+      38 => '',
+      42 => '',
+      48 => '',
+      50 => '',
+      52 => '',
+      'uc_products' => '',
+      'admin_content' => '',
+    ),
+  ),
+  'better_formats_allowed' => 
+  array (
+    1 => true,
+    3 => true,
+    5 => false,
+  ),
+  'better_formats_defaults' => 
+  array (
+    'node-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'node-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'node-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'node-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'comment-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'comment-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'comment-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+  ),
+);
+$content['fields']  = array (
+  0 => 
+  array (
+    'label' => 'Date',
+    'field_name' => 'field_day_date',
+    'type' => 'date',
+    'widget_type' => 'date_popup',
+    'change' => 'Change basic information',
+    'weight' => '-4',
+    'default_value' => 'blank',
+    'default_value2' => 'same',
+    'default_value_code' => '',
+    'default_value_code2' => '',
+    'input_format' => 'Y-m-d',
+    'input_format_custom' => '',
+    'year_range' => '-1:+2',
+    'increment' => '1',
+    'advanced' => 
+    array (
+      'label_position' => 'above',
+      'text_parts' => 
+      array (
+        'year' => 0,
+        'month' => 0,
+        'day' => 0,
+        'hour' => 0,
+        'minute' => 0,
+        'second' => 0,
+      ),
+    ),
+    'label_position' => 'above',
+    'text_parts' => 
+    array (
+    ),
+    'description' => '',
+    'group' => false,
+    'required' => 1,
+    'multiple' => '0',
+    'repeat' => 0,
+    'todate' => '',
+    'granularity' => 
+    array (
+      'year' => 'year',
+      'month' => 'month',
+      'day' => 'day',
+    ),
+    'default_format' => 'day_only',
+    'tz_handling' => 'none',
+    'timezone_db' => '',
+    'op' => 'Save field settings',
+    'module' => 'date',
+    'widget_module' => 'date',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  1 => 
+  array (
+    'label' => 'Timeslots',
+    'field_name' => 'field_day_timeslots',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_buttons',
+    'change' => 'Change basic information',
+    'weight' => '3',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => 'Choose all timeslots that happen on this day.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'nid' => NULL,
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_day_timeslots' => 
+      array (
+        0 => 
+        array (
+          'nid' => NULL,
+        ),
+        'nid' => 
+        array (
+          'nid' => 
+          array (
+            '' => 1,
+            3648 => false,
+            3658 => false,
+            4808 => false,
+            4822 => false,
+            4812 => false,
+            3660 => false,
+            3570 => false,
+            3644 => false,
+            3662 => false,
+            4810 => false,
+            3664 => false,
+            3060 => false,
+            4724 => false,
+            5442 => false,
+            3926 => false,
+            5006 => false,
+            2966 => false,
+            2968 => false,
+            3030 => false,
+            3008 => false,
+            5008 => false,
+            2990 => false,
+            2962 => false,
+            2996 => false,
+            3038 => false,
+            2986 => false,
+            5010 => false,
+            4714 => false,
+            5012 => false,
+            3786 => false,
+            5014 => false,
+            2974 => false,
+            4078 => false,
+            4718 => false,
+            3794 => false,
+            5016 => false,
+            2976 => false,
+            3014 => false,
+            3034 => false,
+            5018 => false,
+            2978 => false,
+            2998 => false,
+            2988 => false,
+            3046 => false,
+            3022 => false,
+            3052 => false,
+            5316 => false,
+            5310 => false,
+            3860 => false,
+            5042 => false,
+            3962 => false,
+            5044 => false,
+            2984 => false,
+            3026 => false,
+            5456 => false,
+            5328 => false,
+            2980 => false,
+            5046 => false,
+            4752 => false,
+            5048 => false,
+            3004 => false,
+            3010 => false,
+            4756 => false,
+            3012 => false,
+            3020 => false,
+            5050 => false,
+            2982 => false,
+            2972 => false,
+            4760 => false,
+            3000 => false,
+            5052 => false,
+            2992 => false,
+            3048 => false,
+            5054 => false,
+            3892 => false,
+            3042 => false,
+            2964 => false,
+            5340 => false,
+            3054 => false,
+            5342 => false,
+            3566 => false,
+            3928 => false,
+            5380 => false,
+            5056 => false,
+            5344 => false,
+            5348 => false,
+            5378 => false,
+            2960 => false,
+            3032 => false,
+            4986 => false,
+            5382 => false,
+            5346 => false,
+            5058 => false,
+            5350 => false,
+            3040 => false,
+            5352 => false,
+            3050 => false,
+            3044 => false,
+            5354 => false,
+            5462 => false,
+            5060 => false,
+            5450 => false,
+            4982 => false,
+            5368 => false,
+            3016 => false,
+            5360 => false,
+            2970 => false,
+            5356 => false,
+            3036 => false,
+            5358 => false,
+            5362 => false,
+            5370 => false,
+            3002 => false,
+            5364 => false,
+            3024 => false,
+            2994 => false,
+            5372 => false,
+            3006 => false,
+            5376 => false,
+            3028 => false,
+            5366 => false,
+            5374 => false,
+            3018 => false,
+            5552 => false,
+          ),
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_types' => 
+    array (
+      'timeslot' => 'timeslot',
+      'day' => 0,
+      'image' => 0,
+      'profile' => 0,
+      'simplenews' => 0,
+      'old_timeslot' => 0,
+      'page' => 0,
+      'panel' => 0,
+      'paper_review' => 0,
+      'placeholder' => 0,
+      'planet' => 0,
+      'poll' => 0,
+      'proposal' => 0,
+      'product' => 0,
+      'room' => 0,
+      'story' => 0,
+      'supporter' => 0,
+      'tshirt' => 0,
+      'webform' => 0,
+      'nomination' => false,
+    ),
+    'advanced_view' => 'timeslot',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_plain' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_html' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+);
+$content['extra']  = array (
+  'title' => '-5',
+  'body_field' => '-2',
+  'revision_information' => '0',
+  'comment_settings' => '2',
+  'menu' => '-3',
+  'path' => '1',
+  'nodewords' => '-1',
+);

@@ -1,0 +1,432 @@
+<?php
+/**
+ * The 'Timeslot' node type.
+ */
+
+$content['type']  = array (
+  'name' => 'Timeslot',
+  'type' => 'timeslot',
+  'description' => 'A <em>timeslot</em> defines a period of time in which a <em>proposal</em> can be scheduled.',
+  'title_label' => 'Title',
+  'body_label' => '',
+  'min_word_count' => '0',
+  'help' => '',
+  'input_formats' => 
+  array (
+    1 => true,
+    0 => 1,
+    3 => false,
+    5 => false,
+  ),
+  'node_options' => 
+  array (
+    'status' => true,
+    'promote' => false,
+    'sticky' => false,
+    'revision' => false,
+  ),
+  'upload' => '0',
+  'show_preview_changes' => 1,
+  'ffp_upload' => 
+  array (
+    'file_path' => '',
+    'file_path_cleanup' => 
+    array (
+      'file_path_pathauto' => 0,
+      'file_path_tolower' => 0,
+      'file_path_transliterate' => 0,
+    ),
+    'file_name' => '[filefield-onlyname-original].[filefield-extension-original]',
+    'file_name_cleanup' => 
+    array (
+      'file_name_pathauto' => 0,
+      'file_name_tolower' => 0,
+      'file_name_transliterate' => 0,
+    ),
+    'retroactive_update' => '',
+    'active_updating' => 0,
+  ),
+  'old_type' => 'timeslot',
+  'orig_type' => '',
+  'module' => 'node',
+  'custom' => '1',
+  'modified' => '1',
+  'locked' => '0',
+  'xmlsitemap_node_type_priority' => 0.5,
+  'nodewords_edit_metatags' => 0,
+  'nodewords_basic_use_teaser' => 0,
+  'content_profile_use' => 0,
+  'comment' => '0',
+  'comment_default_mode' => '4',
+  'comment_default_order' => '1',
+  'comment_default_per_page' => '50',
+  'comment_controls' => '3',
+  'comment_anonymous' => 0,
+  'comment_subject_field' => '1',
+  'comment_preview' => '1',
+  'comment_form_location' => '0',
+  'fivestar' => 0,
+  'fivestar_stars' => 5,
+  'fivestar_labels_enable' => 1,
+  'fivestar_label_0' => 'Cancel rating',
+  'fivestar_label_1' => 'Poor',
+  'fivestar_label_2' => 'Okay',
+  'fivestar_label_3' => 'Good',
+  'fivestar_label_4' => 'Great',
+  'fivestar_label_5' => 'Awesome',
+  'fivestar_label_6' => 'Give it @star/@count',
+  'fivestar_label_7' => 'Give it @star/@count',
+  'fivestar_label_8' => 'Give it @star/@count',
+  'fivestar_label_9' => 'Give it @star/@count',
+  'fivestar_label_10' => 'Give it @star/@count',
+  'fivestar_style' => 'average',
+  'fivestar_text' => 'dual',
+  'fivestar_title' => 1,
+  'fivestar_feedback' => 1,
+  'fivestar_unvote' => 0,
+  'fivestar_position_teaser' => 'hidden',
+  'fivestar_position' => 'below',
+  'fivestar_comment' => 0,
+  'ant' => '2',
+  'ant_pattern' => '[field_timeslot_date-day], [field_timeslot_date-d] [field_timeslot_date-month] [field_timeslot_date-yyyy] [field_timeslot_date-time] - [field_timeslot_date-to-time]',
+  'ant_php' => 0,
+  'relatedcontent_enabled' => 0,
+  'relatedcontent_length' => '50',
+  'relatedcontent_exclude_teasers' => '1',
+  'relatedcontent_output_placing' => 'end',
+  'relatedcontent_output_teasers' => '1',
+  'relatedcontent_output_grouped' => 'type',
+  'relatedcontent_links_absolute' => '0',
+  'views' => 
+  array (
+    'enabled' => 
+    array (
+      2 => '0',
+      4 => '0',
+      6 => '0',
+      8 => '0',
+      14 => '0',
+      16 => '0',
+      18 => '0',
+      22 => '0',
+      24 => '0',
+      26 => '0',
+      28 => '0',
+      30 => '0',
+      32 => '0',
+      34 => '0',
+      36 => '0',
+      38 => '0',
+      42 => '0',
+      48 => '0',
+      50 => '0',
+      52 => '0',
+      'uc_products' => '0',
+      'admin_content' => '0',
+    ),
+    'title' => 
+    array (
+      2 => '',
+      4 => '',
+      6 => '',
+      8 => '',
+      14 => '',
+      16 => '',
+      18 => '',
+      22 => '',
+      24 => '',
+      26 => '',
+      28 => '',
+      30 => '',
+      32 => '',
+      34 => '',
+      36 => '',
+      38 => '',
+      42 => '',
+      48 => '',
+      50 => '',
+      52 => '',
+      'uc_products' => '',
+      'admin_content' => '',
+    ),
+  ),
+  'better_formats_allowed' => 
+  array (
+    1 => true,
+    3 => false,
+    5 => false,
+  ),
+  'better_formats_defaults' => 
+  array (
+    'node-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'node-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'node-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'node-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'comment-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'comment-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'comment-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+  ),
+);
+$content['fields']  = array (
+  0 => 
+  array (
+    'label' => 'Date',
+    'field_name' => 'field_timeslot_date',
+    'type' => 'datetime',
+    'widget_type' => 'date_popup',
+    'change' => 'Change basic information',
+    'weight' => '-4',
+    'default_value' => 'blank',
+    'default_value2' => 'blank',
+    'default_value_code' => '',
+    'default_value_code2' => '',
+    'input_format' => 'Y-m-d H:i',
+    'input_format_custom' => '',
+    'year_range' => '-1:+2',
+    'increment' => '5',
+    'advanced' => 
+    array (
+      'label_position' => 'above',
+      'text_parts' => 
+      array (
+        'year' => 0,
+        'month' => 0,
+        'day' => 0,
+        'hour' => 0,
+        'minute' => 0,
+        'second' => 0,
+      ),
+    ),
+    'label_position' => 'above',
+    'text_parts' => 
+    array (
+    ),
+    'description' => 'Please enter the start time and end time for this timeslot.',
+    'group' => false,
+    'required' => 1,
+    'multiple' => '0',
+    'repeat' => 0,
+    'todate' => 'required',
+    'granularity' => 
+    array (
+      'year' => 'year',
+      'month' => 'month',
+      'day' => 'day',
+      'hour' => 'hour',
+      'minute' => 'minute',
+    ),
+    'default_format' => 'medium',
+    'tz_handling' => 'site',
+    'timezone_db' => 'UTC',
+    'op' => 'Save field settings',
+    'module' => 'date',
+    'widget_module' => 'date',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'datetime',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+      'value2' => 
+      array (
+        'type' => 'datetime',
+        'not null' => false,
+        'sortable' => true,
+        'views' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_plain' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_html' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+);
+$content['extra']  = array (
+  'title' => '-5',
+  'revision_information' => '-1',
+  'comment_settings' => '1',
+  'menu' => '-3',
+  'path' => '0',
+  'nodewords' => '-2',
+);
+

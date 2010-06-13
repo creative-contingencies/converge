@@ -1,0 +1,527 @@
+<?php
+/**
+ * The 'Registration' node type. Aka product in Ubercart.
+ *
+ * You already have this one once you enable the ubercart modules.
+ *
+ * The day field in a registration controls which days (and thus which
+ * timeslots and sessions) the user purchasing it gets access to.
+ */
+
+$content['type']  = array (
+  'name' => 'Registration',
+  'type' => 'product',
+  'description' => 'A new event registration product. You need one of these products for each type of ticket, for each event.',
+  'title_label' => 'Name',
+  'body_label' => 'Description',
+  'min_word_count' => '0',
+  'help' => '',
+  'input_formats' => 
+  array (
+    1 => true,
+    0 => 1,
+    3 => false,
+    5 => false,
+  ),
+  'node_options' => 
+  array (
+    'status' => true,
+    'promote' => false,
+    'sticky' => false,
+    'revision' => false,
+  ),
+  'upload' => '1',
+  'show_preview_changes' => 1,
+  'ffp_upload' => 
+  array (
+    'file_path' => '',
+    'file_path_cleanup' => 
+    array (
+      'file_path_pathauto' => 0,
+      'file_path_tolower' => 0,
+      'file_path_transliterate' => 0,
+    ),
+    'file_name' => '[filefield-onlyname-original].[filefield-extension-original]',
+    'file_name_cleanup' => 
+    array (
+      'file_name_pathauto' => 0,
+      'file_name_tolower' => 0,
+      'file_name_transliterate' => 0,
+    ),
+    'retroactive_update' => '',
+    'active_updating' => 0,
+  ),
+  'old_type' => 'product',
+  'orig_type' => 'product',
+  'module' => 'uc_product',
+  'custom' => '0',
+  'modified' => '1',
+  'locked' => '1',
+  'reset' => 'Reset to defaults',
+  'uc_image' => '',
+  'xmlsitemap_node_type_priority' => 0.5,
+  'nodewords_edit_metatags' => true,
+  'nodewords_basic_use_teaser' => 0,
+  'content_profile_use' => 0,
+  'comment' => '0',
+  'comment_default_mode' => '4',
+  'comment_default_order' => '1',
+  'comment_default_per_page' => '50',
+  'comment_controls' => '3',
+  'comment_anonymous' => 0,
+  'comment_subject_field' => '1',
+  'comment_preview' => '1',
+  'comment_form_location' => '0',
+  'fivestar' => 0,
+  'fivestar_stars' => 5,
+  'fivestar_labels_enable' => 1,
+  'fivestar_label_0' => 'Cancel rating',
+  'fivestar_label_1' => 'Poor',
+  'fivestar_label_2' => 'Okay',
+  'fivestar_label_3' => 'Good',
+  'fivestar_label_4' => 'Great',
+  'fivestar_label_5' => 'Awesome',
+  'fivestar_label_6' => 'Give it @star/@count',
+  'fivestar_label_7' => 'Give it @star/@count',
+  'fivestar_label_8' => 'Give it @star/@count',
+  'fivestar_label_9' => 'Give it @star/@count',
+  'fivestar_label_10' => 'Give it @star/@count',
+  'fivestar_style' => 'average',
+  'fivestar_text' => 'dual',
+  'fivestar_title' => 1,
+  'fivestar_feedback' => 1,
+  'fivestar_unvote' => 0,
+  'fivestar_position_teaser' => 'hidden',
+  'fivestar_position' => 'below',
+  'fivestar_comment' => 0,
+  'ant' => '0',
+  'ant_pattern' => '',
+  'ant_php' => 0,
+  'relatedcontent_enabled' => false,
+  'relatedcontent_length' => 50,
+  'relatedcontent_exclude_teasers' => true,
+  'relatedcontent_output_placing' => 'end',
+  'relatedcontent_output_teasers' => true,
+  'relatedcontent_output_grouped' => 'type',
+  'relatedcontent_links_absolute' => 0,
+  'views' => 
+  array (
+    'enabled' => 
+    array (
+      2 => '',
+      4 => '',
+      6 => '',
+      8 => '',
+      14 => '',
+      16 => '',
+      18 => '',
+      22 => '',
+      24 => '',
+      26 => '',
+      28 => '',
+      30 => '',
+      32 => '',
+      34 => '',
+      36 => '',
+      38 => '',
+      42 => '',
+      48 => '',
+      50 => '',
+      52 => '',
+      'uc_products' => '',
+      'admin_content' => '',
+    ),
+    'title' => 
+    array (
+      2 => '',
+      4 => '',
+      6 => '',
+      8 => '',
+      14 => '',
+      16 => '',
+      18 => '',
+      22 => '',
+      24 => '',
+      26 => '',
+      28 => '',
+      30 => '',
+      32 => '',
+      34 => '',
+      36 => '',
+      38 => '',
+      42 => '',
+      48 => '',
+      50 => '',
+      52 => '',
+      'uc_products' => '',
+      'admin_content' => '',
+    ),
+  ),
+  'better_formats_allowed' => 
+  array (
+    1 => false,
+    3 => false,
+    5 => false,
+  ),
+  'better_formats_defaults' => 
+  array (
+    'node-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'node-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'node-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'node-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'comment-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'comment-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'comment-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+  ),
+);
+$content['fields']  = array (
+  0 => 
+  array (
+    'label' => 'Day',
+    'field_name' => 'field_registration_day',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_buttons',
+    'change' => 'Change basic information',
+    'weight' => '1',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => 'This field determines which days a registrant may attend after having purchased this ticket.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'nid' => NULL,
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => NULL,
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_types' => 
+    array (
+      'day' => 'day',
+      'image' => 0,
+      'profile' => 0,
+      'simplenews' => 0,
+      'old_timeslot' => 0,
+      'page' => 0,
+      'panel' => 0,
+      'paper_review' => 0,
+      'placeholder' => 0,
+      'planet' => 0,
+      'poll' => 0,
+      'proposal' => 0,
+      'product' => 0,
+      'room' => 0,
+      'story' => 0,
+      'supporter' => 0,
+      'tshirt' => 0,
+      'timeslot' => 0,
+      'webform' => 0,
+      'nomination' => false,
+    ),
+    'advanced_view' => 'day',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '1',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_plain' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_html' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  1 => 
+  array (
+    'label' => 'Hide',
+    'field_name' => 'field_registration_hide',
+    'type' => 'number_integer',
+    'widget_type' => 'optionwidgets_onoff',
+    'change' => 'Change basic information',
+    'weight' => '6',
+    'description' => 'Tick this box to hide the registration from the products list - for instance if it is sold out.',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_registration_hide' => 
+      array (
+        'value' => false,
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'min' => '',
+    'max' => '',
+    'prefix' => '',
+    'suffix' => '',
+    'allowed_values' => '0|
+1|Hide this registration from users',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'number',
+    'widget_module' => 'optionwidgets',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'int',
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '6',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_plain' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_html' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+);
+$content['extra']  = array (
+  'title' => '-5',
+  'body_field' => '-4',
+  'revision_information' => '2',
+  'comment_settings' => '4',
+  'menu' => '-2',
+  'path' => '5',
+  'attachments' => '3',
+  'base' => '-3',
+  'nodewords' => '0',
+  'body' => '-1',
+);
+

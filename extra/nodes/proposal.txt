@@ -1,0 +1,1888 @@
+<?php
+/**
+ * The 'Proposal' node type.
+ *
+ * The timeslot reference determines when this session will be scheduled
+ * and also which day it is on. The day in turn links it to a ticket type.
+ */
+
+$content['type']  = array (
+  'name' => 'Proposal',
+  'type' => 'proposal',
+  'description' => 'This node holds proposals for papers, presentations and talks. A proposal can be created by both anonymous and registered users.',
+  'title_label' => 'Title',
+  'body_label' => 'Abstract',
+  'min_word_count' => '0',
+  'help' => 'The Call for Papers has now closed, however we are still accepting submissions which will be placed on a waiting list.
+
+For further details on submitting a paper or proposal for ACEC2010 read more <a href="/presenters">presenter info</a>.',
+  'input_formats' => 
+  array (
+    1 => true,
+    0 => 1,
+    3 => false,
+    5 => false,
+  ),
+  'node_options' => 
+  array (
+    'status' => true,
+    'promote' => false,
+    'sticky' => false,
+    'revision' => false,
+  ),
+  'upload' => '0',
+  'show_preview_changes' => 0,
+  'ffp_upload' => 
+  array (
+    'file_path' => '',
+    'file_path_cleanup' => 
+    array (
+      'file_path_pathauto' => 0,
+      'file_path_tolower' => 0,
+      'file_path_transliterate' => 0,
+    ),
+    'file_name' => '[filefield-onlyname-original].[filefield-extension-original]',
+    'file_name_cleanup' => 
+    array (
+      'file_name_pathauto' => 0,
+      'file_name_tolower' => 0,
+      'file_name_transliterate' => 0,
+    ),
+    'retroactive_update' => '',
+    'active_updating' => 0,
+  ),
+  'old_type' => 'proposal',
+  'orig_type' => '',
+  'module' => 'node',
+  'custom' => '1',
+  'modified' => '1',
+  'locked' => '0',
+  'xmlsitemap_node_type_priority' => 0.5,
+  'nodewords_edit_metatags' => 1,
+  'nodewords_basic_use_teaser' => 0,
+  'content_profile_use' => 0,
+  'comment' => '2',
+  'comment_default_mode' => '4',
+  'comment_default_order' => '2',
+  'comment_default_per_page' => '50',
+  'comment_controls' => '3',
+  'comment_anonymous' => 0,
+  'comment_subject_field' => '1',
+  'comment_preview' => '0',
+  'comment_form_location' => '1',
+  'fivestar' => 1,
+  'fivestar_stars' => '5',
+  'fivestar_labels_enable' => 1,
+  'fivestar_label_0' => 'Cancel rating',
+  'fivestar_label_1' => 'Poor',
+  'fivestar_label_2' => 'Okay',
+  'fivestar_label_3' => 'Good',
+  'fivestar_label_4' => 'Great',
+  'fivestar_label_5' => 'Awesome',
+  'fivestar_label_6' => 'Give it @star/@count',
+  'fivestar_label_7' => 'Give it @star/@count',
+  'fivestar_label_8' => 'Give it @star/@count',
+  'fivestar_label_9' => 'Give it @star/@count',
+  'fivestar_label_10' => 'Give it @star/@count',
+  'fivestar_style' => 'dual',
+  'fivestar_text' => 'dual',
+  'fivestar_title' => 1,
+  'fivestar_feedback' => 1,
+  'fivestar_unvote' => 1,
+  'fivestar_position_teaser' => 'hidden',
+  'fivestar_position' => 'hidden',
+  'fivestar_comment' => '0',
+  'ant' => '0',
+  'ant_pattern' => '',
+  'ant_php' => 0,
+  'relatedcontent_enabled' => 0,
+  'relatedcontent_length' => '50',
+  'relatedcontent_exclude_teasers' => '1',
+  'relatedcontent_output_placing' => 'end',
+  'relatedcontent_output_teasers' => '1',
+  'relatedcontent_output_grouped' => 'type',
+  'relatedcontent_links_absolute' => '0',
+  'views' => 
+  array (
+    'enabled' => 
+    array (
+      2 => '0',
+      4 => '0',
+      6 => '0',
+      8 => '0',
+      14 => '0',
+      16 => '0',
+      18 => '0',
+      22 => '0',
+      24 => '0',
+      26 => '0',
+      28 => '0',
+      30 => '0',
+      32 => '0',
+      34 => '0',
+      36 => '0',
+      38 => '0',
+      42 => '0',
+      48 => '0',
+      50 => '0',
+      52 => '0',
+      'uc_products' => '0',
+      'admin_content' => '0',
+    ),
+    'title' => 
+    array (
+      2 => '',
+      4 => '',
+      6 => '',
+      8 => '',
+      14 => '',
+      16 => '',
+      18 => '',
+      22 => '',
+      24 => '',
+      26 => '',
+      28 => '',
+      30 => '',
+      32 => '',
+      34 => '',
+      36 => '',
+      38 => '',
+      42 => '',
+      48 => '',
+      50 => '',
+      52 => '',
+      'uc_products' => '',
+      'admin_content' => '',
+    ),
+  ),
+  'better_formats_allowed' => 
+  array (
+    1 => true,
+    3 => false,
+    5 => false,
+  ),
+  'better_formats_defaults' => 
+  array (
+    'node-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'node-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'node-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'node-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'comment-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'comment-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'comment-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+  ),
+);
+$content['groups']  = array (
+  0 => 
+  array (
+    'label' => 'Scheduling',
+    'group_type' => 'standard',
+    'settings' => 
+    array (
+      'form' => 
+      array (
+        'style' => 'fieldset',
+        'description' => '',
+      ),
+      'display' => 
+      array (
+        'description' => '',
+        'teaser' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 1,
+        ),
+        'full' => 
+        array (
+          'format' => 'hidden',
+          'exclude' => 1,
+        ),
+        4 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        2 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        3 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'email_plain' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'email_html' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'token' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'label' => 'hidden',
+      ),
+    ),
+    'weight' => '33',
+    'group_name' => 'group_proposal_scheduling',
+  ),
+  1 => 
+  array (
+    'label' => 'Technical Requirements',
+    'group_type' => 'standard',
+    'settings' => 
+    array (
+      'form' => 
+      array (
+        'style' => 'fieldset',
+        'description' => 'All presentation rooms are equipped with a computer, data projector and screen. There is wired internet at a speed of 128Kb/sec. If you require any other equipment or more bandwidth, please specify it here.
+<p><em>NOTE</em>: If attendees should download and install software on their laptops for a hands-on session, you should specify this in your abstract. You are required to make the  software available to attendees. E.g. include a link to download the software in your proposal abstract.',
+      ),
+      'display' => 
+      array (
+        'description' => '',
+        'teaser' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'full' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        4 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        2 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        3 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'email_plain' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'email_html' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'token' => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'label' => 'above',
+      ),
+    ),
+    'weight' => '36',
+    'group_name' => 'group_proposal_tech',
+  ),
+);
+$content['fields']  = array (
+  0 => 
+  array (
+    'label' => 'Administrative Notes',
+    'field_name' => 'field_proposal_admin_notes',
+    'type' => 'text',
+    'widget_type' => 'text_textarea',
+    'change' => 'Change basic information',
+    'weight' => '31',
+    'rows' => '8',
+    'size' => 60,
+    'description' => 'Add any administrative notes. This field is available only to the paper committee chairs.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_proposal_admin_notes][0][value',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => NULL,
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'text',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '31',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  1 => 
+  array (
+    'label' => 'Scheduled',
+    'field_name' => 'field_proposal_scheduled',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_select',
+    'change' => 'Change basic information',
+    'weight' => '50',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => 'Select the timeslot into which this session is scheduled.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'nid' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_scheduled' => 
+      array (
+        0 => 
+        array (
+          'nid' => '',
+        ),
+        'nid' => 
+        array (
+          'nid' => '',
+        ),
+      ),
+    ),
+    'group' => 'group_proposal_scheduling',
+    'required' => 0,
+    'multiple' => '0',
+    'referenceable_types' => 
+    array (
+      'timeslot' => 'timeslot',
+      'day' => 0,
+      'image' => 0,
+      'profile' => 0,
+      'simplenews' => 0,
+      'old_timeslot' => 0,
+      'page' => 0,
+      'panel' => 0,
+      'paper_review' => 0,
+      'placeholder' => 0,
+      'planet' => 0,
+      'poll' => 0,
+      'proposal' => 0,
+      'product' => 0,
+      'room' => 0,
+      'story' => 0,
+      'supporter' => 0,
+      'tshirt' => 0,
+      'webform' => 0,
+      'nomination' => false,
+    ),
+    'advanced_view' => 'timeslot',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '50',
+      'parent' => 'group_proposal_scheduling',
+      'label' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_plain' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_html' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  2 => 
+  array (
+    'label' => 'Room',
+    'field_name' => 'field_proposal_room',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_select',
+    'change' => 'Change basic information',
+    'weight' => '51',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => 'Select the room this session is to run in.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'nid' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_room' => 
+      array (
+        0 => 
+        array (
+          'nid' => '',
+        ),
+        'nid' => 
+        array (
+          'nid' => '',
+        ),
+      ),
+    ),
+    'group' => 'group_proposal_scheduling',
+    'required' => 0,
+    'multiple' => '0',
+    'referenceable_types' => 
+    array (
+      'room' => 'room',
+      'day' => 0,
+      'image' => 0,
+      'profile' => 0,
+      'simplenews' => 0,
+      'old_timeslot' => 0,
+      'page' => 0,
+      'panel' => 0,
+      'paper_review' => 0,
+      'placeholder' => 0,
+      'planet' => 0,
+      'poll' => 0,
+      'proposal' => 0,
+      'product' => 0,
+      'story' => 0,
+      'supporter' => 0,
+      'tshirt' => 0,
+      'timeslot' => 0,
+      'webform' => 0,
+      'nomination' => false,
+    ),
+    'advanced_view' => '--',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '51',
+      'parent' => 'group_proposal_scheduling',
+      'label' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_plain' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_html' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  3 => 
+  array (
+    'label' => 'Day',
+    'field_name' => 'field_proposal_day',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_select',
+    'change' => 'Change basic information',
+    'weight' => '52',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => '',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'nid' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_day' => 
+      array (
+        0 => 
+        array (
+          'nid' => '',
+        ),
+        'nid' => 
+        array (
+          'nid' => '',
+        ),
+      ),
+    ),
+    'group' => 'group_proposal_scheduling',
+    'required' => 0,
+    'multiple' => '0',
+    'referenceable_types' => 
+    array (
+      'day' => 'day',
+      'image' => 0,
+      'profile' => 0,
+      'page' => 0,
+      'panel' => 0,
+      'paper_review' => 0,
+      'placeholder' => 0,
+      'planet' => 0,
+      'poll' => 0,
+      'proposal' => 0,
+      'product' => 0,
+      'story' => 0,
+      'supporter' => 0,
+      'webform' => 0,
+      'old_timeslot' => 0,
+      'simplenews' => false,
+      'nomination' => false,
+      'room' => false,
+      'tshirt' => false,
+      'timeslot' => false,
+    ),
+    'advanced_view' => '--',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '52',
+      'parent' => 'group_proposal_scheduling',
+      'label' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  4 => 
+  array (
+    'label' => 'Timeslot',
+    'field_name' => 'field_proposal_timeslot',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_select',
+    'change' => 'Change basic information',
+    'weight' => '53',
+    'autocomplete_match' => 'contains',
+    'size' => 60,
+    'description' => '',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'nid' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_timeslot' => 
+      array (
+        0 => 
+        array (
+          'nid' => '',
+        ),
+        'nid' => 
+        array (
+          'nid' => '',
+        ),
+      ),
+    ),
+    'group' => 'group_proposal_scheduling',
+    'required' => 0,
+    'multiple' => '0',
+    'referenceable_types' => 
+    array (
+      'day' => 0,
+      'image' => 0,
+      'profile' => 0,
+      'page' => 0,
+      'panel' => 0,
+      'paper_review' => 0,
+      'placeholder' => 0,
+      'planet' => 0,
+      'poll' => 0,
+      'proposal' => 0,
+      'product' => 0,
+      'story' => 0,
+      'supporter' => 0,
+      'webform' => 0,
+      'old_timeslot' => 'old_timeslot',
+      'simplenews' => false,
+      'nomination' => false,
+      'room' => false,
+      'tshirt' => false,
+      'timeslot' => false,
+    ),
+    'advanced_view' => '--',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '53',
+      'parent' => 'group_proposal_scheduling',
+      'label' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'plain',
+        'exclude' => 1,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  5 => 
+  array (
+    'label' => 'Attendee Notes',
+    'field_name' => 'field_proposal_attendee_notes',
+    'type' => 'text',
+    'widget_type' => 'text_textarea',
+    'change' => 'Change basic information',
+    'weight' => '35',
+    'rows' => '8',
+    'size' => 60,
+    'description' => 'If there is anything that attendees to this session need to bring (eg. a laptop) or prepare, such as installing and activating software, please make a note of it here. If attendees are required to install software prior to this session, you should include a download link for that software as well.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_proposal_attendee_notes][0][value',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_attendee_notes' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_proposal_attendee_notes][0][value',
+          'format' => 1,
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'text_processing' => '1',
+    'max_length' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'text',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+      'format' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'views' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '35',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 1,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  6 => 
+  array (
+    'label' => 'Internet',
+    'field_name' => 'field_proposal_tech_internet',
+    'type' => 'text',
+    'widget_type' => 'optionwidgets_select',
+    'change' => 'Change basic information',
+    'weight' => '4',
+    'description' => '',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => 'standard',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_tech_internet' => 
+      array (
+        'value' => 'standard',
+      ),
+    ),
+    'group' => 'group_proposal_tech',
+    'required' => 1,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => 'none|I do not require internet access
+standard|128Kb/sec internet access is fine
+highspeed|I require high speed internet access',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'optionwidgets',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '4',
+      'parent' => 'group_proposal_tech',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  7 => 
+  array (
+    'label' => 'Equipment',
+    'field_name' => 'field_proposal_tech_equipment',
+    'type' => 'text',
+    'widget_type' => 'text_textfield',
+    'change' => 'Change basic information',
+    'weight' => '5',
+    'rows' => 5,
+    'size' => '60',
+    'description' => 'If you require any non-standard equipment, please specify it here.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_proposal_tech_equipment][0][value',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_tech_equipment' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_proposal_tech_equipment][0][value',
+        ),
+      ),
+    ),
+    'group' => 'group_proposal_tech',
+    'required' => 0,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'text',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '5',
+      'parent' => 'group_proposal_tech',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  8 => 
+  array (
+    'label' => 'Presenters',
+    'field_name' => 'field_proposal_presenters',
+    'type' => 'userreference',
+    'widget_type' => 'userreference_autocomplete',
+    'change' => 'Change basic information',
+    'weight' => '37',
+    'autocomplete_match' => 'starts_with',
+    'size' => '60',
+    'reverse_link' => 0,
+    'description' => '',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'uid' => NULL,
+        '_error_element' => 'default_value_widget][field_proposal_presenters][0][uid][uid',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_presenters' => 
+      array (
+        0 => 
+        array (
+          'uid' => 
+          array (
+            'uid' => '',
+            '_error_element' => 'default_value_widget][field_proposal_presenters][0][uid][uid',
+          ),
+          '_error_element' => 'default_value_widget][field_proposal_presenters][0][uid][uid',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_roles' => 
+    array (
+      2 => 2,
+      7 => 0,
+      5 => 0,
+      10 => false,
+      8 => false,
+      16 => false,
+      14 => false,
+      12 => false,
+      24 => false,
+      20 => false,
+      26 => false,
+      18 => false,
+      28 => false,
+      22 => false,
+    ),
+    'referenceable_status' => 1,
+    'advanced_view' => '',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'userreference',
+    'widget_module' => 'userreference',
+    'columns' => 
+    array (
+      'uid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '37',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  9 => 
+  array (
+    'label' => 'Files',
+    'field_name' => 'field_proposal_files',
+    'type' => 'filefield',
+    'widget_type' => 'filefield_widget',
+    'change' => 'Change basic information',
+    'weight' => '39',
+    'file_extensions' => 'txt, pdf, jpg, png, gif, odt, odp, doc, docx, ppt, pptx, zip',
+    'progress_indicator' => 'bar',
+    'file_path' => 'proposal/[uid]',
+    'max_filesize_per_file' => '',
+    'max_filesize_per_node' => '',
+    'description' => 'You can attach one or more files to your proposal. Please provide a concise description for each file you add.',
+    'ffp_field_proposal_files' => 
+    array (
+      'file_path' => 'proposal/[uid]',
+      'file_path_cleanup' => 
+      array (
+        'file_path_pathauto' => 1,
+        'file_path_tolower' => 1,
+        'file_path_transliterate' => 0,
+      ),
+      'file_name' => '[filefield-onlyname-original].[filefield-extension-original]',
+      'file_name_cleanup' => 
+      array (
+        'file_name_pathauto' => 1,
+        'file_name_tolower' => 1,
+        'file_name_transliterate' => 0,
+      ),
+      'retroactive_update' => '',
+      'active_updating' => 0,
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'list_field' => '0',
+    'list_default' => 1,
+    'description_field' => '1',
+    'op' => 'Save field settings',
+    'module' => 'filefield',
+    'widget_module' => 'filefield',
+    'columns' => 
+    array (
+      'fid' => 
+      array (
+        'type' => 'int',
+        'not null' => false,
+        'views' => true,
+      ),
+      'list' => 
+      array (
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => false,
+        'views' => true,
+      ),
+      'data' => 
+      array (
+        'type' => 'text',
+        'serialize' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '39',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  10 => 
+  array (
+    'label' => 'Status',
+    'field_name' => 'field_proposal_status',
+    'type' => 'text',
+    'widget_type' => 'optionwidgets_select',
+    'change' => 'Change basic information',
+    'weight' => '40',
+    'description' => 'This field is used by the papers committee to flag whether or not a proposal has been accepted.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => 'pending',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_status' => 
+      array (
+        'value' => 'pending',
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => 'pending|Pending
+review|Review in progress
+accepted|Accepted
+accepted_minor_changes|Accepted with minor changes
+needs_changes|Major changes needed
+backup|Backup
+rejected|Rejected
+withdrawn|Withdrawn
+cancelled|Cancelled',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'optionwidgets',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '40',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  11 => 
+  array (
+    'label' => 'Reviewers',
+    'field_name' => 'field_proposal_reviewers',
+    'type' => 'userreference',
+    'widget_type' => 'userreference_select',
+    'change' => 'Change basic information',
+    'weight' => '41',
+    'autocomplete_match' => 'contains',
+    'size' => '60',
+    'reverse_link' => 0,
+    'description' => '',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'uid' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_reviewers' => 
+      array (
+        0 => 
+        array (
+          'uid' => '',
+        ),
+        'uid' => 
+        array (
+          'uid' => 
+          array (
+            0 => '',
+          ),
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '1',
+    'referenceable_roles' => 
+    array (
+      2 => 0,
+      7 => 0,
+      10 => 0,
+      8 => 0,
+      14 => 0,
+      12 => 0,
+      5 => 0,
+      16 => false,
+      24 => false,
+      20 => false,
+      26 => false,
+      18 => false,
+      28 => false,
+      22 => false,
+    ),
+    'referenceable_status' => '',
+    'advanced_view' => 'list_reviewers',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'userreference',
+    'widget_module' => 'userreference',
+    'columns' => 
+    array (
+      'uid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '41',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'inline',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  12 => 
+  array (
+    'label' => 'Webform ID',
+    'field_name' => 'field_proposal_webform_id',
+    'type' => 'number_integer',
+    'widget_type' => 'number',
+    'change' => 'Change basic information',
+    'weight' => '42',
+    'description' => 'This field contains the webform submission ID that this proposal was imported from. We use this to make sure we don\'t import a proposal twice.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_proposal_webform_id][0][value',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_webform_id' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_proposal_webform_id][0][value',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'min' => '',
+    'max' => '',
+    'prefix' => '',
+    'suffix' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'number',
+    'widget_module' => 'number',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'int',
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '42',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 1,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  13 => 
+  array (
+    'label' => 'Autoselect',
+    'field_name' => 'field_proposal_autoselect',
+    'type' => 'number_integer',
+    'widget_type' => 'optionwidgets_onoff',
+    'change' => 'Change basic information',
+    'weight' => '54',
+    'description' => 'If this box is checked, this session will be automatically added to the program of anyone who purchases a ticket that gives them access to this session.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => NULL,
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_proposal_autoselect' => 
+      array (
+        'value' => false,
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'min' => '',
+    'max' => '',
+    'prefix' => '',
+    'suffix' => '',
+    'allowed_values' => '0|
+1|Auto-select this session for attendees',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'number',
+    'widget_module' => 'optionwidgets',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'int',
+        'not null' => false,
+        'sortable' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '54',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'hidden',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_plain' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'email_html' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+);
+$content['extra']  = array (
+  'title' => '32',
+  'body_field' => '34',
+  'revision_information' => '45',
+  'comment_settings' => '46',
+  'menu' => '43',
+  'taxonomy' => '38',
+  'path' => '47',
+  'nodewords' => '44',
+);
+

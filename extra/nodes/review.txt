@@ -1,0 +1,1146 @@
+<?php
+/**
+ * The 'Review' content type.
+ */
+
+$content['type']  = array (
+  'name' => 'Paper Review',
+  'type' => 'paper_review',
+  'description' => 'Assign feedback and details to a paper proposal.',
+  'title_label' => 'Title',
+  'body_label' => '',
+  'min_word_count' => '0',
+  'help' => 'Use your mouse to hover over the stars, then click the number of stars
+you wish to assign to each of the listed review criteria. When hovering
+over the stars, they glow yellow, once selected they change to red.',
+  'input_formats' => 
+  array (
+    1 => true,
+    0 => 1,
+    3 => false,
+    5 => false,
+  ),
+  'node_options' => 
+  array (
+    'status' => true,
+    'promote' => false,
+    'sticky' => false,
+    'revision' => false,
+  ),
+  'upload' => '0',
+  'show_preview_changes' => 0,
+  'ffp_upload' => 
+  array (
+    'file_path' => '',
+    'file_path_cleanup' => 
+    array (
+      'file_path_pathauto' => 0,
+      'file_path_tolower' => 0,
+      'file_path_transliterate' => 0,
+    ),
+    'file_name' => '[filefield-onlyname-original].[filefield-extension-original]',
+    'file_name_cleanup' => 
+    array (
+      'file_name_pathauto' => 0,
+      'file_name_tolower' => 0,
+      'file_name_transliterate' => 0,
+    ),
+    'retroactive_update' => '',
+    'active_updating' => 0,
+  ),
+  'old_type' => 'paper_review',
+  'orig_type' => '',
+  'module' => 'node',
+  'custom' => '1',
+  'modified' => '1',
+  'locked' => '0',
+  'xmlsitemap_node_type_priority' => 0.5,
+  'nodewords_edit_metatags' => true,
+  'nodewords_basic_use_teaser' => 0,
+  'content_profile_use' => 0,
+  'comment' => '0',
+  'comment_default_mode' => '4',
+  'comment_default_order' => '1',
+  'comment_default_per_page' => '50',
+  'comment_controls' => '3',
+  'comment_anonymous' => 0,
+  'comment_subject_field' => '1',
+  'comment_preview' => '1',
+  'comment_form_location' => '0',
+  'fivestar' => 0,
+  'fivestar_stars' => 5,
+  'fivestar_labels_enable' => 1,
+  'fivestar_label_0' => 'Cancel rating',
+  'fivestar_label_1' => 'Poor',
+  'fivestar_label_2' => 'Okay',
+  'fivestar_label_3' => 'Good',
+  'fivestar_label_4' => 'Great',
+  'fivestar_label_5' => 'Awesome',
+  'fivestar_label_6' => 'Give it @star/@count',
+  'fivestar_label_7' => 'Give it @star/@count',
+  'fivestar_label_8' => 'Give it @star/@count',
+  'fivestar_label_9' => 'Give it @star/@count',
+  'fivestar_label_10' => 'Give it @star/@count',
+  'fivestar_style' => 'average',
+  'fivestar_text' => 'dual',
+  'fivestar_title' => 1,
+  'fivestar_feedback' => 1,
+  'fivestar_unvote' => 0,
+  'fivestar_position_teaser' => 'hidden',
+  'fivestar_position' => 'below',
+  'fivestar_comment' => 0,
+  'ant' => '1',
+  'ant_pattern' => '[field_paper-title] - Review by [author-name]',
+  'ant_php' => '',
+  'relatedcontent_enabled' => false,
+  'relatedcontent_length' => 50,
+  'relatedcontent_exclude_teasers' => true,
+  'relatedcontent_output_placing' => 'end',
+  'relatedcontent_output_teasers' => true,
+  'relatedcontent_output_grouped' => 'type',
+  'relatedcontent_links_absolute' => 0,
+  'views' => 
+  array (
+    'enabled' => 
+    array (
+      2 => '',
+      4 => '',
+      6 => '',
+      8 => '',
+      14 => '',
+      16 => '',
+      18 => '',
+      22 => '',
+      24 => '',
+      26 => '',
+      28 => '',
+      30 => '',
+      32 => '',
+      34 => '',
+      36 => '',
+      38 => '',
+      42 => '',
+      48 => '',
+      50 => '',
+      52 => '',
+      'uc_products' => '',
+      'admin_content' => '',
+    ),
+    'title' => 
+    array (
+      2 => '',
+      4 => '',
+      6 => '',
+      8 => '',
+      14 => '',
+      16 => '',
+      18 => '',
+      22 => '',
+      24 => '',
+      26 => '',
+      28 => '',
+      30 => '',
+      32 => '',
+      34 => '',
+      36 => '',
+      38 => '',
+      42 => '',
+      48 => '',
+      50 => '',
+      52 => '',
+      'uc_products' => '',
+      'admin_content' => '',
+    ),
+  ),
+  'better_formats_allowed' => 
+  array (
+    1 => false,
+    3 => false,
+    5 => false,
+  ),
+  'better_formats_defaults' => 
+  array (
+    'node-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'node-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'node-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'node-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'node-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-5' => 
+    array (
+      'format' => '0',
+      'weight' => '-25',
+    ),
+    'comment-7' => 
+    array (
+      'format' => '0',
+      'weight' => '-24',
+    ),
+    'comment-1' => 
+    array (
+      'format' => '0',
+      'weight' => '-22',
+    ),
+    'comment-8' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-10' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-12' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-14' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-16' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-18' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-20' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-22' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-24' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-26' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+    'comment-28' => 
+    array (
+      'format' => '0',
+      'weight' => '25',
+    ),
+  ),
+);
+$content['fields']  = array (
+  0 => 
+  array (
+    'label' => 'Paper',
+    'field_name' => 'field_paper',
+    'type' => 'nodereference',
+    'widget_type' => 'nodereference_autocomplete',
+    'change' => 'Change basic information',
+    'weight' => '1',
+    'autocomplete_match' => 'contains',
+    'size' => '60',
+    'description' => 'Please enter the title of the Paper you wish to review.',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => 'if ( isset($_GET[\'nid\']) && $_GET[\'nid\'] > 0 ) {
+return array(
+ 0 => array(\'nid\' => $_GET[\'nid\'])
+);
+}
+else {
+return array(
+ 0 => array(\'nid\' => 0)
+);
+}',
+    'default_value_widget' => NULL,
+    'group' => false,
+    'required' => 1,
+    'multiple' => '0',
+    'referenceable_types' => 
+    array (
+      'proposal' => 'proposal',
+      'image' => 0,
+      'page' => 0,
+      'panel' => 0,
+      'paper_review' => 0,
+      'profile' => 0,
+      'product' => 0,
+      'story' => 0,
+      'webform' => 0,
+      'webform_report' => 0,
+      'placeholder' => false,
+      'day' => false,
+      'simplenews' => false,
+      'nomination' => false,
+      'old_timeslot' => false,
+      'poll' => false,
+      'room' => false,
+      'supporter' => false,
+      'tshirt' => false,
+      'timeslot' => false,
+    ),
+    'advanced_view' => '--',
+    'advanced_view_args' => '',
+    'op' => 'Save field settings',
+    'module' => 'nodereference',
+    'widget_module' => 'nodereference',
+    'columns' => 
+    array (
+      'nid' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'index' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '1',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  1 => 
+  array (
+    'label' => 'Interest and relevance for a national audience',
+    'field_name' => 'field_criteria_interesting',
+    'type' => 'fivestar',
+    'widget_type' => 'stars',
+    'change' => 'Change basic information',
+    'weight' => '2',
+    'allow_clear' => 1,
+    'description' => 'Rate this paper\'s interest and relevance for a national audience by selecting the number of stars where 1 = poor and 5 = excellent.',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_criteria_interesting' => 
+      array (
+        0 => 
+        array (
+          'rating' => 0,
+          'target' => NULL,
+          'axis' => 'Interesting',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 1,
+    'multiple' => 0,
+    'stars' => '5',
+    'dynamic_target' => 'field_paper',
+    'php_target' => '',
+    'axis' => 'Interesting',
+    'op' => 'Save field settings',
+    'module' => 'fivestar',
+    'widget_module' => 'fivestar',
+    'columns' => 
+    array (
+      'rating' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'sortable' => true,
+      ),
+      'target' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  2 => 
+  array (
+    'label' => 'Adequate review of, or reference to, related work',
+    'field_name' => 'field_criteria_references',
+    'type' => 'fivestar',
+    'widget_type' => 'stars',
+    'change' => 'Change basic information',
+    'weight' => '3',
+    'allow_clear' => 1,
+    'description' => 'Rate this paper has adequate review of, or reference to related work by selecting the number of stars where 1 = poor and 5 = excellent.',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_criteria_references' => 
+      array (
+        0 => 
+        array (
+          'rating' => 0,
+          'target' => NULL,
+          'axis' => 'References',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 1,
+    'multiple' => 0,
+    'stars' => '5',
+    'dynamic_target' => 'field_paper',
+    'php_target' => '',
+    'axis' => 'References',
+    'op' => 'Save field settings',
+    'module' => 'fivestar',
+    'widget_module' => 'fivestar',
+    'columns' => 
+    array (
+      'rating' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'sortable' => true,
+      ),
+      'target' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  3 => 
+  array (
+    'label' => 'Potential value/impact of research or developments',
+    'field_name' => 'field_criteria_impact',
+    'type' => 'fivestar',
+    'widget_type' => 'stars',
+    'change' => 'Change basic information',
+    'weight' => '4',
+    'allow_clear' => 1,
+    'description' => 'Rate this paper\'s potential value / impact of research or developments by selecting the number of stars where 1 = poor and 5 = excellent.',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_criteria_impact' => 
+      array (
+        0 => 
+        array (
+          'rating' => 0,
+          'target' => NULL,
+          'axis' => 'Impact',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 1,
+    'multiple' => 0,
+    'stars' => '5',
+    'dynamic_target' => 'field_paper',
+    'php_target' => '',
+    'axis' => 'Impact',
+    'op' => 'Save field settings',
+    'module' => 'fivestar',
+    'widget_module' => 'fivestar',
+    'columns' => 
+    array (
+      'rating' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'sortable' => true,
+      ),
+      'target' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  4 => 
+  array (
+    'label' => 'Discussion (eg. Evaluation and critique of results/experiences, as relevant)',
+    'field_name' => 'field_criteria_discussion',
+    'type' => 'fivestar',
+    'widget_type' => 'stars',
+    'change' => 'Change basic information',
+    'weight' => '5',
+    'allow_clear' => 1,
+    'description' => 'Rate this paper\'s discussion, evaluation or critique of results, evidence or experiences by selecting the number of stars where 1 = poor and 5 = excellent.',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_criteria_discussion' => 
+      array (
+        0 => 
+        array (
+          'rating' => 0,
+          'target' => NULL,
+          'axis' => 'Discussion',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 1,
+    'multiple' => 0,
+    'stars' => '5',
+    'dynamic_target' => 'field_paper',
+    'php_target' => '',
+    'axis' => 'Discussion',
+    'op' => 'Save field settings',
+    'module' => 'fivestar',
+    'widget_module' => 'fivestar',
+    'columns' => 
+    array (
+      'rating' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'sortable' => true,
+      ),
+      'target' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  5 => 
+  array (
+    'label' => 'Quality of writing organisation, clarity, style',
+    'field_name' => 'field_criteria_writing',
+    'type' => 'fivestar',
+    'widget_type' => 'stars',
+    'change' => 'Change basic information',
+    'weight' => '6',
+    'allow_clear' => 1,
+    'description' => 'Rate this paper\'s quality of writing organisation, clarity and style by selecting the number of stars where 1 = poor and 5 = excellent.',
+    'default_value' => 
+    array (
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_criteria_writing' => 
+      array (
+        0 => 
+        array (
+          'rating' => 0,
+          'target' => NULL,
+          'axis' => 'Writing',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 1,
+    'multiple' => 0,
+    'stars' => '5',
+    'dynamic_target' => 'field_paper',
+    'php_target' => '',
+    'axis' => 'Writing',
+    'op' => 'Save field settings',
+    'module' => 'fivestar',
+    'widget_module' => 'fivestar',
+    'columns' => 
+    array (
+      'rating' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+        'sortable' => true,
+      ),
+      'target' => 
+      array (
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => false,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'label' => 
+      array (
+        'format' => 'above',
+        'exclude' => 0,
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  6 => 
+  array (
+    'label' => 'Author Feedback',
+    'field_name' => 'field_author_feedback',
+    'type' => 'text',
+    'widget_type' => 'text_textarea',
+    'change' => 'Change basic information',
+    'weight' => '7',
+    'rows' => '5',
+    'size' => 60,
+    'description' => 'This field is viewable by the Authors.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_author_feedback][0][value',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_author_feedback' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_author_feedback][0][value',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 1,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'text',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '5',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  7 => 
+  array (
+    'label' => 'Private comments',
+    'field_name' => 'field_review',
+    'type' => 'text',
+    'widget_type' => 'text_textarea',
+    'change' => 'Change basic information',
+    'weight' => '8',
+    'rows' => '10',
+    'size' => 60,
+    'description' => 'This field is only viewable by reviewers.',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+        '_error_element' => 'default_value_widget][field_review][0][value',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_review' => 
+      array (
+        0 => 
+        array (
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_review][0][value',
+        ),
+      ),
+    ),
+    'group' => false,
+    'required' => 0,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'text',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '6',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'above',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+  8 => 
+  array (
+    'label' => 'Recommendation',
+    'field_name' => 'field_review_recommendation',
+    'type' => 'text',
+    'widget_type' => 'optionwidgets_select',
+    'change' => 'Change basic information',
+    'weight' => '9',
+    'description' => '',
+    'default_value' => 
+    array (
+      0 => 
+      array (
+        'value' => '',
+      ),
+    ),
+    'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_review_recommendation' => 
+      array (
+        'value' => '',
+      ),
+    ),
+    'group' => false,
+    'required' => 1,
+    'multiple' => '0',
+    'text_processing' => '0',
+    'max_length' => '',
+    'allowed_values' => 'Accept
+Accept with changes
+Reject',
+    'allowed_values_php' => '',
+    'op' => 'Save field settings',
+    'module' => 'text',
+    'widget_module' => 'optionwidgets',
+    'columns' => 
+    array (
+      'value' => 
+      array (
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
+      ),
+    ),
+    'display_settings' => 
+    array (
+      'weight' => '7',
+      'parent' => '',
+      'label' => 
+      array (
+        'format' => 'inline',
+      ),
+      'teaser' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      4 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      2 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+  ),
+);
+$content['extra']  = array (
+  'title' => '10',
+  'revision_information' => '12',
+  'comment_settings' => '14',
+  'menu' => '11',
+  'path' => '13',
+);
+
