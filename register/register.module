@@ -515,6 +515,10 @@ function theme_user_overview_registrations($account, $orders) {
  */
 function register_get_orders($uid) {
   // Orders purchased by this user.
+  $products = register_ticketable_products();
+  if (empty($products))
+    return NULL;
+
   $sql = "
     SELECT uco.order_id, uco.uid, uco.order_status, uco.created, ucop.order_product_id, ucop.nid, ucop.qty, n.title, n.status, n.type
     FROM {uc_orders} uco
@@ -526,7 +530,7 @@ function register_get_orders($uid) {
     ON ucop.order_product_id = cccta.order_product_id
     WHERE (uco.uid = %d OR cccta.uid = %d)
     AND uco.order_status IN ('pending', 'completed', 'payment_received', 'processing')
-    AND ucop.nid IN ( " . implode(', ' , register_ticketable_products()) . " )";
+    AND ucop.nid IN ( " . implode(', ' , $products) . " )";
   $results = db_query($sql, $uid, $uid); 
   $orders = array();
   while ($row = db_fetch_object($results)) {
