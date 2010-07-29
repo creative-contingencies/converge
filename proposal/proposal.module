@@ -617,11 +617,13 @@ function proposal_node_form_submit($form, &$form_state) {
     }
 
     // And login as the new user.
-    $user = $new_user; 
+    $user = $new_user;
 
   }
   else {
-    $form_state['values']['field_proposal_presenters'][0]['uid'] = $user->uid;
+    if (empty($form_state['values']['field_proposal_presenters'][0]['uid'])) {
+      $form_state['values']['field_proposal_presenters'][0]['uid'] = $form['#node']->uid;
+    }
   } // endif uid
 
 }
