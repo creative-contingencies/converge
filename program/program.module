@@ -338,6 +338,10 @@ function program_block_suggested_sessions() {
     'subject' => 'Suggested sessions',
     'content' => '<ul class="session"><li class="session">' . implode('</li><li class="session"> ', $nodes) . '</li></ul><p class="note">Based on your interests, we think you might like these sessions.</p>',
   );
+
+  if (!count($nodes)) {
+    $block['content'] = t('There are no published sessions yet to match your interests.');
+  }
   return $block;
 
 }

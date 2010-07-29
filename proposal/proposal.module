@@ -404,29 +404,29 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
 
     $form['personal']['organisation'] = array(
       '#type' => 'textfield',
-      '#title' => t('School, Organisation or Affiliation'),
-      '#required' => TRUE,
+      '#title' => t('Organisation or Affiliation'),
+      '#required' => FALSE,
       '#description' => t(''),
     );
 
     $form['personal']['position'] = array(
       '#type' => 'textfield',
       '#title' => t('Position'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#description' => t(''),
     );
 
     $form['personal']['phone'] = array(
       '#type' => 'textfield',
       '#title' => t('Phone'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#description' => t(''),
     );
 
     $form['personal']['address'] = array(
       '#type' => 'textfield',
       '#title' => t('Address'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#description' => t(''),
     );
 

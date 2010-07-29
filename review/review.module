@@ -11,7 +11,7 @@ function review_menu() {
     'description' => 'Change configuration and email templates for Reviews',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_admin_settings'),
-    'access arguments' => array('administer mollom'),
+    'access arguments' => array('administer review settings'),
     'type' => MENU_LOCAL_TASK,
   );
 

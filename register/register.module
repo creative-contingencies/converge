@@ -125,7 +125,7 @@ function register_menu() {
   );
 
   $items['my-profile'] = array(
-    'title' => 'My Profile',
+    'title' => 'My profile',
     'page callback' => 'user_profile_goto',
     'access callback' => 'user_access',
     'access arguments' => array('edit own profile content'),
