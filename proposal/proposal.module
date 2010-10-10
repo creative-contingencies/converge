@@ -15,7 +15,7 @@ function proposal_menu() {
 
   // Admin page.
   $items['admin/settings/proposal'] = array(
-    'title' => 'CCC Proposal Settings',
+    'title' => 'Converge Proposal Settings',
     'description' => 'Change configuration and email templates for Proposals',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('proposal_admin_settings'),
