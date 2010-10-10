@@ -11,3 +11,4 @@ dependencies[] = uuid
 dependencies[] = content_profile
 dependencies[] = views_bulk_operations
 dependencies[] = views_bonus_export
+dependencies[] = taxonomy_super_select
