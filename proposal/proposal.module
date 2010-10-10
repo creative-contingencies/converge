@@ -1049,3 +1049,23 @@ function proposal_export_csv($type) {
   die();
 }
 
+/**
+ * Implementation of hook_views_api().
+ */
+function proposal_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'proposal'),
+  );
+}
+
+/**
+ * Implementation of hook_views_default_views().
+ *
+ * Import views presets as defined in endless_corporate.
+ */
+function proposal_views_default_views() {
+  module_load_include('inc', 'proposal', 'proposal.views_presets');
+
+  return _proposal_views_presets();
+}
