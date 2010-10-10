@@ -4,6 +4,7 @@ package = " Creative Contingencies Conference"
 core = 6.x
 
 dependencies[] = content
+dependencies[] = userreference
 dependencies[] = content_permissions
 dependencies[] = logintoboggan
 dependencies[] = uuid
