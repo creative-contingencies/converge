@@ -1393,3 +1393,25 @@ function review_manage_review($op, $pid, $uuid, $vuid) {
   drupal_goto('user');
   return;
 }
+
+/**
+ * Implementation of hook_views_api().
+ */
+function review_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'review'),
+  );
+}
+
+/**
+ * Implementation of hook_views_default_views().
+ *
+ * Import views presets as defined in endless_corporate.
+ */
+function review_views_default_views() {
+  module_load_include('inc', 'review', 'review.views_presets');
+
+  return _review_views_presets();
+}
+

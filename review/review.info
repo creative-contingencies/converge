@@ -6,3 +6,4 @@ core = 6.x
 dependencies[] = nodereference
 dependencies[] = fivestar
 dependencies[] = proposal
+dependencies[] = views_customfield
