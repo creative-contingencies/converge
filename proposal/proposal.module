@@ -63,7 +63,6 @@ function proposal_menu() {
     'access arguments' => array('export proposals'),
     'type' => MENU_CALLBACK,
   );
-
   return $items;
 }
 
@@ -735,28 +734,28 @@ function proposal_mail($key, &$message, $params) {
 
   switch ($key) {
     case 'new_user_notify':
-      $message['subject'] = strtr(variable_get('proposal_mail_proposal_new_user_notify_subject'), $params);
-      $message['body'][] = strtr(variable_get('proposal_mail_proposal_new_user_notify_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_proposal_new_user_notify_subject', ''), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_proposal_new_user_notify_body', ''), $params);
       break;
     case 'notify_user':
-      $message['subject'] = strtr(variable_get('proposal_mail_proposal_notify_user_subject'), $params);
-      $message['body'][] = strtr(variable_get('proposal_mail_proposal_notify_user_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_proposal_notify_user_subject', ''), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_proposal_notify_user_body', ''), $params);
       break;
     case 'notify_admin':
-      $message['subject'] = strtr(variable_get('proposal_mail_proposal_notify_admin_subject'), $params);
-      $message['body'][] = strtr(variable_get('proposal_mail_proposal_notify_admin_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_proposal_notify_admin_subject', ''), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_proposal_notify_admin_body', ''), $params);
       break;
     case 'presenter_add_notify':
-      $message['subject'] = strtr(variable_get('proposal_mail_presenter_add_notify_subject'), $params);
-      $message['body'][] = strtr(variable_get('proposal_mail_presenter_add_notify_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_presenter_add_notify_subject', ''), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_presenter_add_notify_body', ''), $params);
       break;
     case 'copresenter_add_notify':
-      $message['subject'] = strtr(variable_get('proposal_mail_copresenter_add_notify_subject'), $params);
-      $message['body'][] = strtr(variable_get('proposal_mail_copresenter_add_notify_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_copresenter_add_notify_subject', ''), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_copresenter_add_notify_body', ''), $params);
       break;
     default:
-      $message['subject'] = strtr(variable_get('proposal_mail_'. $key .'_subject'), $params);
-      $message['body'][] = strtr(variable_get('proposal_mail_'. $key .'_body'), $params);
+      $message['subject'] = strtr(variable_get('proposal_mail_'. $key .'_subject', ''), $params);
+      $message['body'][] = strtr(variable_get('proposal_mail_'. $key .'_body', ''), $params);
   }
 }
 
@@ -886,7 +885,8 @@ function proposal_content_profile_vars($type, $uid) {
   $profile = content_profile_load($type, $uid);
 
   if(!$profile)
-    $profile = content_profile_load($type, 0);
+    return null;
+  // $profile = content_profile_load($type, 0);
 
   foreach($profile as $key => $val) {
     $r = preg_match($pattern, $key, $matches);
@@ -1048,4 +1048,3 @@ function proposal_export_csv($type) {
   // Importantly, do not print anything else, just quit, exit and die.
   die();
 }
-

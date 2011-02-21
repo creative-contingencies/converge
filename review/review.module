@@ -108,7 +108,7 @@ function review_email_authors() {
   }
 
   $query = "SELECT tid,name FROM {term_data} WHERE vid = %d";
-  $result = db_query($query, variable_get('proposal_vocabulary_kind'));
+  $result = db_query($query, variable_get('proposal_vocabulary_kind', 0));
   $type_options = array();
   while ($o = db_fetch_object($result)) {
     $type_options[$o->tid] = $o->name;

@@ -98,9 +98,13 @@ function program_block_related_proposals_by_nid($nid) {
 
   foreach ($terms as $tid => $term) {
     // Skip type.
-    if ($term->vid == variable_get('proposal_vocabulary_kind'))
+    if ($term->vid == variable_get('proposal_vocabulary_kind', 0))
       continue;
     $tids[] = $tid;
+  }
+
+  if (empty($tids)) {
+    return array();
   }
 
   // Select all nodes that match one or more terms with he current one.
@@ -184,7 +188,8 @@ function program_block_related_keywords_by_term($raw_term) {
       tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid = %d AND
-      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)", $term[0]->vid, $term[0]->tid, $user->uid);
+      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+    LIMIT 4", $term[0]->vid, $term[0]->tid, $user->uid);
   while ($row = db_fetch_array($result)) {
     $nids[] = $row['nid'];
   }
@@ -245,7 +250,8 @@ function program_block_related_proposals_by_term($raw_term) {
       tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid = %d AND
-      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)", $term[0]->vid, $term[0]->tid, $user->uid);
+      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+    LIMIT 4", $term[0]->vid, $term[0]->tid, $user->uid);
   while ($row = db_fetch_array($result)) {
     $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
   }
@@ -295,7 +301,7 @@ function program_block_suggested_sessions() {
     $order = 'RAND()';
   }
 
-  $limit = variable_get('program_block_limit', 0);
+  $limit = variable_get('program_block_limit', 4);
   if ($limit) {
     $limit = "LIMIT " . $limit;
   } else {

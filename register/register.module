@@ -12,7 +12,7 @@
  */
 
 // Ugly-arse hack.
-define('DINNER_TICKET_NID', 118);
+define('DINNER_TICKET_NID', 128);
 
 /**
  * Implementation of hook_nodeapi()
@@ -273,7 +273,7 @@ function user_profile_goto() {
   }
 }
 
-function user_profile_redirect($path1, $path2) {
+function user_profile_redirect($path1 = 'profile', $path2 = '') {
   global $user;
   if ($user->uid) {
     drupal_goto('user/' . $user->uid . '/' . $path1 . '/' . $path2 );
@@ -314,6 +314,10 @@ function register_form_alter(&$form, $form_state, $form_id) {
       '#collapsed' => TRUE,
     );
     $form['order_assignee_listing']['info'] = register_list_ticket_assignees($form['order_id']['#value']);
+  }
+
+  if ($form_id == 'uc_cart_checkout_form') {
+    $form['panes']['payment']['payment_method']['#options']['cod'] = t('Complimentary presenter registration.');
   }
 }
 
@@ -399,10 +403,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
       }
 
     case 'load':
-      $orders = register_get_orders($account->uid);
-      if ($orders) {
-        $account->orders = $orders;
-      }
+      $account->orders = register_get_orders($account->uid);
       break;
 
     // This needs to only be active if the attendee role is required. It will
@@ -517,7 +518,7 @@ function register_get_orders($uid) {
   // Orders purchased by this user.
   $products = register_ticketable_products();
   if (empty($products))
-    return NULL;
+    return array();
 
   $sql = "
     SELECT uco.order_id, uco.uid, uco.order_status, uco.created, ucop.order_product_id, ucop.nid, ucop.qty, n.title, n.status, n.type
@@ -756,7 +757,7 @@ function theme_register_allocations_form_table(&$element) {
 }
 
 function register_tickets_form_validate($form, &$form_state) {
-  foreach($form_state['values']['items'] AS $oi => $order) {    
+  foreach($form_state['values']['items'] AS $oi => $order) {
     $num = 0;
     foreach ($order['allocations']['rows'] AS $ri => $allocated) {
       if (!$allocated['remove'] && !$allocated['uid'] && $allocated['mail']) {
@@ -1640,7 +1641,7 @@ function register_export_badges() {
   $tickets_allocated = array();
 
   // Fetch the data.
-  $badges = register_export_badge_data();
+  $badges = register_export_badge_data(TRUE);
 
   drupal_set_title('Badge Data ACEC2010 ' . date('Ymd'));
 
@@ -1649,7 +1650,7 @@ function register_export_badges() {
     $dinners += $row[8];
   }
 
-  $outpute = t('Badge data for !num attendees, including !dinners dinner tickets.', array('!num' => count($badges['data']), '!dinners' => $dinners));
+  $output = t('Badge data for !num attendees, including !dinners dinner tickets.', array('!num' => count($badges['data']), '!dinners' => $dinners));
   $output .= theme('table', $badges['header'], $badges['data']);
 
   $data = array();
@@ -1684,9 +1685,10 @@ function register_export_badge_data($needs = FALSE, $users = array()) {
 
   global $tickets_allocated;
 
-  $rid = db_result(db_query("SELECT rid FROM {role} WHERE name='attendee'"));
+  // $rid = db_result(db_query("SELECT rid FROM {role} WHERE name='attendee'"));
+  $rid = 0;
 
-// Select all users with an assigned ticket, order by surname, firstname.\
+// Select all users with an assigned ticket, order by surname, firstname.
 // But not dinner tix. These get no badges.
 //
 $query = "
@@ -1747,10 +1749,10 @@ WHERE
     array('data' => 'Accessibility'),
     array('data' => 'Role'),
     array('data' => 'Colour'),
-    array('data' => 'PCA'),
+    array('data' => 'Flags'),
     array('data' => 'VIP Insert'),
     array('data' => 'Dinner'),
-    array('data' => 'Tuesday'),
+    array('data' => 'PHP'),
     array('data' => 'Wednesday'),
     array('data' => 'Thursday'),
     array('data' => 'Friday'),
@@ -1770,7 +1772,7 @@ WHERE
     // For each of these people, check their ticket type(s). leadership, tour, dinner, wed, thu, fri, expo.
     $query = "
 SELECT 
-  uc_op.nid, uc_op.title
+  uc_op.nid, uc_op.title, uc_o.order_id
 FROM
   {ccc_ticket_allocation} AS ta
 LEFT JOIN
@@ -1785,16 +1787,13 @@ WHERE
     $tickets = db_query($query, $account->uid);
 
     $list = array();
+    $orders = array();
     while ($tix = db_fetch_object($tickets)) {
       $list[$tix->nid] = $tix->title;
+      $orders[$tix->nid] = $tix->order_id;
     }
 
     // If they have no tickets allocated AND are not a special role, ignore them!
-
-    // if they *only* have a dinner ticket, do not include them.
-    //
-    if (count($list) == 1 && $list[118])
-      continue;
 
     $tuple = array(
       'uid' => $row->uid,
@@ -1817,7 +1816,18 @@ WHERE
       dpm($list);
     }
 
-    $tuple['pca'] = register_export_badges_format_ticket_flags($list);
+    $tuple['flags'] = '';
+
+    // If they *only* have a dinner ticket, do not include them.
+    //
+    if (count($list) == 1 && $list[DINNER_TICKET_NID]) {
+      $order = uc_order_load($orders[DINNER_TICKET_NID]);
+      // Change organisation to reflect ticket purchased by XXX
+      $purchaser = content_profile_load('profile', $order->uid);
+      $tuple['position'] = '+1';
+      $tuple['organisation'] = t('Ticket purchased by !firstname !surname (!uid)', array('!firstname' => $purchaser->field_profile_firstname[0]['value'], '!surname' => $purchaser->field_profile_surname[0]['value'], '!uid' => $order->uid));
+      $tuple['flags'] = 'DINNER';
+    }
 
     $tuple['vip'] = register_export_badges_format_vip($account);
 
@@ -1829,7 +1839,7 @@ WHERE
       $tuple[$key] = $value;
     }
 
-    $tuple['hours'] = register_export_badges_format_hours($list);
+    // $tuple['hours'] = register_export_badges_format_hours($list);
 
     $data[] = $tuple;
   }
@@ -1937,7 +1947,7 @@ WHERE
 
     // if they *only* have a dinner ticket, do not include them.
     //
-    if (count($list) == 1 && $list[118])
+    if (count($list) == 1 && $list[DINNER_TICKET_NID])
       continue;
 
     $tuple = array($row->uid, $row->firstname, $row->surname, $row->organisation, $row->suburb, $row->state, $row->mail);
@@ -1963,6 +1973,9 @@ function register_export_badges_format_roles($account, $tickets) {
     return 'ICTEV';
 
   if (in_array('site administrator', $account->roles))
+    return 'ORGANISER';
+
+  if (in_array('organiser', $account->roles))
     return 'ORGANISER';
 
   if (in_array('papers chair', $account->roles))
@@ -1995,13 +2008,16 @@ WHERE
   if (in_array('volunteer', $account->roles))
     return 'VOLUNTEER';
 
+  if ($tickets[284])
+    return 'VOLUNTEER';
+
   if ($tickets[4942] || $tickets[4944] || $tickets[4946])
     return 'EXPO';
 
   if (in_array('attendee', $account->roles))
     return 'DELEGATE';
 
-  return 'WAHOONIE';
+  return 'DELEGATE';
 }
 
 /**
@@ -2162,43 +2178,16 @@ function register_export_badges_format_ticket_days($tickets) {
     'friday' => 0,
   );
 
-  // Expo only.
-  if ($tickets[4942]) $days['wednesday'] = 1;
-  if ($tickets[4944]) $days['thursday'] = 1;
-  if ($tickets[4946]) $days['friday'] = 1;
-
-  // 3 dailies
-  if ($tickets[122]) $days['wednesday'] = 1;
-  if ($tickets[124]) $days['thursday'] = 1;
-  if ($tickets[126]) $days['friday'] = 1;
-
-  // 3 dailies students
-  if ($tickets[4046]) $days['wednesday'] = 1;
-  if ($tickets[4042]) $days['thursday'] = 1;
-  if ($tickets[4044]) $days['friday'] = 1;
-
   // full conf
-  if ($tickets[114] || $tickets[1590] || $tickets[4096]) {
+  if ($tickets[129] || $tickets[130] || $tickets[142]) {
     $days['wednesday'] = 1;
     $days['thursday'] = 1;
     $days['friday'] = 1;
   }
 
   // Something on tuesday
-  if ($tickets[3656] || $tickets[116] || $tickets[3722] || $tickets[3724] || $tickets[3726] || $tickets[3728] || $tickets[4800] || $tickets[4796] && $tickets[4789])
+  if ($tickets[265])
     $days['tuesday'] = 1;
-
-  // Something on wednesday
-  if ($tickets[4942] || $tickets[4036] || $tickets[122] || $tickets[4936])
-    $days['wednesday'] = 1;
-
-  // Something on thursday
-  if ($tickets[4944] || $tickets[4042] || $tickets[124] || $tickets[4938])
-    $days['thursday'] = 1;
-
-  // Something on friday
-  if ($tickets[4946] || $tickets[4044] || $tickets[126] || $tickets[4940])
-    $days['friday'] = 1;
 
 /*
   if(!in_array(1, $days)) {
@@ -2224,74 +2213,10 @@ function register_export_badges_format_ticket_flags($tickets) {
   // L, T1, T2, 6, 7, 8, 9
   $flags = array();
 
-  // Gary
-  if ($tickets[3656]) {
-    $flags[] = 'G';
-    $tickets_allocated['breakfast']++;
-  }
-
-
-  // Leadership.
-  if ($tickets[116]) {
-    $flags[] = 'L';
-    $tickets_allocated['leadership']++;
-  }
-
-  // Teamboard begin
-  if ($tickets[3722]) {
-    $flags[] = 'B';
-    $tickets_allocated['teamboard_beginner']++;
-  }
-
-  // Teamboard intermediate
-  if ($tickets[3724]) {
-    $flags[] = 'T';
-    $tickets_allocated['teamboard_intermediate']++;
-  }
-
-  // Lego robotics
-  if ($tickets[3726]) {
-    $flags[] = 'R';
-    $tickets_allocated['lego_robotics']++;
-  }
-
-  // Lego science
-  if ($tickets[3728]) {
-    $flags[] = 'S';
-    $tickets_allocated['lego_science']++;
-  }
-
-  // Tour all day
-  if ($tickets[4800] || ($tickets[4796] && $tickets[4789])) {
-    $flags[] =  'D';
-    if ($tickets[4800])
-      $tickets_allocated['tour_day']++;
-  }
-
-  // Tour AM
-  elseif ($tickets[4796]) {
-    $flags[] = 'A';
-    $tickets_allocated['tour_am']++;
-  }
-
-  // Tour PM
-  elseif ($tickets[4789]) {
-    $flags[] = 'P';
-    $tickets_allocated['tour_pm']++;
-  }
-
-  // Expo only?
-  if ($tickets[4942]) {
-    $flags[] = '7';
-    $tickets_allocated['expo_wed']++;
-  }
-  if ($tickets[4944]) {
-    $flags[] = '8';
-    $tickets_allocated['expo_thu']++;
-  }
-  if ($tickets[4946]) {
-    $flags[] = '9';
-    $tickets_allocated['expo_fri']++;
+  // PHP only?
+  if ($tickets[265]) {
+    $flags[] = 'PHP';
+    $tickets_allocated['php_workshop']++;
   }
 
   return implode(' ', $flags);
@@ -2546,3 +2471,55 @@ function register_mail($key, &$message, $params) {
   }
 }
 
+/*
+ * Prevent non-presenters from buy a presenter ticket.
+ */
+function register_add_to_cart($nid, $qty, $data) {
+  global $user;
+
+  $members_only = 0;
+
+  // If we're adding a kit, also check member-only status of all products in the kit!
+  //
+  if (isset($data['kit_id']) && !empty($data['kit_id'])) {
+    $product = node_load($data['kit_id']);
+    $members_only += $product->field_product_presenters_only[0]['value'];
+    foreach ($product->products as $item) {
+      $members_only += $item->field_product_presenters_only[0]['value'];
+    }
+  }
+  else {
+    $product = node_load($nid);
+    $members_only += $product->field_product_presenters_only[0]['value'];
+    if ($product->type == 'product_kit') {
+      foreach ($product->products as $item) {
+        $members_only += $item->field_product_presenters_only[0]['value'];
+      }
+    }
+  }
+
+  // If this product or none of the products in this kit are member-only, silently allow.
+  //
+  if (!$members_only) {
+    return array(array('silent' => TRUE));
+  }
+
+  // Check if this user has the presenter role set.
+  // User is a presenter or a site admin, go for it.
+  //
+  if (in_array('presenter', $user->roles) || in_array('organiser', $user->roles)) {
+    return array(array('silent' => TRUE));
+  }
+
+  // Sorry, this product is not for you.
+  //
+  return array(array(
+    'success' => FALSE,
+    'message' => t('Only !site presenters can puchase !ticket tickets. If you are a presenter with an accepted proposal, please !login and ensure there are accepted proposals listed in !profile and contact an organiser.',
+      array('!site' => variable_get('site_name', ''),
+            '!ticket' => check_plain($product->title),
+            '!login' => l('login first', 'user/login', array('destination' => drupal_get_destination())),
+            '!profile' => l('your profile', 'user')
+      )
+    )));
+}
