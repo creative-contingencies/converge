@@ -111,25 +111,25 @@
 			<?php print $presenter['picture']; ?> 
 		<?php endif; ?>
 
-      <?php if ($presenter['name']): ?>
+		<?php if ($presenter['name']): ?>
 			<h4 class="presenter"><?php print $presenter['name']; ?></h4>
-      <?php endif; ?>
+		<?php endif; ?>
 
 		<?php if ($presenter['position']): ?>
 			<h4 class="presenter"><?php print $presenter['position']; ?></h4>
-      <?php endif; ?>
+		<?php endif; ?>
 
-      <?php if ($presenter['organisation']): ?>
-      	<h4 class="presenter"><?php print $presenter['organisation']; ?></h4>
+		<?php if ($presenter['organisation']): ?>
+			<h4 class="presenter"><?php print $presenter['organisation']; ?></h4>
 		<?php endif; ?>
 		
-      <?php if ($presenter['bio']): ?>
-      <span class="presenter-bio"><?php print $presenter['bio']; ?></span>
+		<?php if ($presenter['bio']): ?>
+			<span class="presenter-bio"><?php print $presenter['bio']; ?></span>
 		<?php endif; ?>
 
-      <?php if ($presenter['blog']): ?>
-      	<ul><li><?php print $presenter['blog']; ?></li></ul>
-      <?php endif; ?>
+		<?php if ($presenter['blog']): ?>
+		<	ul><li><?php print $presenter['blog']; ?></li></ul>
+		<?php endif; ?>
 
     <?php endforeach; ?>
   <?php endif; ?>
