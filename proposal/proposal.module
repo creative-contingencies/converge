@@ -33,19 +33,9 @@ function proposal_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  // Handler for the magic URL to add a user to a proposal.
+  // Handler for the magic URL to add a user to a proposal or remove one.
   // Needs to be hit by an authenticated user.
-  $items['proposal/manage/%/%/%/%'] = array(
-    'title' => 'Modify a proposal',
-    'description' => 'Modify a proposal',
-    'page callback' => 'proposal_manage',
-    'page arguments' => array(2, 3, 4, 5),
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-  );
-
-  // Legacy URL format.
-  $items['manage/proposal/%/%/%/%'] = array(
+  $items['converge/proposal/%/%/%/%'] = array(
     'title' => 'Modify a proposal',
     'description' => 'Modify a proposal',
     'page callback' => 'proposal_manage',
@@ -55,7 +45,7 @@ function proposal_menu() {
   );
 
   // Handlers to export proposals as CSV.
-  $items['proposal/export/csv/all'] = array(
+  $items['converge/proposal/export/csv/all'] = array(
     'title' => 'All proposals',
     'description' => 'Export all proposals',
     'page callback' => 'proposal_export_csv',
@@ -64,7 +54,8 @@ function proposal_menu() {
     'access arguments' => array('export proposals'),
     'type' => MENU_CALLBACK,
   );
-  $items['proposal/export/csv/refereed'] = array(
+
+  $items['converge/proposal/export/csv/refereed'] = array(
     'title' => 'All proposals',
     'description' => 'Export all proposals',
     'page callback' => 'proposal_export_csv',
@@ -716,7 +707,7 @@ function proposal_nodeapi(&$node, $op, $a1) {
       $params['!keywords'] = implode(', ', $keywords);
 
       // Magic URL any registered user can hit to be added as a presenter.
-      $params['!add_url'] = url('proposal/manage/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
+      $params['!add_url'] = url('converge/proposal/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
       if (variable_get('proposal_mail_proposal_notify_user_send', 0)) {
         drupal_mail('proposal', 'notify_user', $author->mail, $language, $params);
@@ -851,7 +842,7 @@ function proposal_manage($op, $pid, $uuid, $vuid) {
           $params['!title'] = $proposal->title;
           $params['!author'] = $author->name;
           $params['!authoremail'] = $author->mail;
-          $params['!remove_url'] = url('proposal/manage/remove/' . $proposal->nid . '/' . $proposal->uuid . '/' . $user->uid, array('absolute' => TRUE, 'alias' => TRUE));
+          $params['!remove_url'] = url('converge/proposal/remove/' . $proposal->nid . '/' . $proposal->uuid . '/' . $user->uid, array('absolute' => TRUE, 'alias' => TRUE));
 
           // Prepare and send e-mail.
           drupal_mail('proposal', 'presenter_add_notify', $author->mail, $language, $params);

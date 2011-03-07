@@ -15,7 +15,7 @@ function review_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['review/remind_reviewers'] = array(
+  $items['converge/review/remind_reviewers'] = array(
     'title' => 'Send reminder email to reviewers',
     'description' => 'Change configuration and email templates for Reviews',
     'page callback' => 'drupal_get_form',
@@ -24,7 +24,7 @@ function review_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['review/email_authors'] = array(
+  $items['converge/review/email_authors'] = array(
     'title' => 'Send status emails to authors',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_email_authors'),
@@ -32,7 +32,7 @@ function review_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['review/invite_reviewers'] = array(
+  $items['converge/review/invite_reviewers'] = array(
     'title' => 'Invite potential reviewers',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_reviewer_csv'),
@@ -42,7 +42,7 @@ function review_menu() {
 
   // Handler for the magic URL to add a reviewer to a proposal.
   // Needs to be hit by an authenticated user.
-  $items['manage/review/%/%/%/%'] = array(
+  $items['converge/review/%/%/%/%'] = array(
     'title' => 'Modify a review',
     'description' => 'Modify a review',
     'page callback' => 'review_manage_review',
@@ -53,7 +53,7 @@ function review_menu() {
 
   // Handler for the magic URL to accept or decline reviewer status.
   // Needs to be hit by any user.
-  $items['manage/reviewer/%/%/%'] = array(
+  $items['converge/reviewer/%/%/%'] = array(
     'title' => 'Modify a review',
     'description' => 'Modify a review',
     'page callback' => 'review_manage_reviewer',
@@ -711,8 +711,8 @@ function review_form_alter(&$form, $form_state, $form_id) {
       $params['!reviewer_lastname'] = $profile->field_profile_surname[0]['value'];
       $params['!reviewer_user'] = $reviewer->mail;
       $params['!reviewer_email'] = $reviewer->mail;
-      $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
-      $params['!decline_url'] = url('manage/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+      $params['!accept_url'] = url('converge/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+      $params['!decline_url'] = url('converge/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
 
 
       // If this module is ran too early manually copy across the values
@@ -999,7 +999,7 @@ function review_nodeapi(&$node, $op, $a1) {
             if ( $reviewer['uid'] > 0 ) {
               $reviewer_profile = content_profile_load('profile', $reviewer['uid']);
               $reviewer_user = user_load(array('uid' => $reviewer['uid']));
-              $params['!review_decline_url'] = url('manage/review/decline/' . $node->nid . '/' . $node->uuid . '/' . $reviewer_user->uid , array('absolute' => true));
+              $params['!review_decline_url'] = url('converge/review/decline/' . $node->nid . '/' . $node->uuid . '/' . $reviewer_user->uid , array('absolute' => true));
               $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
               $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
               $params['!reviewer_lastname'] = $reviewer_profile->field_profile_surname[0]['value'];
@@ -1202,8 +1202,8 @@ function review_reviewer_csv_submit($form, &$form_state) {
     $params['!reviewer_lastname'] = $profile->field_profile_surname[0]['value'];
     $params['!reviewer_user'] = $reviewer->mail;
     $params['!reviewer_email'] = $reviewer->mail;
-    $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
-    $params['!decline_url'] = url('manage/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+    $params['!accept_url'] = url('converge/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+    $params['!decline_url'] = url('converge/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
 
     // Email this user.
     drupal_mail('review', 'reviewer_invite', $reviewer->mail, $language, $params);
