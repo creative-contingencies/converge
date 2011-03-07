@@ -19,7 +19,7 @@ function proposal_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('proposal_admin_settings'),
     'access arguments' => array('administer site configuration'),
-    'weight' => -6,
+    'weight' => -4,
     'type' => MENU_NORMAL_ITEM,
   );
 
