@@ -276,7 +276,7 @@ function user_profile_goto() {
 function user_profile_redirect($path1 = 'profile', $path2 = '') {
   global $user;
   if ($user->uid) {
-    drupal_goto('user/' . $user->uid . '/' . $path1 . '/' . $path2 );
+    drupal_goto('user/' . $user->uid . '/' . $path1 . ($path2) ? '/' : '' . $path2 );
   }
   else {
     return drupal_access_denied();
@@ -316,8 +316,11 @@ function register_form_alter(&$form, $form_state, $form_id) {
     $form['order_assignee_listing']['info'] = register_list_ticket_assignees($form['order_id']['#value']);
   }
 
+  // This is only a lot hacky.
   if ($form_id == 'uc_cart_checkout_form') {
-    $form['panes']['payment']['payment_method']['#options']['cod'] = t('Complimentary presenter registration.');
+    if (isset($form['panes']['payment']['payment_method']['#options']['cod'])) {
+      $form['panes']['payment']['payment_method']['#options']['cod'] = t('Complimentary presenter registration.');
+    }
   }
 }
 
@@ -403,7 +406,10 @@ function register_user($op, &$edit, &$account, $category = NULL) {
       }
 
     case 'load':
-      $account->orders = register_get_orders($account->uid);
+      $orders = register_get_orders($account->uid);
+      if ($orders) {
+        $account->orders = $orders;
+      }
       break;
 
     // This needs to only be active if the attendee role is required. It will
@@ -518,7 +524,7 @@ function register_get_orders($uid) {
   // Orders purchased by this user.
   $products = register_ticketable_products();
   if (empty($products))
-    return array();
+    return NULL;
 
   $sql = "
     SELECT uco.order_id, uco.uid, uco.order_status, uco.created, ucop.order_product_id, ucop.nid, ucop.qty, n.title, n.status, n.type
@@ -1608,6 +1614,8 @@ function register_get_tickets($uid) {
 
 // Skeleton code for mailmerge.
 //
+// This is extremely unportable.
+//
 // Presenters who haven't registered
 //   (proposal accepted and uid in proposal_presenters and not in uc_orders and not in ccc_ticket_allocation)
 // Presenters who have registered, but not allocated their ticket
@@ -1643,7 +1651,7 @@ function register_export_badges() {
   // Fetch the data.
   $badges = register_export_badge_data(TRUE);
 
-  drupal_set_title('Badge Data ACEC2010 ' . date('Ymd'));
+  drupal_set_title('Badge Data ' . date('Ymd'));
 
   $dinners = 0;
   foreach ($badges['data'] as $row) {
@@ -1752,7 +1760,7 @@ WHERE
     array('data' => 'Flags'),
     array('data' => 'VIP Insert'),
     array('data' => 'Dinner'),
-    array('data' => 'PHP'),
+    array('data' => 'Tuesday'),
     array('data' => 'Wednesday'),
     array('data' => 'Thursday'),
     array('data' => 'Friday'),
@@ -1812,8 +1820,9 @@ WHERE
     $tuple['colour'] = register_export_badges_format_ticket_colour($list);
 
     if (register_export_badges_format_ticket_colour($list) == 'WAHOONIE') {
-      dpm($account);
-      dpm($list);
+      // Bad shit is happening.
+      // dpm($account);
+      // dpm($list);
     }
 
     $tuple['flags'] = '';
@@ -1828,6 +1837,7 @@ WHERE
       $tuple['organisation'] = t('Ticket purchased by !firstname !surname (!uid)', array('!firstname' => $purchaser->field_profile_firstname[0]['value'], '!surname' => $purchaser->field_profile_surname[0]['value'], '!uid' => $order->uid));
       $tuple['flags'] = 'DINNER';
     }
+    $tuple['pca'] = register_export_badges_format_ticket_flags($list);
 
     $tuple['vip'] = register_export_badges_format_vip($account);
 
@@ -1839,6 +1849,7 @@ WHERE
       $tuple[$key] = $value;
     }
 
+    // Really only applies to edu conferences (re PD certificate)
     // $tuple['hours'] = register_export_badges_format_hours($list);
 
     $data[] = $tuple;
@@ -2017,7 +2028,8 @@ WHERE
   if (in_array('attendee', $account->roles))
     return 'DELEGATE';
 
-  return 'DELEGATE';
+  //  An inadvisable sort of sanity check. There should never be wahoonies at the conference.
+  return 'WAHOONIE';
 }
 
 /**
