@@ -110,7 +110,7 @@
 		<?php if ($presenter['picture']): ?>
 			<?php print $presenter['picture']; ?> 
 		<?php endif; ?>
-      
+
       <?php if ($presenter['name']): ?>
 			<h4 class="presenter"><?php print $presenter['name']; ?></h4>
       <?php endif; ?>

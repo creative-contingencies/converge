@@ -356,7 +356,7 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     $form['personal'] = array(
       '#type' => 'fieldset',
       '#title' => t('Your details'),
-      '#description' => t('Please enter your contact details. These details will be used to create a login on this site.'),
+      '#description' => t('Please enter your contact details. These details will be used to create a login on this site.<p>Do not enter any information about additional presenters on this page. Your confirmation email will contain instructions on how to add additional presenters to your proposal.'),
       '#weight' => -6,
       '#tree' => TRUE,
     );
@@ -392,14 +392,14 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
       '#type' => 'textfield',
       '#title' => t('First Name'),
       '#required' => TRUE,
-      '#description' => t(''),
+      '#description' => t('Enter only your first name, not middle names or the names of any additional presenters.'),
     );
 
     $form['personal']['surname'] = array(
       '#type' => 'textfield',
       '#title' => t('Surname or Family Name'),
       '#required' => TRUE,
-      '#description' => t(''),
+      '#description' => t('Enter only your family name, not middle names or the names of any additional presenters.'),
     );
 
     $form['personal']['organisation'] = array(
@@ -515,6 +515,13 @@ function proposal_node_form_validate($form, &$form_state) {
     form_set_error('personal][verifypass', '');
     unset($form_state['values']['personal']['password']);
     unset($form_state['values']['personal']['verifypass']);
+  }
+
+  // Check first name.
+  if (!empty($form_state['values']['personal']['firstname'])) {
+    if (strpos($form_state['values']['personal']['firstname'], ' ' !== FALSE)) {
+      form_set_error('personal][firstname', t('Enter <em>only your</em> first name.'));
+    }
   }
 
   // Check email.
