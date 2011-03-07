@@ -1,6 +1,6 @@
 name = Mailmerge
 description = Perform form letter mail merges to send communication to various roles or users.
-package = " Creative Contingencies Conference"
+package = Converge
 core = 6.x
 
 dependencies[] = proposal

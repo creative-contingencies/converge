@@ -1,6 +1,6 @@
 name = Promotion bits and bobs
 description = Provide blocks and other bits and bobs for promotional purposes.
-package = " Creative Contingencies Conference"
+package = Converge
 core = 6.x
 
 dependencies[] = content_profile
