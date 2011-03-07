@@ -7,16 +7,17 @@
   *    'rows'   - The table rows.
   */
 
+  // Hnnnngg!
   $offset = variable_get('date_default_timezone', 0);
   $offset += 3600;
 
   header('Content-Type: text/Calendar');
-  header('Content-Disposition: inline; filename=OSDC2010.ics');
+  header('Content-Disposition: inline; filename=Porgram.ics');
 
   print "BEGIN:VCALENDAR\n";
   print "VERSION:2.0\n";
   print "METHOD:PUBLISH\n";
-  print "X-WR-CALNAME: Calendar | OSDC2010 for {$username}\n";
+  print "X-WR-CALNAME: Calendar | Program for {$username}\n";
   print "PRODID:-//Drupal iCal API//EN\n";
 
   foreach ($content['rows'] as $idx => $row) {
@@ -30,7 +31,7 @@
     $date_to = strtotime($row['date_to']);
 
     print "BEGIN:VEVENT\n";
-    print "UID:osdc2010:program:{$row['uuid']}:session:{$row['nid']}\n";
+    print "UID:converge:program:{$row['uuid']}:session:{$row['nid']}\n";
     print "SUMMARY:{$row['session']}\n";
     print strftime('DTSTAMP;TZID=Australia/Melbourne;VALUE=DATE-TIME:%Y%m%dT%H%M%S', time()) ."\n";
     print strftime('DTSTART;TZID=Australia/Melbourne;VALUE=DATE-TIME:%Y%m%dT%H%M%S', ($date_from + $offset)) ."\n";
