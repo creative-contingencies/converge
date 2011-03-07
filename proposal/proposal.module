@@ -14,8 +14,8 @@ function proposal_menu() {
   $items = array();
 
   // Admin page.
-  $items['admin/settings/proposal'] = array(
-    'title' => 'Converge Proposal Settings',
+  $items['admin/converge/proposal'] = array(
+    'title' => 'Proposal Settings',
     'description' => 'Change configuration and email templates for Proposals',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('proposal_admin_settings'),

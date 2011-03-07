@@ -6,8 +6,8 @@
 function review_menu() {
   $items = array();
 
-  $items['admin/settings/review'] = array(
-    'title' => 'Converge Review Settings',
+  $items['admin/converge/review'] = array(
+    'title' => 'Review Settings',
     'description' => 'Change configuration and email templates for Reviews',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_admin_settings'),

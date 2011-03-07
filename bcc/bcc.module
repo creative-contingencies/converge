@@ -7,7 +7,7 @@ function bcc_menu() {
   $items = array();
 
   // Admin page.
-  $items['admin/settings/bcc'] = array(
+  $items['admin/converge/bcc'] = array(
     'title' => 'CCC BCC Settings',
     'description' => 'Change configuration for BCC',
     'page callback' => 'drupal_get_form',

@@ -59,8 +59,8 @@ function sessions_menu() {
   $items = array();
 
  // Admin page.
-  $items['admin/settings/sessions'] = array(
-    'title' => 'Converge Session Selection Settings',
+  $items['admin/converge/sessions'] = array(
+    'title' => 'Session Settings',
     'description' => 'Change configuration for Session Selection',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sessions_admin_settings'),
@@ -70,7 +70,7 @@ function sessions_menu() {
   );
 
   // Grid to see which sessions are full.
-  $items['admin/store/reports/sessions'] = array(
+  $items['admin/converge/reports/sessions'] = array(
     'title' => 'Session Selection Report',
     'description' => 'List all sessions and their sizes',
     'page callback' => 'sessions_report',
@@ -80,7 +80,7 @@ function sessions_menu() {
   );
 
   // List who is in a particular session.
-  $items['admin/store/reports/sessions/%node'] = array(
+  $items['admin/converge/reports/sessions/%node'] = array(
     'title' => 'Session Selection Report',
     'description' => 'List attendees for a session',
     'page callback' => 'sessions_report_session',

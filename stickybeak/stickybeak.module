@@ -8,18 +8,18 @@
  */
 function stickybeak_menu() {
   $items = array();
-  $items['admin/reports/sessions'] = array(
+  $items['admin/converge/reports/sessions'] = array(
     'title' => 'View session list',
     'description' => 'View a list of sessions',
     'page callback' => 'stickybeak_browse',
     'access arguments' => array('examine sessions'),
     'type' => MENU_LOCAL_TASK,
   );
-  $items['admin/reports/sessions/%'] = array(
+  $items['admin/converge/reports/sessions/%'] = array(
     'title' => 'View session info',
     'description' => 'View info about a specific session',
     'page callback' => 'stickybeak_details',
-    'page arguments' => array(3),
+    'page arguments' => array(4),
     'access arguments' => array('examine sessions'),
     'type' => MENU_CALLBACK,
   );
