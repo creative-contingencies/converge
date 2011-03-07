@@ -60,7 +60,7 @@ function sessions_menu() {
 
  // Admin page.
   $items['admin/settings/sessions'] = array(
-    'title' => 'CCC Session Selection Settings',
+    'title' => 'Converge Session Selection Settings',
     'description' => 'Change configuration for Session Selection',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sessions_admin_settings'),

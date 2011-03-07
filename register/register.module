@@ -31,7 +31,7 @@ function register_menu() {
   $items = array();
 
   $items['admin/settings/register'] = array(
-    'title' => 'CCC Registration Settings',
+    'title' => 'Converge Registration Settings',
     'description' => 'Change configuration settings for Registration.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('register_admin_settings'),
