@@ -63,7 +63,6 @@ function proposal_menu() {
     'access arguments' => array('export proposals'),
     'type' => MENU_CALLBACK,
   );
-
   return $items;
 }
 
@@ -894,7 +893,6 @@ function proposal_content_profile_vars($type, $uid) {
 
   if(!$profile)
     return null;
-    // $profile = content_profile_load($type, 0);
 
   foreach($profile as $key => $val) {
     $r = preg_match($pattern, $key, $matches);

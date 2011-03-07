@@ -114,7 +114,7 @@ function sessions_menu() {
 
   // Session selections - iCal view.
   // This is referenced by uuid, so no auth check!
-  $items['myacec/%/ical'] = array(
+  $items['osdc2010/%/ical'] = array(
     'title' => 'My Program - iCal',
     'description' => 'iCal conference session selection',
     'page callback' => 'sessions_list_ical',
@@ -238,6 +238,7 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
       break;
 
     case 'login':
+      sessions_set_speaker_role($account);
       sessions_warn_invalid_selections($account);
       sessions_autoselect_sessions($account);
       break;
@@ -314,6 +315,9 @@ function sessions_autoselect_sessions($account = NULL) {
   // Haha. Anonymous. Go away.
   //
   if ($account->uid == 0)
+    return;
+
+  if (empty($account->orders))
     return;
 
   // Check which tickets are assigned to this user.
@@ -478,10 +482,13 @@ function sessions_presenter_check($uid) {
   if (!$sessions)
     return;
 
+  // I am a presenter, I should have that role set.
+
   // Which days are these sessions scheduled to be on?
-  $query = "SELECT DISTINCT(cfdt.nid) AS nid FROM {content_field_day_timeslots} WHERE cfdt.field_day_timeslots_nid IN (%s)";
+  $query = "SELECT DISTINCT(cfdt.nid) AS nid FROM {content_field_day_timeslots} AS cfdt WHERE cfdt.field_day_timeslots_nid IN (%s)";
   $result = db_query($query, implode(', ', $days));
 
+  $nids = array();
   while ($nid = db_result($result)) {
     if (!in_array($nid, $days)) {
       $nids[] = $nid;
@@ -986,7 +993,7 @@ function sessions_list_table($account, $print = FALSE) {
 
   // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
   $offset = variable_get('date_default_timezone', 0);
-  // $offset -= 3600;
+  $offset += 3600;
 
   if (!$days) {
     return t('There are no sessions to be selected. Please check that your order payment status is <en>completed</em> and that a ticket has been assigned to you.');
@@ -1133,7 +1140,7 @@ function sessions_list_view($account) {
   // Add a link to this user's myACEC iCal feed, if it has a uuid.
   //
   if ($account->uuid) {
-    drupal_set_html_head('<link rel="alternate" type="application/rss+xml" href="' . url('myacec/' . $account->uuid. '/ical', array('absolute' => TRUE)) . '" title="myACEC iCal" />');
+    drupal_set_html_head('<link rel="alternate" type="application/rss+xml" href="' . url('osdc2010/' . $account->uuid. '/ical', array('absolute' => TRUE)) . '" title="myACEC iCal" />');
   }
 
   $table = sessions_list_table($account);
@@ -1142,7 +1149,7 @@ function sessions_list_view($account) {
   $output .= '<div style="float: right;">';
   $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
   if ($account->uuid) {
-    $output .= '<a href="' . url('myacec/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/ical-64x64.png" height="64" width="64" alt="iCal" align="right" /></a>';
+    $output .= '<a href="' . url('osdc2010/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/ical-64x64.png" height="64" width="64" alt="iCal" align="right" /></a>';
   }
   $output .= '</div>';
   $output .= variable_get('sessions_program_header', '');
@@ -1483,7 +1490,7 @@ function sessions_report_session($proposal) {
 
   drupal_set_title($proposal->title);
   $output  = t('<p>!num people have selected !title', array('!num' => count($data), '!title' => $proposal->title));
-  $output .= t('<p>Note that people who bought a ticket for this session, but didn\'t selected it are not listed here.');
+  $output .= t("<p>Note that people who bought a ticket for this session but did not select it are not listed here.");
   $output .= theme('table', $header, $data);
   return $output;
 }
@@ -1494,7 +1501,7 @@ function sessions_report_session($proposal) {
 function theme_sessions_timeslot($timeslot, $fields) {
   // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
   $offset = variable_get('date_default_timezone', 0);
-  // $offset -= 3600;
+  $offset += 3600;
 
   $output = '';
 
@@ -1507,4 +1514,19 @@ function theme_sessions_timeslot($timeslot, $fields) {
     $output .= '</span>';
   }
   return $output;
+}
+
+/**
+ * Assign the speaker role to all users with a proposal in an accepted status.
+ */
+function sessions_set_speaker_role($account) {
+  $sessions = sessions_presenter($account->uid);
+  if (empty($sessions))
+    return;
+
+  $rid = db_result(db_query("SELECT rid FROM {role} WHERE name = '%s'", 'presenter'));
+  $roles = $account->roles + array($rid => 'presenter');
+  user_save($account, array('roles' => $roles));
+
+  return;
 }
