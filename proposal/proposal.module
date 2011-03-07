@@ -63,6 +63,7 @@ function proposal_menu() {
     'access arguments' => array('export proposals'),
     'type' => MENU_CALLBACK,
   );
+
   return $items;
 }
 
