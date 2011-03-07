@@ -37,26 +37,26 @@ function register_menu() {
     'page arguments' => array('register_admin_settings'),
     'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['admin/store/reports/custom/attendees'] = array(
+  $items['admin/converge/reports/custom/attendees'] = array(
     'title' => 'Attendee Registration Report',
     'description' => 'List all known attendees.',
     'page callback' => 'register_list_attendees',
     'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
 
-  $items['admin/store/reports/custom/presenters'] = array(
+  $items['admin/converge/reports/custom/presenters'] = array(
     'title' => 'Presenter Registration Report',
     'description' => 'List the registration status for presenters with accepted proposals.',
     'page callback' => 'register_list_presenter_payment_status',
     'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   $items['admin/store/reports/custom/coupons'] = array(

@@ -11,7 +11,17 @@ function proposal_init() {
  * Implementation of hook_menu().
  */
 function proposal_menu() {
+
   $items = array();
+  $items['admin/converge'] = array(
+    'title' => 'Converge Administration',
+    'description' => 'Administer converge settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('proposal_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'weight' => -6,
+    'type' => MENU_NORMAL_ITEM,
+  );
 
   // Admin page.
   $items['admin/converge/proposal'] = array(
@@ -20,7 +30,7 @@ function proposal_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('proposal_admin_settings'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   // Handler for the magic URL to add a user to a proposal.
