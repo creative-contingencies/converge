@@ -12,7 +12,7 @@
   $offset += 3600;
 
   header('Content-Type: text/Calendar');
-  header('Content-Disposition: inline; filename=Porgram.ics');
+  header('Content-Disposition: inline; filename=Program.ics');
 
   print "BEGIN:VCALENDAR\n";
   print "VERSION:2.0\n";
