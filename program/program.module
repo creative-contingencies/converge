@@ -352,29 +352,23 @@ function program_block_suggested_sessions() {
 
 }
 
-/*
-       Table: term_data
-Create Table: CREATE TABLE `term_data` (
-  `tid` int(10) unsigned NOT NULL auto_increment,
-  `vid` int(10) unsigned NOT NULL default '0',
-  `name` varchar(255) NOT NULL default '',
-  `description` longtext,
-  `weight` tinyint(4) NOT NULL default '0',
-  PRIMARY KEY  (`tid`),
-  KEY `taxonomy_tree` (`vid`,`weight`,`name`),
-  KEY `vid_name` (`vid`,`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=464 DEFAULT CHARSET=utf8
-1 row in set (0.00 sec)
+/**
+ * Implementation of hook_views_api().
+ */
+function program_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'program'),
+  );
+}
 
-mysql> show create table term_node\G
-*************************** 1. row ***************************
-       Table: term_node
-Create Table: CREATE TABLE `term_node` (
-  `nid` int(10) unsigned NOT NULL default '0',
-  `vid` int(10) unsigned NOT NULL default '0',
-  `tid` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`tid`,`vid`),
-  KEY `vid` (`vid`),
-  KEY `nid` (`nid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
-*/
+/**
+ * Implementation of hook_views_default_views().
+ *
+ * Import views presets.
+ */
+function program_views_default_views() {
+  module_load_include('inc', 'program', 'program.views_presets');
+
+  return _program_views_presets();
+}
