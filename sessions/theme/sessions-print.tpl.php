@@ -19,7 +19,7 @@
 
 <html>
 <head>
-  <title>My Program for <?php print $username; ?></title>
+  <title>Program for <?php print $username; ?></title>
 <style type="text/css">
   table tr th {
     color: #fff;
