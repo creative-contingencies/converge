@@ -107,7 +107,7 @@ function promotion_user_faces() {
   $faces = array();
 
   if (variable_get('promotion_faces', 'all') == 'registered') {
-    $query = "SELECT DISTINCT(u.uid), u.picture FROM {users} AS u JOIN {ccc_ticket_allocation} AS cccta ON (u.uid=cccta.uid AND u.picture <> '') ORDER BY RAND() LIMIT 12";
+    $query = "SELECT DISTINCT(u.uid), u.picture FROM {users} AS u JOIN {converge_ticket_allocation} AS cccta ON (u.uid=cccta.uid AND u.picture <> '') ORDER BY RAND() LIMIT 12";
   } else {
     $query = "SELECT DISTINCT(u.uid), u.picture FROM {users} AS u WHERE u.picture <> '' ORDER BY RAND() LIMIT 12";
   }
@@ -291,7 +291,7 @@ function promotion_myacec_percentage() {
        else if ($node == 'custom') {
          // Does user have a ticket allocated?
          if ($name == 'ticket') {
-           $tickets = db_result(db_query("SELECT COUNT(order_product_id) FROM {ccc_ticket_allocation} WHERE uid=%d", $user->uid));
+           $tickets = db_result(db_query("SELECT COUNT(order_product_id) FROM {converge_ticket_allocation} WHERE uid=%d", $user->uid));
            if ($tickets) {
              $percentage += $value;
            }
@@ -305,7 +305,7 @@ function promotion_myacec_percentage() {
          }
          // Does user have selected sessions?
          if ($name == 'sessions') {
-           $sessions = db_result(db_query("SELECT COUNT(nid) FROM {ccc_session_selection} WHERE uid=%d", $user->uid));
+           $sessions = db_result(db_query("SELECT COUNT(nid) FROM {converge_session_selection} WHERE uid=%d", $user->uid));
            if ($sessions) {
              $percentage += $value;
            }

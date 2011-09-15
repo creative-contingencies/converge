@@ -21,7 +21,7 @@ function sessions_schema() {
   // This field allows users to select sessions to attend.
   $schema = array();
 
-  $schema['ccc_session_selection'] = array(
+  $schema['converge_session_selection'] = array(
     'description' => t('Store session selections made by users who have registered.'),
     'fields' => array(
       'uid' => array(
@@ -64,8 +64,8 @@ function sessions_schema() {
  */
 function sessions_update_6001() {
   $ret = array();
-  db_add_field($ret, 'ccc_session_selection', 'modified', array('description' => t('Timestamp of when this selection was made'), 'type' => 'datetime', 'not null' => TRUE));
-  db_add_index($ret, 'ccc_session_selection', 'modified_idx', array('modified'));
+  db_add_field($ret, 'converge_session_selection', 'modified', array('description' => t('Timestamp of when this selection was made'), 'type' => 'datetime', 'not null' => TRUE));
+  db_add_index($ret, 'converge_session_selection', 'modified_idx', array('modified'));
   return $ret;
 }
 
@@ -75,4 +75,13 @@ function sessions_update_6001() {
 function sessions_update_6002() {
   $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'date'")));
   db_query("UPDATE {system} SET weight = %d WHERE name = 'sessions'", $weight + 1);
+}
+
+/**
+ * Use updated table names.
+ */
+function sessions_update_6003() {
+  $ret = array();
+  db_rename_table($ret, 'ccc_session_selection', 'converge_session_selection');
+  return $ret;
 }

@@ -245,7 +245,7 @@ function sessions_user($op, &$edit, &$account, $category = NULL) {
 
     case 'delete':
       drupal_set_message(t('The user\'s session selections have been deleted'));
-      db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d", $account->uid);
+      db_query("DELETE FROM {converge_session_selection} WHERE uid=%d", $account->uid);
       break;
 
   }
@@ -349,7 +349,7 @@ function sessions_autoselect_sessions($account = NULL) {
         $result = db_query($query, $order->nid);
 
         while ($row = db_fetch_array($result)) {
-          db_query("REPLACE INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())",
+          db_query("REPLACE INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())",
             $account->uid, $row['nid'], $row['timeslot']);
         }
       }
@@ -381,7 +381,7 @@ function sessions_warn_invalid_selections($account = NULL) {
 
   // Check if any of the user's selections are not in the listing of acceptable proposal statuses.
   //
-  $query = "SELECT ccc_ss.nid AS nid, n.title AS title, ctp.field_proposal_status_value AS status FROM {ccc_session_selection} AS ccc_ss JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid) JOIN {node} AS n ON (ccc_ss.nid = n.nid) WHERE ccc_ss.uid=%d AND ctp.field_proposal_status_value NOT IN ('" . implode("','", sessions_valid_status()) . "')";
+  $query = "SELECT converge_ss.nid AS nid, n.title AS title, ctp.field_proposal_status_value AS status FROM {converge_session_selection} AS converge_ss JOIN {content_type_proposal} AS ctp ON (converge_ss.nid = ctp.nid) JOIN {node} AS n ON (converge_ss.nid = n.nid) WHERE converge_ss.uid=%d AND ctp.field_proposal_status_value NOT IN ('" . implode("','", sessions_valid_status()) . "')";
   $result = db_query($query, $account->uid);
 
   // Print each proposal title that we found.
@@ -389,25 +389,25 @@ function sessions_warn_invalid_selections($account = NULL) {
   while ($row = db_fetch_array($result)) {
     drupal_set_message(t('!title has been !status', array('!title' => l($row['title'], 'node/' . $row['nid']), '!status' => $row['status'])), 'warning');
 
-    db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
+    db_query("DELETE FROM {converge_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
     $gone = TRUE;
   }
 
   // Check if a session that a user has selected has moved timeslots.
   $query = "
 SELECT
-  ccc_ss.nid AS nid,
+  converge_ss.nid AS nid,
   n.title AS title,
-  ccc_ss.timeslot AS timeslot,
+  converge_ss.timeslot AS timeslot,
   ctp.field_proposal_scheduled_nid AS scheduled,
   nf.title AS from_title,
   nt.title AS to_title FROM
-{ccc_session_selection} AS ccc_ss
-JOIN {node} AS n ON (ccc_ss.nid = n.nid)
-LEFT JOIN {content_type_proposal} AS ctp ON (ccc_ss.nid = ctp.nid)
-LEFT JOIN {node} AS nf ON (nf.nid = ccc_ss.timeslot)
+{converge_session_selection} AS converge_ss
+JOIN {node} AS n ON (converge_ss.nid = n.nid)
+LEFT JOIN {content_type_proposal} AS ctp ON (converge_ss.nid = ctp.nid)
+LEFT JOIN {node} AS nf ON (nf.nid = converge_ss.timeslot)
 LEFT JOIN {node} AS nt ON (nt.nid = ctp.field_proposal_scheduled_nid)
-WHERE ccc_ss.uid=%d AND ccc_ss.timeslot <> ctp.field_proposal_scheduled_nid";
+WHERE converge_ss.uid=%d AND converge_ss.timeslot <> ctp.field_proposal_scheduled_nid";
 
   $result = db_query($query, $account->uid);
 
@@ -415,7 +415,7 @@ WHERE ccc_ss.uid=%d AND ccc_ss.timeslot <> ctp.field_proposal_scheduled_nid";
   while ($row = db_fetch_array($result)) {
     drupal_set_message(t('!title has been moved from !from to !to', array('!title' => l($row['title'], 'node/' . $row['nid']), '!from' => $row['from_title'], '!to' => $row['to_title'])), 'warning');
 
-    db_query("DELETE FROM {ccc_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
+    db_query("DELETE FROM {converge_session_selection} WHERE uid=%d AND nid=%d", $account->uid, $row['nid']);
     $moved = TRUE;
   }
 
@@ -535,12 +535,12 @@ function sessions_presenter_select($uid) {
 
         $timeslots = sessions_overlapping_timeslots($timeslot->nid);
         foreach ($timeslots as $t) {
-          db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $uid, $t);
+          db_query("DELETE FROM {converge_session_selection} WHERE uid = %d AND timeslot = %d", $uid, $t);
         }
       }
       // Add the new selection to the database.
       //
-      $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot) VALUES (%d, %d, %d)";
+      $query = "INSERT INTO {converge_session_selection} (uid, nid, timeslot) VALUES (%d, %d, %d)";
       db_query($query, $uid, $session, $timeslot->nid);
       drupal_set_message(t('Added "!title", which you are presenting', array('!title' => $node->title)));
     } // end in_array
@@ -676,7 +676,7 @@ function sessions_get_days($uid) {
    LEFT JOIN
      {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
    LEFT JOIN
-     {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+     {converge_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
    LEFT JOIN
      {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
    LEFT JOIN
@@ -704,7 +704,7 @@ function sessions_get_days($uid) {
 function sessions_user_sessions($uid) {
   $selections = array();
 
-  $query = "SELECT timeslot, nid FROM {ccc_session_selection} WHERE uid = %d";
+  $query = "SELECT timeslot, nid FROM {converge_session_selection} WHERE uid = %d";
   $result = db_query($query, $uid);
   while ($row = db_fetch_array($result)) {
     $selections[$row['timeslot']] = $row['nid'];
@@ -749,7 +749,7 @@ function sessions_user_valid_timeslot($uid, $nid) {
    FROM
      {uc_order_products} AS uc_op
    JOIN
-     {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+     {converge_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
    JOIN
      {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
    JOIN
@@ -819,12 +819,12 @@ function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NU
         // This really needs a function of its own.
         //
         foreach ($timeslots as $t) {
-          db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $account->uid, $t);
+          db_query("DELETE FROM {converge_session_selection} WHERE uid = %d AND timeslot = %d", $account->uid, $t);
         }
 
         // Add the new selection to the database.
         //
-        $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
+        $query = "INSERT INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
         db_query($query, $account->uid, $session->nid, $timeslot);
 
         drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
@@ -952,12 +952,12 @@ function sessions_list_form_submit($form, &$form_state) {
       // ie: something in a timeslot that starts at or before this one and ends during or with this one.
       $timeslots = sessions_overlapping_timeslots($timeslot);
       foreach ($timeslots as $t) {
-        db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND timeslot = %d", $uid, $t);
+        db_query("DELETE FROM {converge_session_selection} WHERE uid = %d AND timeslot = %d", $uid, $t);
       }
 
       // Add the new selection to the database.
       //
-      $query = "INSERT INTO {ccc_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
+      $query = "INSERT INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
       db_query($query, $uid, $session, $timeslot);
 
       // Tell the user what we did.
@@ -967,7 +967,7 @@ function sessions_list_form_submit($form, &$form_state) {
 
     case 'remove':
       $session = node_load($session);
-      db_query("DELETE FROM {ccc_session_selection} WHERE uid = %d AND nid = %d", $uid, $session->nid);
+      db_query("DELETE FROM {converge_session_selection} WHERE uid = %d AND nid = %d", $uid, $session->nid);
       drupal_set_message(t('Removed session "!title"', array('!title' => $session->title)));
       break;
   }
@@ -1292,9 +1292,9 @@ function sessions_attendees($nid) {
 SELECT
   DISTINCT(ss.uid) AS uid
 FROM
-  {ccc_session_selection} AS ss
+  {converge_session_selection} AS ss
 JOIN
-  {ccc_ticket_allocation} AS ta ON (ta.uid = ss.uid)
+  {converge_ticket_allocation} AS ta ON (ta.uid = ss.uid)
 JOIN
   {uc_order_products} AS uc_op ON (uc_op.order_product_id = ta.order_product_id)
 JOIN
@@ -1392,8 +1392,8 @@ function sessions_report($nid = 0) {
       nr.nid AS rnid,
       nr.title AS rtitle,
       ctr.field_room_capacity_value AS capacity,
-      COUNT(ccc_ss.uid) AS attendees,
-      ctr.field_room_capacity_value - COUNT(ccc_ss.uid) AS available
+      COUNT(converge_ss.uid) AS attendees,
+      ctr.field_room_capacity_value - COUNT(converge_ss.uid) AS available
     FROM
       {node} AS n
     LEFT JOIN
@@ -1407,7 +1407,7 @@ function sessions_report($nid = 0) {
     LEFT JOIN
       {content_type_room} AS ctr ON (ctr.vid = nr.vid)
     LEFT JOIN
-      {ccc_session_selection} AS ccc_ss ON (ccc_ss.nid = n.nid)
+      {converge_session_selection} AS converge_ss ON (converge_ss.nid = n.nid)
     WHERE
         n.type = 'proposal'
       AND
@@ -1455,21 +1455,21 @@ function sessions_report($nid = 0) {
 function sessions_report_session($proposal) {
 
   $query = "SELECT
-    DISTINCT(ccc_ss.uid) AS uid,
+    DISTINCT(converge_ss.uid) AS uid,
     ctp.field_profile_firstname_value AS firstname,
     ctp.field_profile_surname_value AS surname,
     u.mail AS mail,
-    UNIX_TIMESTAMP(ccc_ss.modified) AS modified
+    UNIX_TIMESTAMP(converge_ss.modified) AS modified
   FROM
-    {ccc_session_selection} AS ccc_ss
+    {converge_session_selection} AS converge_ss
   LEFT JOIN
-    {users} AS u ON (ccc_ss.uid = u.uid)
+    {users} AS u ON (converge_ss.uid = u.uid)
   LEFT JOIN
     {node} AS n ON (n.uid = u.uid AND n.type = 'profile')
   LEFT JOIN
     {content_type_profile} AS ctp ON (ctp.vid = n.vid)
   WHERE
-    ccc_ss.nid = %d";
+    converge_ss.nid = %d";
 
   $data = array();
   $header[] = array('data' => t('Firstname'), 'field' => 'firstname');

@@ -375,7 +375,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
           // order_product_ids associated with this order.
           //
           if (!in_array($order->order_status, sessions_valid_order())) {
-            db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $order->order_product_id);
+            db_query("DELETE FROM {converge_ticket_allocation} WHERE order_product_id = %d", $order->order_product_id);
             continue;
           }
 
@@ -415,7 +415,7 @@ function register_user($op, &$edit, &$account, $category = NULL) {
 
     case 'delete':
       drupal_set_message(t('The user\'s ticket allocations have been deleted'));
-      db_query("DELETE FROM {ccc_ticket_allocation} WHERE uid=%d", $account->uid);
+      db_query("DELETE FROM {converge_ticket_allocation} WHERE uid=%d", $account->uid);
       break;
   }
 }
@@ -425,7 +425,7 @@ function register_toggle_attendee_role(&$account) {
 
   // Check for allocated tickets.
   //
-  $ticket = db_result(db_query("SELECT COUNT(ta.order_product_id) FROM {ccc_ticket_allocation} AS ta
+  $ticket = db_result(db_query("SELECT COUNT(ta.order_product_id) FROM {converge_ticket_allocation} AS ta
     JOIN {uc_order_products} AS op ON (ta.order_product_id = op.order_product_id)
     JOIN {uc_orders} AS o ON (op.order_id = o.order_id)
     WHERE o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
@@ -527,7 +527,7 @@ function register_get_orders($uid) {
     ON uco.order_id = ucop.order_id
     INNER JOIN {node} n
     ON n.nid = ucop.nid
-    LEFT JOIN {ccc_ticket_allocation} cccta
+    LEFT JOIN {converge_ticket_allocation} cccta
     ON ucop.order_product_id = cccta.order_product_id
     WHERE (uco.uid = %d OR cccta.uid = %d)
     AND uco.order_status IN ('pending', 'completed', 'payment_received', 'processing')
@@ -578,7 +578,7 @@ function register_get_orders($uid) {
 function register_get_ticketholders($order_product) {
   $result = db_query("
     SELECT u.uid, u.name, u.mail, u.status, cccta.order_product_id, n.title
-    FROM {ccc_ticket_allocation} cccta
+    FROM {converge_ticket_allocation} cccta
     INNER JOIN {users} u
     ON cccta.uid = u.uid
     LEFT JOIN node n
@@ -626,7 +626,7 @@ function register_tickets_form(&$form_state, $user, $order_product_id = FALSE) {
     // $form[$key]['title']['#value'] = '<h2>' . check_plain($order->title) . '</h2>';
     $form['items'][$key]['status']['#value'] = '<p><strong>Order ID:</strong> ' . $order->order_id . '. Status: ' . $order->order_status . '</p>';
     $form['items'][$key]['tickets']['#value'] = '<p><strong>Number of tickets:</strong> ' . $order->qty . '</p>';
-    if (!variable_get('ccc_register_allow_prepay_allocation', TRUE) && $order->order_status != 'completed') {
+    if (!variable_get('converge_register_allow_prepay_allocation', TRUE) && $order->order_status != 'completed') {
       $form['items'][$key]['warning']['#value'] = '<p class="error">You may not allocate tickets until the order is completed.</p>';      
     }
     else {
@@ -787,7 +787,7 @@ function register_tickets_form_submit($form, &$form_state) {
 
     // Remove all current allocations for this order_product_id.
     //
-    $sql = "DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d";
+    $sql = "DELETE FROM {converge_ticket_allocation} WHERE order_product_id = %d";
     db_query($sql, $order['order_product_id']);
 
     if ($order['myself']) {
@@ -825,7 +825,7 @@ function register_tickets_form_submit($form, &$form_state) {
  * This returns an order_id of any 1 order (should only ever be one) that a user is allocated to.
  */
 function register_check_user_allocated_nid($nid, $uid) {
-  $found = db_result(db_query("SELECT ucop.order_id FROM {ccc_ticket_allocation} cccta INNER JOIN {uc_order_products} ucop ON ucop.order_product_id = cccta.order_product_id WHERE ucop.nid = %d AND cccta.uid = %d LIMIT 0, 1", $nid, $uid));
+  $found = db_result(db_query("SELECT ucop.order_id FROM {converge_ticket_allocation} cccta INNER JOIN {uc_order_products} ucop ON ucop.order_product_id = cccta.order_product_id WHERE ucop.nid = %d AND cccta.uid = %d LIMIT 0, 1", $nid, $uid));
   return $found;
 }
 
@@ -841,7 +841,7 @@ function register_allocate_ticket($order_product_id, $uid) {
     $found = register_check_user_allocated_nid($nid, $uid);
     $victim = user_load($uid);
     if (!$found) {
-      db_query("INSERT INTO {ccc_ticket_allocation} (order_product_id, uid) VALUES (%d, %d)", $order_product_id, $uid);
+      db_query("INSERT INTO {converge_ticket_allocation} (order_product_id, uid) VALUES (%d, %d)", $order_product_id, $uid);
       register_toggle_attendee_role(&$victim);
       return TRUE;
     } else {
@@ -858,7 +858,7 @@ function register_allocate_ticket($order_product_id, $uid) {
 // This may be moved to settings and configurations.
 
 /**
- * Variable called 'ccc_register_allow_prepay_allocation'
+ * Variable called 'converge_register_allow_prepay_allocation'
  */
 
 /**
@@ -894,7 +894,7 @@ function register_order($op, $order, $a) {
     //
     case 'delete':
       foreach ($order->products as $product) {
-        db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id=%d", $product->order_product_id);
+        db_query("DELETE FROM {converge_ticket_allocation} WHERE order_product_id=%d", $product->order_product_id);
       }
       drupal_set_message(t('Deleted ticket allocations associated with order !order_id.', array('!order_id' => $order->order_id)));
       break;
@@ -911,14 +911,14 @@ function register_order($op, $order, $a) {
 
     // If we have an old order, check if an identical product nid is available in the the
     // current order and if its order_product_id is higher. If so, assume the order was updated
-    // and update the ccc_ticket_allocation table with the new order_product_id.
+    // and update the converge_ticket_allocation table with the new order_product_id.
     //
     case 'save':
       // If the order is no longer valid, remove its allocations.
       //
       if (!in_array($order->order_status, sessions_valid_order())) {
         foreach ($order->products as $id => $product) {
-           db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $product->order_product_id);
+           db_query("DELETE FROM {converge_ticket_allocation} WHERE order_product_id = %d", $product->order_product_id);
            // drupal_set_message(t('Removed ticket allocations for !status !ticket on this order.', array('!status' => $order->order_status, '!ticket' => $product->title)));
         }
       }
@@ -938,13 +938,13 @@ function register_order($op, $order, $a) {
               // try to guess which user gets to keep their allocation!
               //
               if ($product->qty < $p->qty) {
-                db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $product->order_product_id);
+                db_query("DELETE FROM {converge_ticket_allocation} WHERE order_product_id = %d", $product->order_product_id);
                 drupal_set_message(t('Removed ticket allocations for modified !ticket on this order.', array('!ticket' => $product->title)));
               }
               // Stayed the same, just update.
               //
               else {
-                db_query("UPDATE {ccc_ticket_allocation} SET order_product_id = %d WHERE order_product_id = %d", $product->order_product_id, $p->order_product_id);
+                db_query("UPDATE {converge_ticket_allocation} SET order_product_id = %d WHERE order_product_id = %d", $product->order_product_id, $p->order_product_id);
                 drupal_set_message(t('Updated ticket allocations for !ticket on this order.', array('!ticket' => $product->title)));
               }
             }
@@ -956,7 +956,7 @@ function register_order($op, $order, $a) {
         //
         // $missing = array_diff_key($old_products, $new_products);
         // foreach ($missing as $product) {
-        //   db_query("DELETE FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $product['order_product_id']);
+        //   db_query("DELETE FROM {converge_ticket_allocation} WHERE order_product_id = %d", $product['order_product_id']);
         //   drupal_set_message(t('Removed ticket allocations for deleted !ticket on this order.', array('!ticket' => $product['title'])));
         // }
       }
@@ -1053,9 +1053,9 @@ function register_list_presenter_payment_status() {
     LEFT JOIN
       {users} AS u ON (cfpp.field_proposal_presenters_uid = u.uid)
     LEFT JOIN
-      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.uid = cfpp.field_proposal_presenters_uid)
+      {converge_ticket_allocation} AS converge_ta ON (converge_ta.uid = cfpp.field_proposal_presenters_uid)
     LEFT JOIN
-      {uc_order_products} AS uc_op ON (ccc_ta.order_product_id = uc_op.order_product_id)
+      {uc_order_products} AS uc_op ON (converge_ta.order_product_id = uc_op.order_product_id)
     LEFT JOIN
       {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
     LEFT JOIN
@@ -1179,7 +1179,7 @@ function register_prizedraw($limit = 10) {
 
   // Get all users who have a completed or payment received ticket allocated to them.
   $query = "SELECT
-      ccc_ta.uid AS uid,
+      converge_ta.uid AS uid,
       uc_op.order_id AS order_id,
       uc_op.order_product_id,
       uc_o.order_status AS order_status,
@@ -1192,11 +1192,11 @@ function register_prizedraw($limit = 10) {
     JOIN
       {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
     JOIN
-      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
+      {converge_ticket_allocation} AS converge_ta ON (converge_ta.order_product_id=uc_op.order_product_id)
     JOIN
       {node} AS n ON (uc_op.nid=n.nid)
     LEFT JOIN
-      {node} AS np ON (ccc_ta.uid=np.uid AND np.type='profile')
+      {node} AS np ON (converge_ta.uid=np.uid AND np.type='profile')
     LEFT JOIN
       {content_type_profile} AS ctp ON(np.nid=ctp.nid)
     WHERE
@@ -1204,9 +1204,9 @@ function register_prizedraw($limit = 10) {
       AND
         uc_op.nid IN (114,126,1590,4940,4046,4044)
       AND
-        ccc_ta.uid NOT IN (SELECT uid FROM {users_roles} WHERE rid IN (24,20,7,26,12,5,28,22))
+        converge_ta.uid NOT IN (SELECT uid FROM {users_roles} WHERE rid IN (24,20,7,26,12,5,28,22))
     GROUP BY
-      ccc_ta.uid
+      converge_ta.uid
     ORDER BY
       RAND()
     LIMIT
@@ -1275,20 +1275,20 @@ function register_product_filter_form($form_state) {
 function register_list_attendees() {
 
   $count_query = "SELECT
-      COUNT(DISTINCT(ccc_ta.uid))
+      COUNT(DISTINCT(converge_ta.uid))
     FROM
       {uc_order_products} AS uc_op
     JOIN
       {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
     JOIN
-      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
+      {converge_ticket_allocation} AS converge_ta ON (converge_ta.order_product_id=uc_op.order_product_id)
     JOIN
       {node} AS n ON (uc_op.nid=n.nid)
     WHERE
       uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')";
 
   $select_query = "SELECT
-      ccc_ta.uid AS uid,
+      converge_ta.uid AS uid,
       uc_op.order_id AS order_id,
       uc_op.order_product_id,
       uc_o.order_status AS order_status,
@@ -1300,19 +1300,19 @@ function register_list_attendees() {
     JOIN
       {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
     JOIN
-      {ccc_ticket_allocation} AS ccc_ta ON (ccc_ta.order_product_id=uc_op.order_product_id)
+      {converge_ticket_allocation} AS converge_ta ON (converge_ta.order_product_id=uc_op.order_product_id)
     JOIN
-      {users} AS u ON (u.uid = ccc_ta.uid)
+      {users} AS u ON (u.uid = converge_ta.uid)
     JOIN
       {node} AS n ON (uc_op.nid=n.nid)
     LEFT JOIN
-      {node} AS np ON (ccc_ta.uid=np.uid AND np.type='profile')
+      {node} AS np ON (converge_ta.uid=np.uid AND np.type='profile')
     LEFT JOIN
       {content_type_profile} AS ctp ON(np.nid=ctp.nid)
     WHERE
       uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
     GROUP BY
-      ccc_ta.uid
+      converge_ta.uid
     ORDER BY
       ctp.field_profile_surname_value ASC,
       ctp.field_profile_firstname_value ASC";
@@ -1363,7 +1363,7 @@ function register_list_overview() {
 
   // Number of distinct users with a ticket of any kind allocated to them.
   //
-  $attendees = db_result(db_query("SELECT COUNT(DISTINCT(uid)) FROM {ccc_ticket_allocation}"));
+  $attendees = db_result(db_query("SELECT COUNT(DISTINCT(uid)) FROM {converge_ticket_allocation}"));
   $output .= '<h3>Overview</h3>';
   $output .= t('<p>There are !num distinct people who have a ticket of any kind allocated to them. Note that this may include allocations from cancelled tickets!', array('!num' => $attendees));
   $output .= '<hr size="1" />';
@@ -1388,7 +1388,7 @@ function register_list_overview() {
   // Allocated tickets.
   //
   $data = array();
-  $query = "SELECT DISTINCT(uc_op.nid) AS nid, uc_op.title AS title, COUNT(ccc_ta.uid) AS allocated FROM {uc_order_products} AS uc_op JOIN {ccc_ticket_allocation} AS ccc_ta ON (uc_op.order_product_id = ccc_ta.order_product_id) WHERE uc_op.nid <> 0 GROUP BY uc_op.nid";
+  $query = "SELECT DISTINCT(uc_op.nid) AS nid, uc_op.title AS title, COUNT(converge_ta.uid) AS allocated FROM {uc_order_products} AS uc_op JOIN {converge_ticket_allocation} AS converge_ta ON (uc_op.order_product_id = converge_ta.order_product_id) WHERE uc_op.nid <> 0 GROUP BY uc_op.nid";
   $result = db_query($query);
 
   while($row = db_fetch_array($result)) {
@@ -1414,7 +1414,7 @@ LEFT JOIN {content_type_proposal} AS ctp ON (ctp.vid = n.vid) WHERE ctp.field_pr
 
   // Presenters who have an allocated ticket.
   //
-  $presenters_ticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp JOIN {ccc_ticket_allocation} AS ccc_ta ON (cfpp.field_proposal_presenters_uid = ccc_ta.uid)
+  $presenters_ticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp JOIN {converge_ticket_allocation} AS converge_ta ON (cfpp.field_proposal_presenters_uid = converge_ta.uid)
 LEFT JOIN {node} AS n ON (n.nid = cfpp.nid)
 LEFT JOIN {content_type_proposal} AS ctp ON (ctp.vid = n.vid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')"));
   $data[] = array(
@@ -1428,7 +1428,7 @@ LEFT JOIN {content_type_proposal} AS ctp ON (ctp.vid = n.vid) WHERE ctp.field_pr
   $presenters_noticket = db_result(db_query("SELECT COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM {content_field_proposal_presenters} AS cfpp
 LEFT JOIN {node} AS n ON (n.nid = cfpp.nid)
 LEFT JOIN {content_type_proposal} AS ctp ON (ctp.vid = n.vid) WHERE ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
-AND cfpp.field_proposal_presenters_uid NOT IN (SELECT uid FROM {ccc_ticket_allocation})"));
+AND cfpp.field_proposal_presenters_uid NOT IN (SELECT uid FROM {converge_ticket_allocation})"));
   $data[] = array(
     'Presenters without allocated ticket',
     $presenters_noticket,
@@ -1496,7 +1496,7 @@ WHERE
 
     // Check if this order has unallocated tickets.
     //
-    $allocated = db_result(db_query("SELECT COUNT(uid) FROM {ccc_ticket_allocation} WHERE order_product_id = %d", $row['order_product_id']));
+    $allocated = db_result(db_query("SELECT COUNT(uid) FROM {converge_ticket_allocation} WHERE order_product_id = %d", $row['order_product_id']));
     if ($allocated != $row['qty']) {
       $row[] = l('unallocated', 'user/' . $row['uid'] . '/tickets');
     }
@@ -1529,7 +1529,7 @@ SELECT
   pro.field_profile_position_value AS position,
   pro.field_profile_organisation_value AS organisation
 FROM
-  {ccc_ticket_allocation} AS ta
+  {converge_ticket_allocation} AS ta
 LEFT JOIN
   {node} AS n ON (n.uid = ta.uid AND n.type = 'profile')
 LEFT JOIN
@@ -1596,7 +1596,7 @@ function ordinalise($number) {
  */
 function register_get_tickets($uid) {
   $query = "SELECT DISTINCT(uc_op.nid), n.title FROM {uc_order_products} AS uc_op JOIN 
-    {ccc_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+    {converge_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
     JOIN {node} AS n ON (uc_op.nid = n.nid)
     WHERE cccta.uid=%d";
   $result = db_query($query, $uid);
@@ -1609,29 +1609,29 @@ function register_get_tickets($uid) {
 // Skeleton code for mailmerge.
 //
 // Presenters who haven't registered
-//   (proposal accepted and uid in proposal_presenters and not in uc_orders and not in ccc_ticket_allocation)
+//   (proposal accepted and uid in proposal_presenters and not in uc_orders and not in converge_ticket_allocation)
 // Presenters who have registered, but not allocated their ticket
-//   (proposal accepted and uid in proposal_presenters and in uc_orders and not in ccc_ticket_allocation)
+//   (proposal accepted and uid in proposal_presenters and in uc_orders and not in converge_ticket_allocation)
 // Presenters who have registered and allocated their ticket, but have not selected sessions
-//   (proposal accepted and uid in proposal_presenters and in ccc_ticket_allocation and not in ccc_session_selection)
+//   (proposal accepted and uid in proposal_presenters and in converge_ticket_allocation and not in converge_session_selection)
 // Users whose order hasn't had its tickets allocated yet
-//   (order_product_id not in ccc_ticket_allocation)
+//   (order_product_id not in converge_ticket_allocation)
 // Users who haven't got a ticket allocated to them
-//   (uid not in ccc_ticket_allocation)
+//   (uid not in converge_ticket_allocation)
 // Users who have got a ticket allocated to them
-//   (uid in ccc_ticket_allocation)
+//   (uid in converge_ticket_allocation)
 // Users with tickets who haven't selected sessions yet
-//   (uid in ccc_ticket_allocation and not in ccc_session_selection)
+//   (uid in converge_ticket_allocation and not in converge_session_selection)
 // Users with tickets who have selected sessions
-//   (uid in ccc_ticket_allocation and in ccc_session_selection)
+//   (uid in converge_ticket_allocation and in converge_session_selection)
 // Users with accessibility or dietary needs
 //   (data in content_type_profile fields)
 
 // u.uid, u.mail, pro.firstname, pro.surname
 //   proposal, scheduled
 //   link to pro
-//   link to ccc_ta
-//   link to ccc_ss
+//   link to converge_ta
+//   link to converge_ss
 
 /**
  * Wrapper to display badge data.
@@ -1710,7 +1710,7 @@ LEFT JOIN
 LEFT JOIN
   {content_type_profile} AS pro ON (n.nid = pro.nid)
 LEFT JOIN
-  {ccc_ticket_allocation} AS ta ON (ta.uid = u.uid)
+  {converge_ticket_allocation} AS ta ON (ta.uid = u.uid)
 LEFT JOIN
   {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
 LEFT JOIN
@@ -1774,7 +1774,7 @@ WHERE
 SELECT 
   uc_op.nid, uc_op.title, uc_o.order_id
 FROM
-  {ccc_ticket_allocation} AS ta
+  {converge_ticket_allocation} AS ta
 LEFT JOIN
   {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
 LEFT JOIN
@@ -1880,7 +1880,7 @@ LEFT JOIN
 LEFT JOIN
   {content_type_profile} AS pro ON (n.nid = pro.nid)
 LEFT JOIN
-  {ccc_ticket_allocation} AS ta ON (ta.uid = u.uid)
+  {converge_ticket_allocation} AS ta ON (ta.uid = u.uid)
 LEFT JOIN
   {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
 LEFT JOIN
@@ -1928,7 +1928,7 @@ WHERE
 SELECT 
   uc_op.nid, uc_op.title
 FROM
-  {ccc_ticket_allocation} AS ta
+  {converge_ticket_allocation} AS ta
 LEFT JOIN
   {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id)
 LEFT JOIN
@@ -2251,7 +2251,7 @@ function register_export_badges_format_dinners($account) {
         else {
           // Does the uid have *any* other tickets assigned to them?
           //
-          $query = "SELECT COUNT(uc_op.nid) AS num FROM {ccc_ticket_allocation} AS ta JOIN {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id) JOIN {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id) WHERE ta.uid = %d AND uc_op.nid <> %d AND uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')";
+          $query = "SELECT COUNT(uc_op.nid) AS num FROM {converge_ticket_allocation} AS ta JOIN {uc_order_products} AS uc_op ON (ta.order_product_id = uc_op.order_product_id) JOIN {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id) WHERE ta.uid = %d AND uc_op.nid <> %d AND uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')";
           $num = db_result(db_query($query, $ticket->uid, DINNER_TICKET_NID));
 
           // If the uid we're looking at does NOT have any other tickets assigned to it, we need

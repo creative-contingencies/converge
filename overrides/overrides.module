@@ -283,25 +283,5 @@ function overrides_user($type, &$edit, &$account, $category = NULL) {
  */
 function overrides_fullname($uid) {
   $profile = content_profile_load('profile', $uid);
-  return ccc_strtot($profile->field_profile_firstname[0]['value'] . ' ' . $profile->field_profile_surname[0]['value']);
-}
-
-/**
- * Titlecase function.
- */
-function ccc_strtot($s, $only_if_single_case = FALSE) {
-  $smallwordsarray = array( 'of','a','the','and','an','or','nor','but','is','if','then','else','when', 'at','from','by','on','off','for','in','out','over','to','into','with' );
-
-  if($only_if_single_case) {
-    if(strtolower($s) != $s && strtoupper($s) != $s)
-      return $s;
-  }
-
-  $words = explode(' ', $s);
-
-  foreach($words as $key => $word) {
-    if (!$key || !in_array($word, $smallwordsarray))
-      $words[$key] = ucwords($word);
-  }
-  return implode(' ', $words);
+  return $profile->field_profile_firstname[0]['value'] . ' ' . $profile->field_profile_surname[0]['value'];
 }

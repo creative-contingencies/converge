@@ -126,7 +126,7 @@ function program_block_related_proposals_by_nid($nid) {
       AND ctp.field_proposal_status_value IN ('accepted', 'accepted_minor_changes')
       AND tn.tid != 42
       AND tn.nid != %d
-      AND n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+      AND n.nid NOT IN (SELECT nid FROM {converge_session_selection} WHERE uid=%d)
     GROUP BY
       tn.tid
     ORDER BY
@@ -136,7 +136,7 @@ function program_block_related_proposals_by_nid($nid) {
 
   $result = db_query($query, $proposal->nid, $user->uid);
   while ($row = db_fetch_array($result)) {
-    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
+    $nodes[] = l($row['title'], 'node/' . $row['nid']);
   }
 
   // Output.
@@ -188,7 +188,7 @@ function program_block_related_keywords_by_term($raw_term) {
       tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid = %d AND
-      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+      n.nid NOT IN (SELECT nid FROM {converge_session_selection} WHERE uid=%d)
     LIMIT 4", $term[0]->vid, $term[0]->tid, $user->uid);
   while ($row = db_fetch_array($result)) {
     $nids[] = $row['nid'];
@@ -250,10 +250,10 @@ function program_block_related_proposals_by_term($raw_term) {
       tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid = %d AND
-      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+      n.nid NOT IN (SELECT nid FROM {converge_session_selection} WHERE uid=%d)
     LIMIT 4", $term[0]->vid, $term[0]->tid, $user->uid);
   while ($row = db_fetch_array($result)) {
-    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
+    $nodes[] = l($row['title'], 'node/' . $row['nid']);
   }
 
   // Output.
@@ -331,12 +331,12 @@ function program_block_suggested_sessions() {
       tnt.tid IS NULL AND
       td.vid = %d AND
       tn.tid IN (" . implode(',', $terms) . ") AND
-      n.nid NOT IN (SELECT nid FROM {ccc_session_selection} WHERE uid=%d)
+      n.nid NOT IN (SELECT nid FROM {converge_session_selection} WHERE uid=%d)
     GROUP BY
       tn.nid
     ORDER BY " . $order . " " . $limit, $vid, $user->uid);
   while ($row = db_fetch_array($result)) {
-    $nodes[] = l(ccc_strtot($row['title']), 'node/' . $row['nid']);
+    $nodes[] = l($row['title'], 'node/' . $row['nid']);
   }
 
   // Output.
