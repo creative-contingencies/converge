@@ -1,6 +1,6 @@
 name = Program tidbits
 description = Provides blocks with proposal and keyword suggestions for users.
-package = " Creative Contingencies Conference"
+package = "Converge"
 core = 6.x
 
 dependencies[] = proposal
