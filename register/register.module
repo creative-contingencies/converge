@@ -30,14 +30,14 @@ function register_nodeapi(&$node, $op) {
 function register_menu() {
   $items = array();
 
-  $items['admin/settings/register'] = array(
-    'title' => 'CCC Registration Settings',
+  $items['admin/converge/register'] = array(
+    'title' => 'Registration Settings',
     'description' => 'Change configuration settings for Registration.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('register_admin_settings'),
     'access callback' => 'user_access',
     'access arguments' => array('view all orders'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   $items['admin/store/reports/custom/attendees'] = array(

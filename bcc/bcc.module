@@ -7,13 +7,13 @@ function bcc_menu() {
   $items = array();
 
   // Admin page.
-  $items['admin/settings/bcc'] = array(
-    'title' => 'CCC BCC Settings',
+  $items['admin/converge/bcc'] = array(
+    'title' => 'BCC Settings',
     'description' => 'Change configuration for BCC',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bcc_admin_settings'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   return $items;

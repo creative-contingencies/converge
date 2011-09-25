@@ -59,14 +59,14 @@ function sessions_menu() {
   $items = array();
 
  // Admin page.
-  $items['admin/settings/sessions'] = array(
-    'title' => 'CCC Session Selection Settings',
+  $items['admin/converge/sessions'] = array(
+    'title' => 'Session Selection Settings',
     'description' => 'Change configuration for Session Selection',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sessions_admin_settings'),
     'access callback' => 'user_access',
     'access arguments' => array('administer session selection'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   // Grid to see which sessions are full.

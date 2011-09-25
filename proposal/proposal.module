@@ -14,13 +14,13 @@ function proposal_menu() {
   $items = array();
 
   // Admin page.
-  $items['admin/settings/proposal'] = array(
-    'title' => 'CCC Proposal Settings',
+  $items['admin/converge/proposal'] = array(
+    'title' => 'Proposal Settings',
     'description' => 'Change configuration and email templates for Proposals',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('proposal_admin_settings'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   // Handler for the magic URL to add a user to a proposal.
