@@ -63,7 +63,7 @@ function proposal_menu() {
  * Implements hook_menu_alter()
  */
 function proposal_menu_alter(&$items) {
-  dpm($items['node/add/proposal']);
+  // Override the access handler for proposal node creation.
   $items['node/add/proposal']['access callback'] = 'proposal_access';
   unset($items['node/add/proposal']['access arguments']);
 }
