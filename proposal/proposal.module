@@ -338,6 +338,10 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
 
   if ($form_id == 'proposal_node_form') {
 
+    // Relabel 'taxonomy' as something else.
+    $form['taxonomy']['#title'] = t('Session Details');
+
+
     // Hide the stream taxonomy if you're not an admin or papers chair.
     if (!in_array('site administrator', $user->roles) || !in_array('papers chair',$user->roles) || $user->uid != 1) {
       $js = "
@@ -350,6 +354,10 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     if ((variable_get('proposal_c4p_open', 0) == 0) && !$form['title']['#default_value']) {
       drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
     }
+  }
+
+  if ($form_id == 'proposal_node_form') {
+    $form['body_field']['body']['#required'] = TRUE;
   }
 
   if ($form_id == 'proposal_node_form' && empty($form['#node']->nid) && $user->uid < 1) {
@@ -434,21 +442,21 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     $form['personal']['city'] = array(
       '#type' => 'textfield',
       '#title' => t('Town, City or Suburb'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#description' => t(''),
     );
 
     $form['personal']['state'] = array(
       '#type' => 'textfield',
       '#title' => t('State, Region or Province'),
-      '#required' => FALSE,
+      '#required' => TRUE,
       '#description' => t(''),
     );
 
     $form['personal']['postcode'] = array(
       '#type' => 'textfield',
       '#title' => t('Postcode'),
-      '#required' => FALSE,
+      '#required' => TRUE,
       '#description' => t(''),
     );
 
@@ -1065,4 +1073,55 @@ function proposal_export_csv($type) {
 
   // Importantly, do not print anything else, just quit, exit and die.
   die();
+}
+
+/**
+ * Implements hook_theme()
+ */
+function proposal_theme() {
+  return array(
+    'filefield_size' => array(
+      'arguments' => array('file' => NULL),
+    ),
+  );
+}
+
+/**
+ * Override the filefield formatter, include the file size as well.
+ */
+function proposal_filefield_file($file) {
+
+  if (empty($file['fid'])) {
+    return '';
+  }
+
+  $path = $file['filepath'];
+  $url = file_create_url($path);
+  $icon = theme('filefield_icon', $file);
+  $size = theme('filefield_size', $file);
+
+  $options = array(
+    'attributes' => array(
+      'type' => $file['filemime'] . '; length=' . $file['filesize'],
+    ),
+  );
+
+  // Use the description as the link text if available.
+  if (empty($file['data']['description'])) {
+    $link_text = $file['filename'];
+  }
+
+  else {
+    $link_text = $file['data']['description'];
+    $options['attributes']['title'] = $file['filename'];
+  }
+
+  return '<div class="filefield-file clear-block">'. $icon . l($link_text, $url, $options) . $size . '</div>';
+}
+
+/**
+ * Helper to pretty-format a file size.
+ */
+function proposal_filefield_size($file) {
+  return '<span class="filefield-size">' . '(' . format_size($file['filesize']) . ')' . '</span>';
 }
