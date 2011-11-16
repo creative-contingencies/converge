@@ -18,6 +18,37 @@ function proposal_install() {
 }
 
 /**
+ * Implements hook_requirements()
+ *
+ * Check that proposal nodes have UUIDs enabled.
+ */
+function proposal_requirements($phase) {
+  $t = get_t();
+
+  $requirements = array(
+    'proposal' => array(
+      'title' => $t('Converge Proposals'),
+      'description' => $t('The UUID module is used to create unique links for presenters and co-presenters.'),
+      'severity' => REQUIREMENT_ERROR,
+    ),
+  );
+
+  if ($phase == 'runtime') {
+    $uuid = variable_get('uuid_automatic_for_nodes', array());
+    if (empty($uuid['proposal'])) {
+      $requirements['proposal']['value'] = $t('Not configured');
+      $requirements['proposal']['description'] = $t('You need to !link to enable automatic UUID generation for proposal nodes.', array('!link' => l('configure the UUID module', 'admin/settings/uuid')));
+    }
+    else {
+      $requirements['proposal']['severity'] = REQUIREMENT_OK;
+      $requirements['proposal']['value'] = $t('Configured');
+    }
+  }
+  return $requirements;
+} 
+
+
+/**
  * Helper to create a taxonomy.
  */
 function _proposal_taxonomy_init() {
