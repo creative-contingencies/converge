@@ -341,7 +341,6 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     // Relabel 'taxonomy' as something else.
     $form['taxonomy']['#title'] = t('Session Details');
 
-
     // Hide the stream taxonomy if you're not an admin or papers chair.
     if (!in_array('site administrator', $user->roles) || !in_array('papers chair',$user->roles) || $user->uid != 1) {
       $js = "
@@ -354,157 +353,71 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     if ((variable_get('proposal_c4p_open', 0) == 0) && !$form['title']['#default_value']) {
       drupal_set_message(t('The call for proposals has closed. Your submission will be added to a waiting list.'), 'warning');
     }
-  }
 
-  if ($form_id == 'proposal_node_form') {
     $form['body_field']['body']['#required'] = TRUE;
-  }
 
-  if ($form_id == 'proposal_node_form' && empty($form['#node']->nid) && $user->uid < 1) {
+    if (empty($form['#node']->nid) && user_is_anonymous()) {
+      // Ask for user info on anonymous submission.
+      $form['user'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Your Details'),
+        '#description' => t('First, please enter your contact details. These details will be used to create a login for you on !site. You will need these details later to access your proposal submission and to register for the conference.', array('!site' => variable_get('site_name', ''))),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#weight' => -100,
+      );
 
-    $form['personal'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Your details'),
-      '#description' => t('Please enter your contact details. These details will be used to create a login on this site.'),
-      '#weight' => -6,
-      '#tree' => TRUE,
-    );
-
-    $form['personal']['login'] = array(
-      '#type' => 'markup',
-      '#value' => '<p>Are you an existing user? Please <a href="/user/login?'.drupal_get_destination().'">login</a> first.',
-    );
-
-    /* This goes into a user, the rest into a profile */
-    $form['personal']['email'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Your email'),
-      '#required' => TRUE,
-      '#description' => t('Please your email address. You will use this to login to the site, so please ensure the address is valid'),
-    );
-
-    $form['personal']['password'] = array(
-      '#type' => 'password',
-      '#title' => t('Choose Password'),
-      '#required' => TRUE,
-      '#description' => t('Please choose a secure password that is not easy to guess. You will use this password to login when you return to this site'),
-    );
-
-    $form['personal']['verifypass'] = array(
-      '#type' => 'password',
-      '#title' => t('Verify Password'),
-      '#required' => TRUE,
-      '#description' => t('Please re-enter the password for verification'),
-    );
-
-    $form['personal']['firstname'] = array(
-      '#type' => 'textfield',
-      '#title' => t('First Name'),
-      '#required' => TRUE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['surname'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Surname or Family Name'),
-      '#required' => TRUE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['organisation'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Organisation or Affiliation'),
-      '#required' => FALSE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['position'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Position'),
-      '#required' => FALSE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['phone'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Phone'),
-      '#required' => FALSE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['address'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Address'),
-      '#required' => FALSE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['city'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Town, City or Suburb'),
-      '#required' => FALSE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['state'] = array(
-      '#type' => 'textfield',
-      '#title' => t('State, Region or Province'),
-      '#required' => TRUE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['postcode'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Postcode'),
-      '#required' => TRUE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['country'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Country'),
-      '#required' => TRUE,
-      '#description' => t(''),
-    );
-
-    $form['personal']['bio'] = array(
-      '#type' => 'textarea',
-      '#title' => t('Bio'),
-      '#required' => TRUE,
-      '#description' => t('Please tell us a bit about yourself, such as relevant experience'),
-    );
-
-    // Perform some extra validation steps.
-    $form['#validate'][] = 'proposal_node_form_validate';
-
-    // Patch in account and profile creation.
-    $form['#submit'] = array('proposal_node_form_submit') + $form['#submit'];
-
-    // Redirect to the user dashboard when submission is done.
-    $form['#redirect'] = url('user', array('absolute' => TRUE));
-  }
-
-  if (empty($form['#node']->nid) && $user->uid > 0 && isset($_SESSION['proposal_node_form_state_values'])) {  
-    $values = unserialize($_SESSION['proposal_node_form_state_values']);
-
-    $form['title']['#default_value'] = $values['title'];
-    $form['body_field']['body']['#default_value'] = $values['body'];
-
-    foreach($values['taxonomy'] as $taxonomy => $value) {
-      $multi_taxonomy_counter = 0;
-      if(!is_array($value)) {
-        $form['taxonomy'][$taxonomy]['#default_value'] = $value;
+      $form['user']['register'] = user_register();
+      $form['user']['register']['#tree'] = TRUE;
+      if (module_exists('logintoboggan')) {
+        $form['user']['register']['name']['#access'] = FALSE;
       }
-      else {
-        $tags = array();
-        $multi_taxonomy_counter++;
-        foreach($value as $key => $val) {
-          $tags[] = $val;
+      unset($form['user']['register']['destination']);
+      unset($form['user']['register']['submit']);
+
+      if (module_exists('content_profile')) {
+        $form['user']['profile'] = proposal_user_profile_form();
+        $form['user']['profile']['#tree'] = TRUE;
+      }
+
+      // Perform some extra validation steps.
+      array_unshift($form['#validate'], 'proposal_node_form_validate');
+      $form['#validate'][] = 'proposal_user_profile_form_validate';
+
+      // Patch in account and profile creation.
+      array_unshift($form['#submit'], 'proposal_node_form_submit');
+  
+      // Redirect to the user dashboard when submission is done.
+      $form['#redirect'] = url('user', array('absolute' => TRUE));
+    } // endif empty($form['#node']->nid) && user_is_anonymous()
+
+    else if (empty($form['#node']->nid) && user_is_logged_in() && isset($_SESSION['proposal_node_form_state_values'])) {
+      $values = unserialize($_SESSION['proposal_node_form_state_values']);
+
+      $form['title']['#default_value'] = $values['title'];
+      $form['body_field']['body']['#default_value'] = $values['body'];
+
+      foreach($values['taxonomy'] as $taxonomy => $value) {
+        $multi_taxonomy_counter = 0;
+        if(!is_array($value)) {
+          $form['taxonomy'][$taxonomy]['#default_value'] = $value;
         }
-        $form['taxonomy'][$taxonomy][$multi_taxonomy_counter]['#default_value'] = implode(', ', $tags);
+        else {
+          $tags = array();
+          $multi_taxonomy_counter++;
+          foreach($value as $key => $val) {
+            $tags[] = $val;
+          }
+          $form['taxonomy'][$taxonomy][$multi_taxonomy_counter]['#default_value'] = implode(', ', $tags);
+        }
       }
-    }
-  }
+    } // end elseif
+
+    // Hide the 'presenters' userreference field.
+    $form['field_proposal_presenters']['#access'] = FALSE;
+    $form['field_proposal_copresenters']['field_proposal_copresenters_add_more']['#value'] = t('Add another co-presenter');
+    $form['#validate'][] = 'proposal_node_form_copresenters_validate';
+  } // end if form_id node_proposal_form
 }
 
 /*
@@ -518,26 +431,36 @@ function proposal_node_form_validate($form, &$form_state) {
     unset($_SESSION['proposal_node_form_state_values']);
   }
 
-  // Check password.
-  if($form_state['values']['personal']['password'] != $form_state['values']['personal']['verifypass']) {
-    form_set_error('personal][password', t('The passwords do not match.'));
-    form_set_error('personal][verifypass', '');
-    unset($form_state['values']['personal']['password']);
-    unset($form_state['values']['personal']['verifypass']);
+  $account = user_load(array('mail' => $form_state['values']['register']['mail']));
+  if (!empty($account)) {
+    drupal_set_message(t('The email address %mail is already in use. Please !login first', array('%mail' => $form_state['values']['register']['mail'], '!login' => l('login', 'user'))), 'warning');
+    form_set_error('mail', '');
+    $_SESSION['proposal_node_form_state_values'] = serialize($form_state['values']);
   }
 
-  // Check email.
-  $email_valid = valid_email_address($form_state['values']['personal']['email']);
-  if(!empty($form_state['values']['personal']['email']) && !$email_valid) {
-    form_set_error('personal][email', t('Please enter a valid email address.'));
-  } else if(strpos(strtolower($email), 'edumail.edu.au') !== FALSE) {
-    form_set_error('personal][email', t('Please enter a valid email address. Edumail addresses end in .gov.edu.au.'));
-  } else {
-    // Check if email address is already in use; redirect to login if so.
-    $email_exists = db_result(db_query("SELECT COUNT(uid) FROM {users} WHERE mail='%s'", $form_state['values']['personal']['email']));
-    if(!empty($form_state['values']['personal']['email']) && $email_exists) {
-      form_set_error('personal][email', t('This email address is already in use. Please <a href="/user/login?'.drupal_get_destination().'">login</a> before resubmitting'));
-      $_SESSION['proposal_node_form_state_values'] = serialize($form_state['values']);
+  if (!valid_email_address($form_state['values']['register']['mail'])) {
+    form_set_error('mail', t('You must enter a valid email address.'));
+  }
+  if(strpos(strtolower($form_state['values']['register']['mail']), 'edumail.edu.au') !== FALSE) {
+    form_set_error('mail', t('You must enter a valid email address. Edumail addresses should end in .gov.edu.au.'));
+  }
+
+  if (module_exists('logintoboggan')) {
+    $num = variable_get('logintoboggan_minimum_password_length', 0);
+    if (!empty($num) && strlen($form_state['values']['register']['pass']) < $num) {
+      form_set_error('pass', t('The password is too short: it must be at least %num characters.', array('%num' => $num)));
+    }
+  }
+}
+
+/**
+ * Check the co-presenter fields.
+ */
+function proposal_node_form_copresenters_validate($form, &$form_state) {
+  // Check what's in the co-presenter fields.
+  foreach ($form_state['values']['field_proposal_copresenters'] as $field) {
+    if (is_array($field) && !empty($field['value']) && !valid_email_address($field['value'])) {
+      form_set_error($field['_error_element'], t('%mail is not a valid email address.', array('%mail' => $field['value'])));
     }
   }
 }
@@ -555,86 +478,54 @@ function proposal_node_form_submit($form, &$form_state) {
   global $language;
 
   // If we check here, we can never accidentally log the user out.
-  if (empty($form['#node']->nid) && $user->uid < 1) {
+  if (empty($form['#node']->nid) && (empty($user->uid))) {
 
-    /*
-     * Create a new user with submitted information.
-     */
-    $user_attributes = array(
-      'name' => $form_state['values']['personal']['email'],
-      'pass' => $form_state['values']['personal']['password'],
-      'mail' => $form_state['values']['personal']['email'],
-      'roles' => array(DRUPAL_AUTHENTICATED_RID),
-      'status' => TRUE,
-    );
-    $new_user = user_save(
-      new stdClass(),
-      $user_attributes
-    );
+    // Save the form state.
+    $saved_state = $form_state;
 
-    /*
-     * And create a new profile, which will be associated with this user.
-     */
-    $profile_attributes = array(
-      'nid' => NULL, // NULL creates a new node.
-      'title' => $new_user->name .'\'s Profile',
-      'body' => NULL, // Defaults to no body.
-      'type' => 'profile',
-      'teaser' => NULL,
-      'log' => '',
-      'created' => '',
-      'format' => FILTER_FORMAT_DEFAULT,
-      'uid' => $new_user->uid,
-      'field_profile_firstname' => array(array('value' => $form_state['values']['personal']['firstname'])),
-      'field_profile_surname' => array(array('value' => $form_state['values']['personal']['surname'])),
-      'field_profile_organisation' => array(array('value' => $form_state['values']['personal']['organisation'])),
-      'field_profile_position' => array(array('value' => $form_state['values']['personal']['position'])),
-      'field_profile_phone' => array(array('value' => $form_state['values']['personal']['phone'])),
-      'field_profile_address' => array(array('value' => $form_state['values']['personal']['address'])),
-      'field_profile_city' => array(array('value' => $form_state['values']['personal']['city'])),
-      'field_profile_state' => array(array('value' => $form_state['values']['personal']['state'])),
-      'field_profile_postcode' => array(array('value' => $form_state['values']['personal']['postcode'])),
-      'field_profile_country' => array(array('value' => $form_state['values']['personal']['country'])),
-      'field_profile_bio' => array( array('value' => $form_state['values']['personal']['bio'])),
-    );
-    $new_profile = (object) $profile_attributes;
-    node_save($new_profile);
+    $form_state['values'] = $saved_state['values']['register'];
+    $form_state['values']['op'] = t('Create new account');
+    $form_state['values']['pass1'] = $form_state['values']['pass2'] = $saved_state['values']['register']['pass'];
+    $form_state['values']['notify'] = 1;
 
-    $params = proposal_content_profile_vars('profile', $new_user->uid);
-
-    // Send an email to the user and tell them about the new account.
-    if (variable_get('proposal_mail_proposal_new_user_notify_send', 1)) {
-      $params['!username'] = $new_user->name;
-      $params['!email'] = $new_user->mail;
-      $params['!password'] = $form_state['values']['personal']['password'];
-
-      // Prepare and send e-mail.
-      drupal_mail('proposal', 'new_user_notify', $new_user->mail, $language, $params);
-      drupal_set_message(t('An e-mail with your login details has been sent to !email.', array('!email' => $new_user->mail)));
+     // If logintoboggan, hide the username.
+    if (module_exists('logintoboggan')) {
+      $form_state['values']['name'] = $saved_state['values']['user']['mail'];
     }
 
+    // Mush in the profile!
+    $form_state['values']['type'] = 'profile';
+    foreach ($saved_state['values']['profile'] as $field => $value) {
+      $form_state['values'][$field] = $value;
+    }
+
+    // Generate the new user as user 1. Then switch.
+    session_save_session(FALSE);
+    $temp_user = $user;
+    $user = user_load(1);
+    drupal_execute('user_register', $form_state);
+
+    session_save_session(TRUE);
+    $user = $form_state['user'];
+
+    $form_state = $saved_state;
+
+    // Create the user's profile node.
+    // $form_state['content_profile_registration']['profile']['node']->uid = $account->uid;
+    // node_save($form_state['content_profile_registration']['profile']['node']);
+
     // Set the new user as owner of this proposal.
-    $form_state['values']['uid'] = $new_user->uid;
+    $form_state['values']['uid'] = $user->uid;
 
     // Add the new user as presenters[0] in this proposal.
-    $form_state['values']['field_proposal_presenters'][0]['uid'] = $new_user->uid;
+    $form_state['values']['field_proposal_presenters'][0]['uid'] = $user->uid;
 
     // If we have a newsletter, subscribe the user.
     //
     if (module_exists('simplenews') && ($tid = variable_get('register_newsletter_tid', 0))) {
-      simplenews_subscribe_user($new_user->mail, $tid, FALSE);
-    }
-
-    // And login as the new user.
-    $user = $new_user;
-
-  }
-  else {
-    if (empty($form_state['values']['field_proposal_presenters'][0]['uid'])) {
-      $form_state['values']['field_proposal_presenters'][0]['uid'] = $form['#node']->uid;
+      simplenews_subscribe_user($user->mail, $tid, FALSE);
     }
   } // endif uid
-
 }
 
 /**
@@ -721,6 +612,11 @@ function proposal_nodeapi(&$node, $op, $a1) {
           drupal_mail('proposal', 'notify_admin', $o->mail, $language, $params);
         }
       }
+      // No break, also run munge if inserting.
+
+    case 'presave':
+      // Munge copresenter strings into actual users.
+      proposal_fix_copresenters($node);
       break;
   }
 }
@@ -774,6 +670,60 @@ function proposal_mail($key, &$message, $params) {
  */
 function proposal_perm() {
   return array("export proposals");
+}
+
+/**
+ * Helper that translates copresenters.
+ */
+function proposal_fix_copresenters(&$node) {
+  // Owner is always co-presenter 0.
+  $node->field_proposal_presenters[0]['uid'] = $node->uid;
+
+  foreach ($node->field_proposal_copresenters as $field) {
+    if (!is_array($field))
+      continue;
+
+    // No value means rmeove the user.
+    if (empty($field['value'])) {
+      unset($node->field_proposal_presenters[($field['_weight']+1)]);
+    }
+    else {
+      // Check if the given email address is associated with an account.
+      $account = user_load(array('mail' => $field['value']));
+      if (!empty($account->uid)) {
+        $node->field_proposal_presenters[($field['_weight']+1)]['uid'] = $account->uid;
+      }
+      else {
+        $name = substr($field['value'], 0, strpos($field['value'], '@'));
+        if (strpos($name, '.') !== FALSE) {
+          $firstname = substr($name, 0, strpos($name, '.'));
+          $surname = substr($name, strpos($name, '.')+1);
+        }
+        else {
+          $firstname = substr($field['value'], 0, strpos($field['value'], '@'));
+          $surname = substr($field['value'], strpos($field['value'], '@')+1);
+        }
+        $random_password = user_password(8);
+        $form_state['values']['mail'] = $field['value'];
+        $form_state['values']['name'] = $field['value'];
+        $form_state['values']['op'] = t('Create new account');
+        $form_state['values']['pass'] = $random_password;
+        $form_state['values']['pass1'] = $random_password;
+        $form_state['values']['pass2'] = $random_password;
+        $form_state['values']['notify'] = 1;
+        $form_state['values']['field_profile_firstname'] = array(array('value' => $firstname));
+        $form_state['values']['field_profile_surname'] = array(array('value' => $surname));
+
+        $temp_user = $user;
+        session_save_session(FALSE);
+        $user = user_load(1);
+        drupal_execute('user_register', $form_state);
+        $user = $temp_user;
+        session_save_session(TRUE);
+        $node->field_proposal_presenters[($field['_weight']+1)]['uid'] = $form_state['user']->uid;
+      }
+    }
+  }
 }
 
 /**
@@ -1084,6 +1034,66 @@ function proposal_theme() {
       'arguments' => array('file' => NULL),
     ),
   );
+}
+
+/**
+ * Return the registration form fields defined by content profile.
+ *
+ * This is straight out of a signup.module patch.
+ */
+function proposal_user_profile_form() {
+  require_once drupal_get_path('module', 'node') .'/node.pages.inc';
+  $default_types = content_profile_get_types('names', 'registration_use');
+  $form = array();
+  foreach ($default_types as $type => $typename) {
+    $form_state = array();
+    // Fake a node here so that content_profile doesn't redirect.
+    $form_state['node'] = array('nid' => FALSE);
+    content_profile_registration_add_profile_form($type, $form, $form_state);
+  }
+  if (empty($form['#field_info'])) {
+    return;
+  }
+
+  $new_form = array();
+  foreach ($form['#field_info'] as $field => $value) {
+    $new_form[$field] = $form[$field];
+  }
+
+  $extras = array(
+    '#field_info', '#pre_render', '#content_profile_weights', '#attributes', 
+  );
+  foreach ($extras as $key) {
+    $new_form[$key] = $form[$key];
+  }
+
+  return $new_form;
+}
+
+function proposal_user_profile_form_validate($form, &$form_state) {
+  require_once drupal_get_path('module', 'node') .'/node.pages.inc';
+
+  foreach (content_profile_get_types('names', 'registration_use') as $type => $typename) {
+    $node = (object)$form_state['values']['profile'][$type];
+    $node->type = $type;
+    node_object_prepare($node);
+
+    // Make sure there is no user name so we can node_validate
+    unset($node->name);
+
+    if (!in_array('other', content_profile_get_settings($type, 'registration_hide'))) {
+      node_validate($node, $form['user']['profile']);
+    }
+    elseif (module_exists('content')) {
+      content_validate($node);
+    }
+
+    $form_state['values']['profile']['content_profile_registration'][$type]['node'] = $node;
+  }
+  // Remove our added values
+  foreach ($form['user']['profile']['#content_profile_weights'] as $key => $weight) {
+    _content_profile_registration_remove_values($key, $form['user']['profile'][$key], $form_state);
+  }
 }
 
 /**

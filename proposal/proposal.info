@@ -3,6 +3,7 @@ description = Users submit proposals, we need to generate a user account for ano
 package = "Converge"
 core = 6.x
 
+dependencies[] = converge
 dependencies[] = content
 dependencies[] = content_permissions
 dependencies[] = logintoboggan
