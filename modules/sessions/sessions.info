@@ -2,4 +2,5 @@ name = Session Selection
 description = This module implements session selection. Attendees choose which sessions they want to attend.
 package = "Converge"
 core = 6.x
-dependencies[] = register
+dependencies[] = proposal
+dependencies[] = uc_signup
