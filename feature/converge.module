@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * Implements hook_menu()
+ */
+function converge_menu() {
+  $items = array();
+  $items['admin/converge'] = array(
+    'title' => 'Converge',
+    'description' => 'Administer converge settings.',
+    'page callback' => 'converge_admin',
+    'access callback' => 'user_perm',
+    'access arguments' => array('administer converge'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'converge.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_perm()
+ */
+function converge_perm() {
+  return array('administer converge');
+}
+
+include_once('converge.features.inc');
