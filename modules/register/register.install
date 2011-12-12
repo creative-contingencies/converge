@@ -1,52 +1,17 @@
 <?php
-
 /**
- * Implementation of hook_install().
+ * Implements hook_install()
  */
 function register_install() {
-  drupal_install_schema('register');
+  register_update_6100();
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_update_N()
+ *
+ * Make sure we run AFTER uc_signup. This is needed for hook_order().
  */
-function register_uninstall() {
-  drupal_uninstall_schema('register');
-}
-
-/**
- * Implementation of hook_schema().
- */
-function register_schema() {
-  // This field allows us to associate users with ticket items in the system.
-  $schema = array();
-
-  $schema['converge_ticket_allocation'] = array(
-    'description' => t('Associate users directly with event line items in orders.'),
-    'fields' => array(
-      'order_product_id' => array(
-        'description' => t('Unique product line item. Remote key: uc_order_products.order_product_id'),
-        'type' => 'int',
-        'not null' => TRUE,
-        'disp-width' => '11',
-      ),
-      'uid' => array(
-        'description' => t('User ID'),
-        'type' => 'int',
-        'not null' => TRUE,
-        'disp-width' => '11',
-      ),
-    ),
-  );
-
-  return $schema;
-}
-
-/**
- * Use updated table names.
- */
-function register_update_6001() {
-  $ret = array();
-  db_rename_table($ret, 'ccc_ticket_allocation', 'converge_ticket_allocation');
-  return $ret;
+function register_update_6100() {
+  $weight = db_result(db_query("SELECT weight FROM {system} WHERE name = 'uc_signup'"));
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'register'", ++$weight);
 }

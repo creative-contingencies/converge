@@ -1,6 +1,7 @@
-name = Registrations
-description = Helps checkout processes and registration
+name = Register
+description = Provides registration integration between uc_signup and content_profile.
 package = "Converge"
 core = 6.x
+dependencies[] = content_profile
 dependencies[] = uc_order
-dependencies[] = proposal
+dependencies[] = uc_signup
