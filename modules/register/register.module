@@ -1,0 +1,126 @@
+<?php
+/**
+ * Implements hook_user()
+ */
+function register_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'view') {
+    // Hide the core profile fields.
+    unset($account->profile_firstname);
+    unset($account->profile_surname);
+    unset($account->content['Name']);
+  }
+}
+
+/**
+ * Does this work in a module?
+ */
+function register_preprocess_page(&$vars, $hook) {
+  if($hook == 'page' && arg(0) == 'user') {
+    _register_removetab('Account', $vars);
+    _register_removetab('Name', $vars);
+  }
+}
+
+/**
+ * Helper to remove tabs.
+ */
+function _register_removetab($label, &$vars) {
+  $tabs = explode("\n", $vars['tabs']);
+  $vars['tabs'] = '';
+
+  foreach($tabs as $tab) {
+    if(strpos($tab, '>' . $label . '<') === FALSE) {
+      $vars['tabs'] .= $tab . "\n";
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter()
+ */
+function register_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'uc_signup_attendees_form') {
+    // Build an array keyed on email addresses
+    foreach ($form_state['storage']['uc_signup']['nids'] as $nid => $attendees) {
+      if (!in_array($nid, $nodes)) {
+        // Prepare node obejcts so we can display date information.
+        $nodes[$nid] = node_load($nid);
+      }
+      foreach ($attendees as $key => $mail) {
+        if (user_is_logged_in() && !user_access('purchase signups for other users')) {
+          $mail = $user->mail;
+        }
+        if (is_numeric($nid)) {
+          $mails[$mail][] = $nid;
+        }
+      }
+    }
+
+    // Remove descriptions from profile fields.
+    foreach ($mails as $mail => $events) {
+      foreach ($form[$mail]['profile'] as $group => $fields) {
+        foreach ($fields as $key => $value) {
+          if (is_array($form[$mail]['profile'][$group][$key])) {
+            $form[$mail]['profile'][$group][$key]['#description'] = '';
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_order()
+ */
+function register_order($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'submit':
+      register_order_prepare($arg1);
+      break;
+  }
+}
+
+/**
+ * Turn newly created user's profiles into content_profile nodes.
+ */
+function register_order_prepare(&$order) {
+  if (empty($order->products)) {
+    return;
+  }
+  foreach ($order->products as $product) {
+    if (isset($product->data['uc_signup_enabled']) && $product->data['uc_signup_enabled'] == 1) {
+      $events_to_signup[$product->nid] = $product;
+    }
+  }
+
+  if (empty($events_to_signup)) {
+    return;
+  }
+
+  foreach ($_SESSION['uc_signup']['nids'] as $nid => $attendees) {
+    if (!isset($events_to_signup[$nid])) {
+      continue;
+    }
+    foreach ($attendees as $key => $mail) {
+      $account = user_load(array('mail' => $mail));
+
+      $profile = new stdClass();
+      $profile->type = 'profile';
+
+      // If the user has a profile node already, skip.
+      if (!empty($account->uid) && content_profile_profile_exists($profile, $account->uid)) {
+        continue;
+      }
+
+      $profile->nid = NULL;
+      $profile->vid = NULL;
+      $profile->title = NULL;
+      $profile->body = NULL;
+      $profile->uid = $account->uid;
+      $profile->field_profile_firstname = array(0 => array('value' => $account->profile_firstname));
+      $profile->field_profile_surname = array(0 => array('value' => $account->profile_surname));
+
+      node_save($profile);
+    }
+  }
+}
