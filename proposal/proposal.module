@@ -393,6 +393,7 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
 
     else if (empty($form['#node']->nid) && user_is_logged_in() && isset($_SESSION['proposal_node_form_state_values'])) {
       $values = unserialize($_SESSION['proposal_node_form_state_values']);
+      unset($_SESSION['proposal_node_form_state_values']);
 
       $form['title']['#default_value'] = $values['title'];
       $form['body_field']['body']['#default_value'] = $values['body'];
@@ -411,6 +412,15 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
           $form['taxonomy'][$taxonomy][$multi_taxonomy_counter]['#default_value'] = implode(', ', $tags);
         }
       }
+      // And the rest...
+      foreach ($values as $key => $val) {
+        if (isset($form[$key]) && is_array($form[$key]) && !is_array($val)) {
+          $form[$key]['#default_value'] = $val;
+        }
+      }
+
+      // Redirect to the user dashboard when submission is done.
+      // $form['#redirect'] = url('user', array('absolute' => TRUE));
     } // end elseif
 
     // Hide the 'presenters' userreference field.
@@ -433,7 +443,7 @@ function proposal_node_form_validate($form, &$form_state) {
 
   $account = user_load(array('mail' => $form_state['values']['register']['mail']));
   if (!empty($account)) {
-    drupal_set_message(t('The email address %mail is already in use. Please !login first', array('%mail' => $form_state['values']['register']['mail'], '!login' => l('login', 'user'))), 'warning');
+    drupal_set_message(t('The email address %mail is already in use. Please !login first. After login, you will be redirected to this page', array('%mail' => $form_state['values']['register']['mail'], '!login' => l('login', 'user', array('query' => drupal_get_destination())))), 'warning');
     form_set_error('mail', '');
     $_SESSION['proposal_node_form_state_values'] = serialize($form_state['values']);
   }
@@ -474,11 +484,13 @@ function proposal_node_form_copresenters_validate($form, &$form_state) {
  
 function proposal_node_form_submit($form, &$form_state) {
 
-  global $user;
   global $language;
 
   // If we check here, we can never accidentally log the user out.
-  if (empty($form['#node']->nid) && (empty($user->uid))) {
+  if (empty($form['#node']->nid) && user_is_anonymous()) {
+
+    // Need to be able to be user #1 and to login.
+    global $user;
 
     // Save the form state.
     $saved_state = $form_state;
@@ -501,18 +513,15 @@ function proposal_node_form_submit($form, &$form_state) {
 
     // Generate the new user as user 1. Then switch.
     session_save_session(FALSE);
-    $temp_user = $user;
     $user = user_load(1);
     drupal_execute('user_register', $form_state);
-
+    $account = $form_state['user'];
     session_save_session(TRUE);
-    $user = $form_state['user'];
-
+    $user = $account;
+    
+    // Switch back to the proposal form state, add the new user account to it.
     $form_state = $saved_state;
-
-    // Create the user's profile node.
-    // $form_state['content_profile_registration']['profile']['node']->uid = $account->uid;
-    // node_save($form_state['content_profile_registration']['profile']['node']);
+    $form_state['account'] = $user;
 
     // Set the new user as owner of this proposal.
     $form_state['values']['uid'] = $user->uid;
@@ -525,6 +534,10 @@ function proposal_node_form_submit($form, &$form_state) {
     if (module_exists('simplenews') && ($tid = variable_get('register_newsletter_tid', 0))) {
       simplenews_subscribe_user($user->mail, $tid, FALSE);
     }
+
+    // Login as this new user.
+    user_authenticate_finalize(&$user);
+
   } // endif uid
 }
 
@@ -537,16 +550,7 @@ function proposal_nodeapi(&$node, $op, $a1) {
     return;
 
   global $user;
-  global $transpose_author;
   global $language;
-
-  // If the node is created by the admin user via the transpose handler, the $user is wrong.
-  // This allows us to set an override in transpose.module. It's ugly, but it works.
-  if($transpose_author) {
-    $author = $transpose_author;
-  } else {
-    $author = $user;
-  }
 
   // Munge the user profile into the params array (win!)
   $params = proposal_content_profile_vars('profile', $author->uid);
@@ -562,17 +566,9 @@ function proposal_nodeapi(&$node, $op, $a1) {
       if($node->field_proposal_status[0]['value'] == 'rejected')
         break;
 
-      // Put the owner uid in the first presenters field.
-      //
-      if ($node->uid) {
-        $node->field_proposal_presenters[0]['uid'] = $node->uid;
-      } else {
-        $node->field_proposal_presenters[0]['uid'] = $author->uid;
-      }
-
       // Prepare and send e-mail to user.
-      $params['!username'] = $author->name;
-      $params['!email'] = $author->mail;
+      $params['!username'] = $user->name;
+      $params['!email'] = $user->mail;
 
       $params['!url'] = url('node/' . $node->nid, array('absolute' => TRUE, 'alias' => TRUE));
       $params['!url-alias'] = url('node/' . $node->nid, array('absolute' => TRUE));
@@ -596,14 +592,14 @@ function proposal_nodeapi(&$node, $op, $a1) {
       foreach($terms as $tid => $term) {
         $keywords[] = $term->name;
       }
-      $params['!keywords'] = implode(', ', $keywords);
+      $params['!keywords'] = is_array($keywords) ? implode(', ', $keywords) : '';
 
       // Magic URL any registered user can hit to be added as a presenter.
       $params['!add_url'] = url('proposal/manage/add/' . $node->nid . '/' . $node->uuid . '/0', array('absolute' => TRUE));
 
       if (variable_get('proposal_mail_proposal_notify_user_send', 0)) {
-        drupal_mail('proposal', 'notify_user', $author->mail, $language, $params);
-        drupal_set_message(t('A confirmation e-mail with the proposal details has been sent to @email.', array('@email' => $author->mail)));
+        drupal_mail('proposal', 'notify_user', $user->mail, $language, $params);
+        drupal_set_message(t('A confirmation e-mail with the proposal details has been sent to @email.', array('@email' => $user->mail)));
       }
       if (variable_get('proposal_mail_proposal_notify_admin_send', 0)) {
         // Send mail to all 'chair' role users.
@@ -612,7 +608,8 @@ function proposal_nodeapi(&$node, $op, $a1) {
           drupal_mail('proposal', 'notify_admin', $o->mail, $language, $params);
         }
       }
-      // No break, also run munge if inserting.
+      proposal_fix_copresenters($node);
+      break;
 
     case 'presave':
       // Munge copresenter strings into actual users.
@@ -676,24 +673,25 @@ function proposal_perm() {
  * Helper that translates copresenters.
  */
 function proposal_fix_copresenters(&$node) {
-  // Owner is always co-presenter 0.
-  $node->field_proposal_presenters[0]['uid'] = $node->uid;
+  global $user;
 
-  foreach ($node->field_proposal_copresenters as $field) {
+  // Owner is always co-presenter 0. If not yet set, we'll make it be user 1.
+  $node->field_proposal_presenters[0]['uid'] = ($node->uid) ? $node->uid : 1;
+
+  foreach ($node->field_proposal_copresenters as $num => $field) {
     if (!is_array($field))
       continue;
 
-    // No value means rmeove the user.
+    // No value means remove the user.
     if (empty($field['value'])) {
-      unset($node->field_proposal_presenters[($field['_weight']+1)]);
+      unset($node->field_proposal_presenters[($num + 1)]);
     }
     else {
       // Check if the given email address is associated with an account.
       $account = user_load(array('mail' => $field['value']));
-      if (!empty($account->uid)) {
-        $node->field_proposal_presenters[($field['_weight']+1)]['uid'] = $account->uid;
-      }
-      else {
+      if (empty($account->uid)) {
+
+        // Turn the email address into a name (for the profile).
         $name = substr($field['value'], 0, strpos($field['value'], '@'));
         if (strpos($name, '.') !== FALSE) {
           $firstname = substr($name, 0, strpos($name, '.'));
@@ -702,7 +700,10 @@ function proposal_fix_copresenters(&$node) {
         else {
           $firstname = substr($field['value'], 0, strpos($field['value'], '@'));
           $surname = substr($field['value'], strpos($field['value'], '@')+1);
+          $surname = substr($surname, 0, strpos($surname, '.'));
         }
+
+        // Create the new user.
         $random_password = user_password(8);
         $form_state['values']['mail'] = $field['value'];
         $form_state['values']['name'] = $field['value'];
@@ -714,16 +715,41 @@ function proposal_fix_copresenters(&$node) {
         $form_state['values']['field_profile_firstname'] = array(array('value' => $firstname));
         $form_state['values']['field_profile_surname'] = array(array('value' => $surname));
 
-        $temp_user = $user;
+        // Switch to user 1 and submit the user_register form.
+        global $user;
+        $whoami = $user;
+
         session_save_session(FALSE);
         $user = user_load(1);
         drupal_execute('user_register', $form_state);
-        $user = $temp_user;
+        $errors = form_get_errors();
         session_save_session(TRUE);
-        $node->field_proposal_presenters[($field['_weight']+1)]['uid'] = $form_state['user']->uid;
+
+        if (!empty($errors)) {
+          drupal_set_message(t('Unable to crete a new account for %mail', array('%mail' => $form_state['values']['mail'])), 'error');
+          foreach ($errors as $key => $val) {
+            drupal_set_message($val, 'error');
+          }
+        }
+
+        $user = $whoami;
+        $account = $form_state['user'];
+      }
+
+      // Disallow duplicates, so loop through what's already set.
+      // This should probably be a helper function that returns a boolean.
+      $skip = FALSE;
+      foreach ($node->field_proposal_presenters as $presenter) {
+        if ($presenter['uid'] == $account->uid) {
+          $skip = TRUE;
+        }
+      }
+      if ($skip == FALSE) {
+        $node->field_proposal_presenters[($num + 1)] = array('uid' => $account->uid);
       }
     }
   }
+
 }
 
 /**
