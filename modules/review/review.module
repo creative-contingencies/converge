@@ -40,7 +40,7 @@ function review_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  // Handler for the magic URL to add a reviewer to a proposal.
+  // Handler for the magic URL to add a reviewer to a article.
   // Needs to be hit by an authenticated user.
   $items['manage/review/%/%/%/%'] = array(
     'title' => 'Modify a review',
@@ -78,9 +78,9 @@ function reviews_nonpeer_access() {
   global $user;
   if ( arg(0) == 'node' && is_numeric(arg(1)) ) {
     $node = node_load(arg(1));
-    if ( $node->type == 'proposal' ) {
+    if ( $node->type == 'article' ) {
       $reviewers = false;
-      foreach ( $node->field_proposal_reviewers as $reviewer ) {
+      foreach ( $node->field_article_reviewers as $reviewer ) {
         if ( $reviewer['uid'] > 0 ) {
           $reviewers = true;
           break;
@@ -97,7 +97,7 @@ function reviews_nonpeer_access() {
 function review_email_authors() {
 
   $query = "SELECT global_settings FROM {content_node_field} WHERE field_name = '%s'";
-  $result = db_query($query, 'field_proposal_status');
+  $result = db_query($query, 'field_article_status');
   $settings = db_fetch_object($result);
   $to_options_serialized = unserialize($settings->global_settings);
   $to_options_serialized = explode("\n", $to_options_serialized['allowed_values']);
@@ -108,7 +108,7 @@ function review_email_authors() {
   }
 
   $query = "SELECT tid,name FROM {term_data} WHERE vid = %d";
-  $result = db_query($query, variable_get('proposal_vocabulary_kind', 0));
+  $result = db_query($query, variable_get('article_vocabulary_kind', 0));
   $type_options = array();
   while ($o = db_fetch_object($result)) {
     $type_options[$o->tid] = $o->name;
@@ -127,15 +127,15 @@ function review_email_authors() {
     '#required' => true,
   );
   $form['reviewer_email_authors']['review_email_authors_to'] = array(
-    '#title' => t('Filter by proposal status status'),
-    '#description' => t("Select which proposal status' to e-mail authors."),
+    '#title' => t('Filter by article status status'),
+    '#description' => t("Select which article status' to e-mail authors."),
     '#type' => 'select',
     '#options' => $to_options,
     '#multiple' => true
   );
   $form['reviewer_email_authors']['review_email_authors_kind'] = array(
-    '#title' => t('Filter by proposal type'),
-    '#description' => t("Select which proposal types to e-mail authors. If you select none, this filter will be ignored."),
+    '#title' => t('Filter by article type'),
+    '#description' => t("Select which article types to e-mail authors. If you select none, this filter will be ignored."),
     '#type' => 'select',
     '#options' => $type_options,
     '#multiple' => true
@@ -164,7 +164,7 @@ function review_email_authors() {
   );
   $form['reviewer_email_authors']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !proposal_tech_internet, !proposal_tech_equipment, !proposal_attendee_notes, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !article_title, !article_abstract, !article_url, !article_feedback_url, !article_status, !article_tech_internet, !article_tech_equipment, !article_attendee_notes, !site, !site_url, !site_mail'),
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -200,18 +200,18 @@ function review_email_authors_submit($form, &$form_state) {
   $sent_to = array();
   $extra_join = '';
   if ( $form_state['values']['review_email_authors_attachments'] == 'attachments' ) {
-    $extra_join .= " JOIN {content_field_proposal_files} AS f ON (ctp.nid=f.nid)";
-    $extra_where .= " AND f.field_proposal_files_fid IS NOT null";
+    $extra_join .= " JOIN {content_field_article_files} AS f ON (ctp.nid=f.nid)";
+    $extra_where .= " AND f.field_article_files_fid IS NOT null";
   }
   if ( $form_state['values']['review_email_authors_attachments'] == 'no_attachments' ) {
-    $extra_join .= " JOIN {content_field_proposal_files} AS f ON (ctp.nid=f.nid)";
-    $extra_where .= " AND f.field_proposal_files_fid IS null";
+    $extra_join .= " JOIN {content_field_article_files} AS f ON (ctp.nid=f.nid)";
+    $extra_where .= " AND f.field_article_files_fid IS null";
   }
 
-  // $query = "SELECT nid FROM {content_type_proposal} WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
-  $query = "SELECT DISTINCT ctp.nid FROM {content_type_proposal} AS ctp JOIN {term_node} AS tn ON (ctp.nid=tn.nid)" . $extra_join . " WHERE field_proposal_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')" . $extra_where;
+  // $query = "SELECT nid FROM {content_type_article} WHERE field_article_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')";
+  $query = "SELECT DISTINCT ctp.nid FROM {content_type_article} AS ctp JOIN {term_node} AS tn ON (ctp.nid=tn.nid)" . $extra_join . " WHERE field_article_status_value IN ('" . implode("', '", $form_state['values']['review_email_authors_to']) . "')" . $extra_where;
 
-  // If we filter by proposal type...
+  // If we filter by article type...
   if( $form_state['values']['review_email_authors_kind']) {
     $query .= " AND tn.tid IN (" . implode(',', $form_state['values']['review_email_authors_kind']) .")";
   }
@@ -219,19 +219,19 @@ function review_email_authors_submit($form, &$form_state) {
   $result = db_query($query);
 
   while ( $n = db_fetch_object($result) ) {
-    $proposal_node = node_load($n->nid);
-    $params['!proposal_title'] = $proposal_node->title;
-    $params['!proposal_abstract'] = check_plain($proposal_node->body);
-    $params['!proposal_url'] = url('node/' . $proposal_node->nid, array('absolute' => TRUE));
-    $params['!proposal_feedback_url'] = url('node/' . $proposal_node->nid . '/feedback', array('absolute' => TRUE));
-    $params['!proposal_status'] = $proposal_node->field_proposal_status[0]['value'];
+    $article_node = node_load($n->nid);
+    $params['!article_title'] = $article_node->title;
+    $params['!article_abstract'] = check_plain($article_node->body);
+    $params['!article_url'] = url('node/' . $article_node->nid, array('absolute' => TRUE));
+    $params['!article_feedback_url'] = url('node/' . $article_node->nid . '/feedback', array('absolute' => TRUE));
+    $params['!article_status'] = $article_node->field_article_status[0]['value'];
 
     // Add in 
-    $params['!proposal_tech_internet'] = check_plain($proposal_node->field_proposal_tech_internet[0]['value']);
-    $params['!proposal_tech_equipment'] = check_plain($proposal_node->field_proposal_tech_equipment[0]['value']);
-    $params['!proposal_attendee_notes'] = check_plain($proposal_node->field_proposal_attendee_notes[0]['value']);
+    $params['!article_tech_internet'] = check_plain($article_node->field_article_tech_internet[0]['value']);
+    $params['!article_tech_equipment'] = check_plain($article_node->field_article_tech_equipment[0]['value']);
+    $params['!article_attendee_notes'] = check_plain($article_node->field_article_attendee_notes[0]['value']);
 
-    $author_user = user_load(array('uid' => $proposal_node->uid));
+    $author_user = user_load(array('uid' => $article_node->uid));
     $author_profile = content_profile_load('profile', $author_user->uid);
     $params['!author_firstname'] = $author_profile->field_profile_firstname[0]['value'];
     $params['!author_surname'] = $author_profile->field_profile_surname[0]['value'];
@@ -322,12 +322,12 @@ function review_remind_reviewers_submit($form, &$form_state) {
   if(empty($params['!site_mail']))
      $params['!site_mail'] = variable_get('site_mail', '');
   if(empty($params['!review_assigned_list_url']))
-     $params['!review_assigned_list_url'] = url('review/assigned_proposals', array('absolute' => true));
+     $params['!review_assigned_list_url'] = url('review/assigned_articles', array('absolute' => true));
   if(empty($params['!review_nonpeer_list_url']))
-     $params['!review_nonpeer_list_url'] = url('review/nonpeer_proposals', array('absolute' => true));
+     $params['!review_nonpeer_list_url'] = url('review/nonpeer_articles', array('absolute' => true));
 
   if ( $form_state['values']['reviewer_remind_to'] == 'peer' ) {
-    $query = "SELECT DISTINCT field_proposal_reviewers_uid AS uid FROM {content_field_proposal_reviewers}";
+    $query = "SELECT DISTINCT field_article_reviewers_uid AS uid FROM {content_field_article_reviewers}";
   }
   else {
     $rid_query = "SELECT rid FROM {role} WHERE name = '%s'";
@@ -413,7 +413,7 @@ function review_admin_settings() {
 
   $form['review_show_presenters'] = array(
     '#title' => 'Show Presenters',
-    '#description' => t('Show or hide presenters on peer-reviewed proposals. Hide presenters whilst blind review is in progress.'),
+    '#description' => t('Show or hide presenters on peer-reviewed articles. Hide presenters whilst blind review is in progress.'),
     '#type' => 'radios',
     '#options' => array(0 => 'Hide presenters', 1 => 'Show presenters'),
     '#default_value' => variable_get('review_show_presenters', 0),
@@ -472,7 +472,7 @@ function review_admin_settings() {
   $form['reviewer_add_notify'] = array(
     '#type' => 'fieldset',
     '#title' => 'Reviewer Add Notification',
-    '#description' => t('Choose whether or not a reviewer is notified when they are assigned to a proposal.'),
+    '#description' => t('Choose whether or not a reviewer is notified when they are assigned to a article.'),
   );
   $form['reviewer_add_notify']['review_mail_reviewer_add_notify_send'] = array(
     '#title' => t('Send notification to reviewer'),
@@ -499,14 +499,14 @@ function review_admin_settings() {
   );
   $form['reviewer_add_notify']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !article_url, !review_url, !site, !site_url, !site_mail'),
   );
 
 
   $form['reviewer_remove_notify'] = array(
     '#type' => 'fieldset',
     '#title' => 'Reviewer Remove Notification',
-    '#description' => t('Choose whether or not a reviewer is notified when they are removed from a proposal.'),
+    '#description' => t('Choose whether or not a reviewer is notified when they are removed from a article.'),
   );
   $form['reviewer_remove_notify']['review_mail_reviewer_remove_notify_send'] = array(
     '#title' => t('Send notification to reviewer'),
@@ -533,13 +533,13 @@ function review_admin_settings() {
   );
   $form['reviewer_remove_notify']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !article_url, !review_url, !site, !site_url, !site_mail'),
   );
 
   $form['reviewer_decline_notify'] = array(
     '#type' => 'fieldset',
     '#title' => 'Reviewer Decline Notification',
-    '#description' => t('Choose whether or not chairpersons are notified when an assigned reviewer declines to review a proposal.'),
+    '#description' => t('Choose whether or not chairpersons are notified when an assigned reviewer declines to review a article.'),
   );
   $form['reviewer_decline_notify']['review_mail_reviewer_decline_notify_send'] = array(
     '#title' => t('Send notification to chairpersons'),
@@ -566,7 +566,7 @@ function review_admin_settings() {
   );
   $form['reviewer_decline_notify']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !title, !abstract, !proposal_url, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !reviewer_firstname, !reviewer_surname, !reviewer_email, !title, !abstract, !article_url, !site, !site_url, !site_mail'),
   );
 
 
@@ -590,7 +590,7 @@ function review_admin_settings() {
   );
   $form['review_email_authors']['vars'] = array(
     '#type' => 'markup',
-    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail'),
+    '#value' => t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !article_title, !article_abstract, !article_url, !article_feedback_url, !article_status, !site, !site_url, !site_mail'),
   );
 
   $form['reviewer_remind_reviewers'] = array(
@@ -630,10 +630,10 @@ function review_form_alter(&$form, $form_state, $form_id) {
   if ( $form_id == 'contact_mail_user' && isset($_GET['contact_author']) && $_GET['contact_author'] == "true" && (in_array('papers chair', $user->roles) || user_access('administer users')) ) {
     // Allow substitution on contact form
 
-    $form['message']['#description'] = t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail');
+    $form['message']['#description'] = t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !article_title, !article_abstract, !article_url, !article_feedback_url, !article_status, !site, !site_url, !site_mail');
 
     $query = "SELECT nid, title FROM {node} WHERE uid = %d AND type = '%s'";
-    $result = db_query($query, arg(1), 'proposal');
+    $result = db_query($query, arg(1), 'article');
     $papers = array();
     while ( $n = db_fetch_object($result) ) {
       $papers[$n->nid] = $n->title;
@@ -660,14 +660,14 @@ function review_form_alter(&$form, $form_state, $form_id) {
       if(empty($params['!site_mail']))
          $params['!site_mail'] = variable_get('site_mail', '');
          
-        $proposal_node = node_load($form_state['post']['paper']);
-        $params['!proposal_title'] = $proposal_node->title;
-        $params['!proposal_abstract'] = $proposal_node->body;
-        $params['!proposal_url'] = url('node/' . $proposal_node->nid, array('absolute' => TRUE));
-        $params['!proposal_feedback_url'] = url('node/' . $proposal_node->nid . '/feedback', array('absolute' => TRUE));
-        $params['!proposal_status'] = $proposal_node->field_proposal_status[0]['value'];
+        $article_node = node_load($form_state['post']['paper']);
+        $params['!article_title'] = $article_node->title;
+        $params['!article_abstract'] = $article_node->body;
+        $params['!article_url'] = url('node/' . $article_node->nid, array('absolute' => TRUE));
+        $params['!article_feedback_url'] = url('node/' . $article_node->nid . '/feedback', array('absolute' => TRUE));
+        $params['!article_status'] = $article_node->field_article_status[0]['value'];
         
-        $author_user = user_load(array('uid' => $proposal_node->uid));
+        $author_user = user_load(array('uid' => $article_node->uid));
         $author_profile = content_profile_load('profile', $author_user->uid);
         $params['!author_firstname'] = $author_profile->field_profile_firstname[0]['value'];
         $params['!author_surname'] = $author_profile->field_profile_surname[0]['value'];
@@ -743,17 +743,17 @@ function review_form_alter(&$form, $form_state, $form_id) {
 */
   }
 
-  if ( $form_id == 'proposal_node_form' && isset($_GET['assign_reviewers']) && $_GET['assign_reviewers'] == True ) {
-    //$form['field_proposal_reviewers']['#size'] = 12;
+  if ( $form_id == 'article_node_form' && isset($_GET['assign_reviewers']) && $_GET['assign_reviewers'] == True ) {
+    //$form['field_article_reviewers']['#size'] = 12;
     
-    // oddly field_proposal_reviewers doesn't exist so I commented out the above line
+    // oddly field_article_reviewers doesn't exist so I commented out the above line
     // jhesketh Sun 20 Sep 2009 16:29:45 EST 
     
     // Show only reviewers field to allow reviewer assignment through standard node-edit and CCK.
     $js = "
     $(document).ready(function() {
       $('#content .node-form .standard').children().each(function() {
-        if ( $(this).attr('id') != 'field-proposal-reviewers-items' && $(this).attr('id') != 'edit-field-proposal-reviewers-uid-uid-wrapper' && $(this).attr('class') != 'not-hidden' ) {
+        if ( $(this).attr('id') != 'field-article-reviewers-items' && $(this).attr('id') != 'edit-field-article-reviewers-uid-uid-wrapper' && $(this).attr('class') != 'not-hidden' ) {
           $(this).hide();
         }
       });
@@ -768,7 +768,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
     // Show a list of reviewers with interests that match the categories on this node.
 
     // Get category vid.
-    $vid = variable_get('proposal_vocabulary_category', 0);
+    $vid = variable_get('article_vocabulary_category', 0);
     if ($vid) {
 
       $rid = db_result(db_query("SELECT rid FROM {role} WHERE name='reviewer'"));
@@ -795,7 +795,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
       $form['matches'] = array(
         '#type' => 'fieldset',
         '#title' => 'Suggested reviewers',
-        '#description' => 'Based on selected interests, these reviewers should be preferentially assigned to review this proposal.',
+        '#description' => 'Based on selected interests, these reviewers should be preferentially assigned to review this article.',
         '#attributes' => array('class' => 'not-hidden'),
       );
       if (count($data)) {
@@ -814,12 +814,12 @@ function review_form_alter(&$form, $form_state, $form_id) {
       } // !count
     } // !vid
   }
-  else if ( $form_id == 'proposal_node_form' && isset($_GET['change_status']) && $_GET['change_status'] == True ) {
-    // Show only status field for updating proposals.
+  else if ( $form_id == 'article_node_form' && isset($_GET['change_status']) && $_GET['change_status'] == True ) {
+    // Show only status field for updating articles.
     $js = "
     $(document).ready(function() {
       $('#content .node-form .standard').children().each(function() {
-        if ( $(this).attr('id') != 'edit-field-proposal-status-value-wrapper' ) {
+        if ( $(this).attr('id') != 'edit-field-article-status-value-wrapper' ) {
           $(this).hide();
         }
       });
@@ -838,23 +838,23 @@ function review_form_alter(&$form, $form_state, $form_id) {
 
 /**
  * Implementation of hook_nodeapi().
- * Send emails when new proposals are created.
+ * Send emails when new articles are created.
  */
 function review_nodeapi(&$node, $op, $a1) {
   global $user;
   switch($op) {
     case 'view':
       // Check to see if there are reviewers. If there are, hide the presenters.
-      if ( $node->type == 'proposal' ) {
+      if ( $node->type == 'article' ) {
         $reviewers = false;
-        foreach ( $node->field_proposal_reviewers as $reviewer ) {
+        foreach ( $node->field_article_reviewers as $reviewer ) {
           if ( $reviewer['uid'] > 0 ) {
             $reviewers = true;
             break;
           }
         }
         if ($reviewers && !variable_get('review_show_presenters', 0) ) {
-          unset($node->field_proposal_presenters);
+          unset($node->field_article_presenters);
         }
       }
     break;
@@ -871,13 +871,13 @@ function review_nodeapi(&$node, $op, $a1) {
         while ( $n = db_fetch_object($result) ) {
           $review_node = node_load($n->nid);
           if ( $review_node->field_paper[0]['nid'] == $_GET['nid'] ) {
-            drupal_set_message("You have already reviewed this proposal. You may edit and update your review below.");
+            drupal_set_message("You have already reviewed this article. You may edit and update your review below.");
             drupal_goto('node/' . $review_node->nid . '/edit', array('nid' => $_GET['nid']));
           }
         }
-        $proposal_node = node_load($_GET['nid']);
+        $article_node = node_load($_GET['nid']);
         $assigned = true;
-        foreach ( $proposal_node->field_proposal_reviewers as $u ) {
+        foreach ( $article_node->field_article_reviewers as $u ) {
           if ( is_numeric($u['uid']) ) {
             $assigned = false;
           }
@@ -887,12 +887,12 @@ function review_nodeapi(&$node, $op, $a1) {
           }
         }
         if ( !$assigned ) {
-          drupal_set_message("You are not assigned to review this proposal.");
+          drupal_set_message("You are not assigned to review this article.");
           drupal_goto();
         }
       }
       else if ( ($node->nid > 0) && $node->type == 'paper_review' ) {
-        $proposal_node = node_load($node->field_paper[0]['nid']);
+        $article_node = node_load($node->field_paper[0]['nid']);
       }
       
       // Add another if, or it'll show "Reviewing" as title everywhere.
@@ -900,7 +900,7 @@ function review_nodeapi(&$node, $op, $a1) {
         $js = "
         $(document).ready(function() {
           $('#edit-field-paper-0-nid-nid-wrapper').hide();
-          $('#content .title').text('Reviewing " . $proposal_node->title . "');
+          $('#content .title').text('Reviewing " . $article_node->title . "');
         });
         ";
       
@@ -916,13 +916,13 @@ function review_nodeapi(&$node, $op, $a1) {
         while ( $n = db_fetch_object($result) ) {
           $review_node = node_load($n->nid);
           if ( $review_node->field_paper[0]['nid'] == $node->field_paper[0]['nid'] ) {
-            drupal_set_message("You have already reviewed this proposal. You may edit and update your review below.");
+            drupal_set_message("You have already reviewed this article. You may edit and update your review below.");
             drupal_goto('node/' . $review_node->nid . '/edit');
           }
         }
-        $proposal_node = node_load($node->field_paper[0]['nid']);
+        $article_node = node_load($node->field_paper[0]['nid']);
         $assigned = true;
-        foreach ( $proposal_node->field_proposal_reviewers as $u ) {
+        foreach ( $article_node->field_article_reviewers as $u ) {
           if ( is_numeric($u['uid']) ) {
             $assigned = false;
           }
@@ -932,15 +932,15 @@ function review_nodeapi(&$node, $op, $a1) {
           }
         }
         if ( !$assigned ) {
-          drupal_set_message("You are not assigned to review this proposal.");
+          drupal_set_message("You are not assigned to review this article.");
           drupal_goto();
         }
       }
-      else if ( $node->type == 'proposal' ) {
+      else if ( $node->type == 'article' ) {
         // Email the reviewers
         // clear the "munged" params
         $params = array();
-        //!reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !proposal_url, !review_url, !site, !site_url, !site_mail'
+        //!reviewer_firstname, !reviewer_surname, !reviewer_email, !author_firstname, !author_surname, !author_email, !title, !abstract, !article_url, !review_url, !site, !site_url, !site_mail'
 
         // The UUID is not available in hook_presave, so we need to load it explicitly!
         if ($node->nid && !$node->uuid) {
@@ -959,15 +959,15 @@ function review_nodeapi(&$node, $op, $a1) {
         $params['!author_email'] = $author_user->mail;
         $params['!title'] = $node->title;
         $params['!abstract'] = $node->body;
-        $params['!proposal_url'] = url('node/' . $node->nid, array('absolute' => true));
+        $params['!article_url'] = url('node/' . $node->nid, array('absolute' => true));
         $params['!review_url'] = url('node/add/paper-review', array('absolute' => true, 'query' => array('nid' => $node->nid)));
 
         // Load in the already existing reviewers
-        $new_reviewers = $node->field_proposal_reviewers;
+        $new_reviewers = $node->field_article_reviewers;
         $num_new_reviewers = count($new_reviewers);
         if ( $node->nid ) {
           $old_node = node_load($node->nid);
-          $old_reviewers = $old_node->field_proposal_reviewers;
+          $old_reviewers = $old_node->field_article_reviewers;
           $num_old_reviewers = count($old_reviewers);
           for ( $i = 0; $i < $num_old_reviewers; $i++) {
             for ( $j = 0; $j < $num_new_reviewers; $j++) {
@@ -1060,9 +1060,9 @@ function review_link($type, $object, $teaser = FALSE) {
   if($user->uid == 0)
     return $links;
   
-  if ( $type == 'node' && $object->type == 'proposal' ) {
+  if ( $type == 'node' && $object->type == 'article' ) {
     $can_review = False;
-    foreach ( $object->field_proposal_reviewers as $reviewer ) {
+    foreach ( $object->field_article_reviewers as $reviewer ) {
         if ($reviewer['uid'] == $user->uid) {
             $can_review = True;
             break;
@@ -1186,7 +1186,7 @@ function review_reviewer_csv_submit($form, &$form_state) {
       $data['position'] = $line[3];
       $data['mail'] = $line[4];
 
-      $new_uid = proposal_copresenter_create($data);
+      $new_uid = article_copresenter_create($data);
       $reviewer = user_load(array('uid' => $new_uid));
       $profile = content_profile_load('profile', $reviewer->uid);
     }
@@ -1257,7 +1257,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
       user_save($victim, array('roles' => $roles));
 
       // Send email to chairs.
-      $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
+      $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('article_chair_rid', 0));
       while($o = db_fetch_object($result)) {
         drupal_mail('review', 'reviewer_invite_action', $o->mail, $language, $params);
       }
@@ -1280,7 +1280,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
     case 'decline':
 
       // Send email to chairs.
-      $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
+      $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('article_chair_rid', 0));
       while($o = db_fetch_object($result)) {
         drupal_mail('review', 'reviewer_invite_action', $o->mail, $language, $params);
       }
@@ -1309,7 +1309,7 @@ function review_manage_reviewer($op, $uuid, $vuid) {
 }
 
 /**
- * Function to handle the adding and removing of reviews to and from proposals.
+ * Function to handle the adding and removing of reviews to and from articles.
  */
 function review_manage_review($op, $pid, $uuid, $vuid) {
 
@@ -1322,14 +1322,14 @@ function review_manage_review($op, $pid, $uuid, $vuid) {
     return;
   }
 
-  $proposal = node_load($pid);
+  $article = node_load($pid);
   $victim = user_load(array('uid' => $vuid));
 
   // Don't bother if we're removing the guest user.
 
   // Check that the UUID matches.
-  if(!$proposal || $proposal->uuid != $uuid) {
-    // Not a valid proposal or UUID. Fuckoff.
+  if(!$article || $article->uuid != $uuid) {
+    // Not a valid article or UUID. Fuckoff.
     drupal_set_message('The link you clicked is invalid.', 'error');
     drupal_goto('<front>');
     return;
@@ -1345,23 +1345,23 @@ function review_manage_review($op, $pid, $uuid, $vuid) {
     drupal_set_message(t('Administrator override is in effect.'), 'warning');
 
   // Check if $user is already on the list.
-  foreach($proposal->field_proposal_reviewers as $r) {
+  foreach($article->field_article_reviewers as $r) {
     if($r['uid'] == $victim->uid) {
       $victim_is_reviewer = TRUE;
     }
   }
 
-  // We have a valid proposal and we know what to do. Do it.
+  // We have a valid article and we know what to do. Do it.
   switch($op) {
     case 'decline':
       if($victim_is_reviewer) {
-        for($i = 0; $i < count($proposal->field_proposal_reviewers); $i++) {
-          if($proposal->field_proposal_reviewers[$i]['uid'] == $victim->uid) {
-            unset($proposal->field_proposal_reviewers[$i]);
+        for($i = 0; $i < count($article->field_article_reviewers); $i++) {
+          if($article->field_article_reviewers[$i]['uid'] == $victim->uid) {
+            unset($article->field_article_reviewers[$i]);
           }
         }
-        node_save($proposal);
-        drupal_set_message($victim->name . ' was removed as reviewer for "' . $proposal->title .'"');
+        node_save($article);
+        drupal_set_message($victim->name . ' was removed as reviewer for "' . $article->title .'"');
 
         // And we now want to let the paper chairs know.
         $reviewer_profile = content_profile_load('profile', $victim->uid);
@@ -1369,19 +1369,19 @@ function review_manage_review($op, $pid, $uuid, $vuid) {
         $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
         $params['!reviewer_lastname'] = $reviewer_profile->field_profile_surname[0]['value'];
         $params['!reviewer_email'] = $victim->mail;
-        $params['!title'] = $proposal->title;
-        $params['!abstract'] = $proposal->body;
-        $params['!proposal_url'] = url('node/' . $proposal->nid, array('absolute' => true));
+        $params['!title'] = $article->title;
+        $params['!abstract'] = $article->body;
+        $params['!article_url'] = url('node/' . $article->nid, array('absolute' => true));
 
         if (variable_get('review_mail_reviewer_decline_notify_send', 0)) {
-          $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('proposal_chair_rid', 0));
+          $result = db_query("SELECT u.mail FROM {users_roles} AS ur LEFT JOIN {users} AS u ON (u.uid=ur.uid) WHERE ur.rid=%d", variable_get('article_chair_rid', 0));
           while($o = db_fetch_object($result)) {
             drupal_mail('review', 'reviewer_decline_chair_notify', $o->mail, $language, $params);
           }
         }
 
       } else {  // if user is not presenter
-        drupal_set_message($victim->name . ' is not a listed reviewer for "' . $proposal->title .'"', 'error');
+        drupal_set_message($victim->name . ' is not a listed reviewer for "' . $article->title .'"', 'error');
       }
       break;
 

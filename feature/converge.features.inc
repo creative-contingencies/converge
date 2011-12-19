@@ -29,7 +29,7 @@ function converge_node_info() {
     'paper_review' => array(
       'name' => t('Paper Review'),
       'module' => 'features',
-      'description' => t('Assign feedback and details to a paper proposal.'),
+      'description' => t('Assign feedback and details to a paper article.'),
       'has_title' => '1',
       'title_label' => t('Title'),
       'has_body' => '0',
@@ -40,7 +40,7 @@ you wish to assign to each of the listed review criteria. When hovering
 over the stars, they glow yellow, once selected they change to red.'),
     ),
     'profile' => array(
-      'name' => t('My profile'),
+      'name' => t('Profile'),
       'module' => 'features',
       'description' => t('A user profile built as content.'),
       'has_title' => '1',
@@ -50,10 +50,10 @@ over the stars, they glow yellow, once selected they change to red.'),
       'min_word_count' => '0',
       'help' => '',
     ),
-    'proposal' => array(
-      'name' => t('Proposal'),
+    'article' => array(
+      'name' => t('Article'),
       'module' => 'features',
-      'description' => t('This node holds proposals for papers, presentations and talks. A proposal can be created by both anonymous and registered users.'),
+      'description' => t('This node holds articles for papers, presentations and talks. A article can be created by both anonymous and registered users.'),
       'has_title' => '1',
       'title_label' => t('Title'),
       'has_body' => '1',
@@ -61,7 +61,7 @@ over the stars, they glow yellow, once selected they change to red.'),
       'min_word_count' => '0',
       'help' => t('The Call for Papers has now closed, however we are still accepting submissions which will be placed on a waiting list.
 
-For further details on submitting a paper or proposal for ACEC2010 read more <a href="/presenters">presenter info</a>.'),
+For further details on submitting a paper or article for ACEC2010 read more <a href="/presenters">presenter info</a>.'),
     ),
     'room' => array(
       'name' => t('Room'),
@@ -77,7 +77,7 @@ For further details on submitting a paper or proposal for ACEC2010 read more <a 
     'timeslot' => array(
       'name' => t('Timeslot'),
       'module' => 'features',
-      'description' => t('A <em>timeslot</em> defines a period of time in which a <em>proposal</em> can be scheduled.'),
+      'description' => t('A <em>timeslot</em> defines a period of time in which a <em>article</em> can be scheduled.'),
       'has_title' => '1',
       'title_label' => t('Title'),
       'has_body' => '0',

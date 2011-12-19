@@ -7,51 +7,20 @@
 /**
  * Implementation of hook_install()
  */
-function proposal_install() {
+function article_install() {
   $ret = array();
   // Make sure we run *AFTER* the form module, so we can disable
   // the proposal submission form if we need to.
   $weight = intval(db_result(db_query("SELECT weight FROM {system} WHERE name = 'form'")));
   $ret[] = update_sql("UPDATE {system} SET weight = %d WHERE name = 'proposal'", $weight + 1);
-  _proposal_taxonomy_init();
+  _article_taxonomy_init();
   return $ret;
 }
 
 /**
- * Implements hook_requirements()
- *
- * Check that proposal nodes have UUIDs enabled.
- */
-function proposal_requirements($phase) {
-  $t = get_t();
-
-  $requirements = array(
-    'proposal' => array(
-      'title' => $t('Converge Proposals'),
-      'description' => $t('The UUID module is used to create unique links for presenters and co-presenters.'),
-      'severity' => REQUIREMENT_ERROR,
-    ),
-  );
-
-  if ($phase == 'runtime') {
-    $uuid = variable_get('uuid_automatic_for_nodes', array());
-    if (empty($uuid['proposal'])) {
-      $requirements['proposal']['value'] = $t('Not configured');
-      $requirements['proposal']['description'] = $t('You need to !link to enable automatic UUID generation for proposal nodes.', array('!link' => l('configure the UUID module', 'admin/settings/uuid')));
-    }
-    else {
-      $requirements['proposal']['severity'] = REQUIREMENT_OK;
-      $requirements['proposal']['value'] = $t('Configured');
-    }
-  }
-  return $requirements;
-} 
-
-
-/**
  * Helper to create a taxonomy.
  */
-function _proposal_taxonomy_init() {
+function _article_taxonomy_init() {
   $vocab = array(
     'name' => t('Conference'),
     'description' => t('Automatically created by the proposal module'),
@@ -62,14 +31,14 @@ function _proposal_taxonomy_init() {
     'module' => 'proposal',
   );
   taxonomy_save_vocabulary($vocab);
-  variable_set('proposal_conference_vid', $vocab['vid']);
+  variable_set('article_conference_vid', $vocab['vid']);
   drupal_set_message('Created vocabulary ' . $vocab['vid'] . ' for the conference modules.', 'info');
 }
 
 /**
  * Make sure we run after the form module.
  */
-function proposal_update_6001() {
+function article_update_6001() {
   $ret = array();
   // Make sure we run *AFTER* the form module, so we can disable
   // the proposal submission form if we need to.
@@ -81,8 +50,8 @@ function proposal_update_6001() {
 /**
  * Create a Conference Taxonomy, so we cna be re-used on many events.
  */
-function proposal_update_6002() {
+function article_update_6002() {
   $ret = array();
-  _proposal_taxonomy_init();
+  _article_taxonomy_init();
   return $ret;
 }

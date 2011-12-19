@@ -137,7 +137,7 @@ function converge_content_default_fields() {
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
-      'proposal' => 0,
+      'article' => 0,
       'product' => 0,
       'room' => 0,
       'story' => 0,
@@ -550,7 +550,7 @@ function converge_content_default_fields() {
     'module' => 'nodereference',
     'active' => '1',
     'referenceable_types' => array(
-      'proposal' => 'proposal',
+      'article' => 'article',
       'image' => 0,
       'page' => 0,
       'panel' => 0,
@@ -2054,10 +2054,10 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_admin_notes
-  $fields['proposal-field_proposal_admin_notes'] = array(
-    'field_name' => 'field_proposal_admin_notes',
-    'type_name' => 'proposal',
+  // Exported field: field_article_admin_notes
+  $fields['article-field_article_admin_notes'] = array(
+    'field_name' => 'field_article_admin_notes',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '31',
       'parent' => '',
@@ -2105,7 +2105,7 @@ Independent',
       'default_value' => array(
         '0' => array(
           'value' => '',
-          '_error_element' => 'default_value_widget][field_proposal_admin_notes][0][value',
+          '_error_element' => 'default_value_widget][field_article_admin_notes][0][value',
         ),
       ),
       'default_value_php' => NULL,
@@ -2117,10 +2117,10 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_attendee_notes
-  $fields['proposal-field_proposal_attendee_notes'] = array(
-    'field_name' => 'field_proposal_attendee_notes',
-    'type_name' => 'proposal',
+  // Exported field: field_article_attendee_notes
+  $fields['article-field_article_attendee_notes'] = array(
+    'field_name' => 'field_article_attendee_notes',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '35',
       'parent' => '',
@@ -2168,7 +2168,7 @@ Independent',
       'default_value' => array(
         '0' => array(
           'value' => '',
-          '_error_element' => 'default_value_widget][field_proposal_attendee_notes][0][value',
+          '_error_element' => 'default_value_widget][field_article_attendee_notes][0][value',
         ),
       ),
       'default_value_php' => NULL,
@@ -2180,10 +2180,10 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_autoselect
-  $fields['proposal-field_proposal_autoselect'] = array(
-    'field_name' => 'field_proposal_autoselect',
-    'type_name' => 'proposal',
+  // Exported field: field_article_autoselect
+  $fields['article-field_article_autoselect'] = array(
+    'field_name' => 'field_article_autoselect',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '54',
       'parent' => '',
@@ -2251,13 +2251,13 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_day
-  $fields['proposal-field_proposal_day'] = array(
-    'field_name' => 'field_proposal_day',
-    'type_name' => 'proposal',
+  // Exported field: field_article_day
+  $fields['article-field_article_day'] = array(
+    'field_name' => 'field_article_day',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '52',
-      'parent' => 'group_proposal_scheduling',
+      'parent' => 'group_article_scheduling',
       'label' => array(
         'format' => 'hidden',
       ),
@@ -2302,7 +2302,7 @@ Independent',
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
-      'proposal' => 0,
+      'article' => 0,
       'product' => 0,
       'story' => 0,
       'supporter' => 0,
@@ -2333,10 +2333,10 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_files
-  $fields['proposal-field_proposal_files'] = array(
-    'field_name' => 'field_proposal_files',
-    'type_name' => 'proposal',
+  // Exported field: field_article_files
+  $fields['article-field_article_files'] = array(
+    'field_name' => 'field_article_files',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '39',
       'parent' => '',
@@ -2379,22 +2379,22 @@ Independent',
     'description_field' => '1',
     'widget' => array(
       'file_extensions' => 'txt pdf jpg png gif odt odp doc docx ppt pptx zip',
-      'file_path' => 'proposal/[uid]',
+      'file_path' => 'article/[uid]',
       'progress_indicator' => 'bar',
       'max_filesize_per_file' => '',
       'max_filesize_per_node' => '',
       'label' => 'Files',
       'weight' => '39',
-      'description' => 'You can attach one or more files to your proposal. Please provide a concise description for each file you add.',
+      'description' => 'You can attach one or more files to your article. Please provide a concise description for each file you add.',
       'type' => 'filefield_widget',
       'module' => 'filefield',
     ),
   );
 
-  // Exported field: field_proposal_presenters
-  $fields['proposal-field_proposal_presenters'] = array(
-    'field_name' => 'field_proposal_presenters',
-    'type_name' => 'proposal',
+  // Exported field: field_article_presenters
+  $fields['article-field_article_presenters'] = array(
+    'field_name' => 'field_article_presenters',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '37',
       'parent' => '',
@@ -2458,7 +2458,7 @@ Independent',
       'default_value' => array(
         '0' => array(
           'uid' => NULL,
-          '_error_element' => 'default_value_widget][field_proposal_presenters][0][uid][uid',
+          '_error_element' => 'default_value_widget][field_article_presenters][0][uid][uid',
         ),
       ),
       'default_value_php' => NULL,
@@ -2470,10 +2470,10 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_reviewers
-  $fields['proposal-field_proposal_reviewers'] = array(
-    'field_name' => 'field_proposal_reviewers',
-    'type_name' => 'proposal',
+  // Exported field: field_article_reviewers
+  $fields['article-field_article_reviewers'] = array(
+    'field_name' => 'field_article_reviewers',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '41',
       'parent' => '',
@@ -2548,13 +2548,13 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_room
-  $fields['proposal-field_proposal_room'] = array(
-    'field_name' => 'field_proposal_room',
-    'type_name' => 'proposal',
+  // Exported field: field_article_room
+  $fields['article-field_article_room'] = array(
+    'field_name' => 'field_article_room',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '51',
-      'parent' => 'group_proposal_scheduling',
+      'parent' => 'group_article_scheduling',
       'label' => array(
         'format' => 'hidden',
       ),
@@ -2610,7 +2610,7 @@ Independent',
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
-      'proposal' => 0,
+      'article' => 0,
       'product' => 0,
       'story' => 0,
       'supporter' => 0,
@@ -2638,13 +2638,13 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_scheduled
-  $fields['proposal-field_proposal_scheduled'] = array(
-    'field_name' => 'field_proposal_scheduled',
-    'type_name' => 'proposal',
+  // Exported field: field_article_scheduled
+  $fields['article-field_article_scheduled'] = array(
+    'field_name' => 'field_article_scheduled',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '50',
-      'parent' => 'group_proposal_scheduling',
+      'parent' => 'group_article_scheduling',
       'label' => array(
         'format' => 'hidden',
       ),
@@ -2700,7 +2700,7 @@ Independent',
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
-      'proposal' => 0,
+      'article' => 0,
       'product' => 0,
       'room' => 0,
       'story' => 0,
@@ -2728,10 +2728,10 @@ Independent',
     ),
   );
 
-  // Exported field: field_proposal_status
-  $fields['proposal-field_proposal_status'] = array(
-    'field_name' => 'field_proposal_status',
-    'type_name' => 'proposal',
+  // Exported field: field_article_status
+  $fields['article-field_article_status'] = array(
+    'field_name' => 'field_article_status',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '40',
       'parent' => '',
@@ -2790,19 +2790,19 @@ cancelled|Cancelled',
       'default_value_php' => NULL,
       'label' => 'Status',
       'weight' => '40',
-      'description' => 'This field is used by the papers committee to flag whether or not a proposal has been accepted.',
+      'description' => 'This field is used by the papers committee to flag whether or not a article has been accepted.',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
     ),
   );
 
-  // Exported field: field_proposal_tech_equipment
-  $fields['proposal-field_proposal_tech_equipment'] = array(
-    'field_name' => 'field_proposal_tech_equipment',
-    'type_name' => 'proposal',
+  // Exported field: field_article_tech_equipment
+  $fields['article-field_article_tech_equipment'] = array(
+    'field_name' => 'field_article_tech_equipment',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '5',
-      'parent' => 'group_proposal_tech',
+      'parent' => 'group_article_tech',
       'label' => array(
         'format' => 'above',
       ),
@@ -2847,7 +2847,7 @@ cancelled|Cancelled',
       'default_value' => array(
         '0' => array(
           'value' => '',
-          '_error_element' => 'default_value_widget][field_proposal_tech_equipment][0][value',
+          '_error_element' => 'default_value_widget][field_article_tech_equipment][0][value',
         ),
       ),
       'default_value_php' => NULL,
@@ -2859,13 +2859,13 @@ cancelled|Cancelled',
     ),
   );
 
-  // Exported field: field_proposal_tech_internet
-  $fields['proposal-field_proposal_tech_internet'] = array(
-    'field_name' => 'field_proposal_tech_internet',
-    'type_name' => 'proposal',
+  // Exported field: field_article_tech_internet
+  $fields['article-field_article_tech_internet'] = array(
+    'field_name' => 'field_article_tech_internet',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '4',
-      'parent' => 'group_proposal_tech',
+      'parent' => 'group_article_tech',
       'label' => array(
         'format' => 'above',
       ),
@@ -2921,13 +2921,13 @@ highspeed|I require high speed internet access',
     ),
   );
 
-  // Exported field: field_proposal_timeslot
-  $fields['proposal-field_proposal_timeslot'] = array(
-    'field_name' => 'field_proposal_timeslot',
-    'type_name' => 'proposal',
+  // Exported field: field_article_timeslot
+  $fields['article-field_article_timeslot'] = array(
+    'field_name' => 'field_article_timeslot',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '53',
-      'parent' => 'group_proposal_scheduling',
+      'parent' => 'group_article_scheduling',
       'label' => array(
         'format' => 'hidden',
       ),
@@ -2972,7 +2972,7 @@ highspeed|I require high speed internet access',
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
-      'proposal' => 0,
+      'article' => 0,
       'product' => 0,
       'story' => 0,
       'supporter' => 0,
@@ -3003,10 +3003,10 @@ highspeed|I require high speed internet access',
     ),
   );
 
-  // Exported field: field_proposal_webform_id
-  $fields['proposal-field_proposal_webform_id'] = array(
-    'field_name' => 'field_proposal_webform_id',
-    'type_name' => 'proposal',
+  // Exported field: field_article_webform_id
+  $fields['article-field_article_webform_id'] = array(
+    'field_name' => 'field_article_webform_id',
+    'type_name' => 'article',
     'display_settings' => array(
       'weight' => '42',
       'parent' => '',
@@ -3054,13 +3054,13 @@ highspeed|I require high speed internet access',
       'default_value' => array(
         '0' => array(
           'value' => '',
-          '_error_element' => 'default_value_widget][field_proposal_webform_id][0][value',
+          '_error_element' => 'default_value_widget][field_article_webform_id][0][value',
         ),
       ),
       'default_value_php' => NULL,
       'label' => 'Webform ID',
       'weight' => '42',
-      'description' => 'This field contains the webform submission ID that this proposal was imported from. We use this to make sure we don\'t import a proposal twice.',
+      'description' => 'This field contains the webform submission ID that this article was imported from. We use this to make sure we don\'t import a article twice.',
       'type' => 'number',
       'module' => 'number',
     ),

@@ -1,8 +1,8 @@
 name = Reviews workflow
-description = Manage proposals and reviewers along with scoring.
+description = Manage articles and reviewers along with scoring.
 package = "Converge"
 core = 6.x
 
 dependencies[] = nodereference
 dependencies[] = fivestar
-dependencies[] = proposal
+dependencies[] = article

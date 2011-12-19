@@ -15,16 +15,16 @@ function converge_views_default_views() {
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'required' => 1,
       'delta' => '-1',
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
       'override' => array(
         'button' => 'Override',
@@ -37,27 +37,27 @@ function converge_views_default_views() {
       'id' => 'content_profile_rel',
       'table' => 'users',
       'field' => 'content_profile_rel',
-      'relationship' => 'field_proposal_presenters_uid',
+      'relationship' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Override',
       ),
     ),
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 1,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
-    'field_proposal_room_nid' => array(
+    'field_article_room_nid' => array(
       'label' => 'Room',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_room_nid',
-      'table' => 'node_data_field_proposal_room',
-      'field' => 'field_proposal_room_nid',
+      'id' => 'field_article_room_nid',
+      'table' => 'node_data_field_article_room',
+      'field' => 'field_article_room_nid',
       'relationship' => 'none',
     ),
   ));
@@ -88,7 +88,7 @@ function converge_views_default_views() {
       'field' => 'nid',
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'alter' => array(
         'alter_text' => 0,
@@ -121,9 +121,9 @@ function converge_views_default_views() {
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
     ),
     'title' => array(
@@ -194,7 +194,7 @@ function converge_views_default_views() {
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'field_timeslot_date_value_1' => array(
       'label' => 'Time',
@@ -238,7 +238,7 @@ function converge_views_default_views() {
       'id' => 'field_timeslot_date_value_1',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'phpcode' => array(
       'label' => 'Keywords',
@@ -264,9 +264,9 @@ function converge_views_default_views() {
 
   $node = node_load($data->nid);
 
-  $categories = taxonomy_node_get_terms_by_vocabulary($node, variable_get(\'proposal_vocabulary_category\', 0));
+  $categories = taxonomy_node_get_terms_by_vocabulary($node, variable_get(\'article_vocabulary_category\', 0));
 
-  $keywords = taxonomy_node_get_terms_by_vocabulary($node, variable_get(\'proposal_vocabulary_keywords\', 0));
+  $keywords = taxonomy_node_get_terms_by_vocabulary($node, variable_get(\'article_vocabulary_keywords\', 0));
 
   foreach($categories as $category) {
     $links[] = l($category->name, \'program/category/\' . $category->name);
@@ -320,7 +320,7 @@ function converge_views_default_views() {
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'field_timeslot_date_value2' => array(
       'order' => 'ASC',
@@ -328,7 +328,7 @@ function converge_views_default_views() {
       'id' => 'field_timeslot_date_value2',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value2',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'title' => array(
       'order' => 'ASC',
@@ -385,7 +385,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'story' => 0,
         'supporter' => 0,
       ),
@@ -402,10 +402,10 @@ function converge_views_default_views() {
       'validate_user_restrict_roles' => 0,
       'validate_argument_php' => '',
     ),
-    'field_proposal_scheduled_nid' => array(
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+    'field_article_scheduled_nid' => array(
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
     ),
   ));
   $handler->override_option('filters', array(
@@ -426,7 +426,7 @@ function converge_views_default_views() {
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -445,7 +445,7 @@ function converge_views_default_views() {
       'field' => 'type',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value_many_to_one' => array(
+    'field_article_status_value_many_to_one' => array(
       'operator' => 'or',
       'value' => array(
         'review' => 'review',
@@ -458,9 +458,9 @@ function converge_views_default_views() {
         'operator' => FALSE,
         'label' => '',
       ),
-      'id' => 'field_proposal_status_value_many_to_one',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value_many_to_one',
+      'id' => 'field_article_status_value_many_to_one',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value_many_to_one',
       'override' => array(
         'button' => 'Override',
       ),
@@ -524,13 +524,13 @@ function converge_views_default_views() {
     'order' => 'asc',
     'columns' => array(
       'nid' => 'nid',
-      'field_proposal_scheduled_nid' => 'field_proposal_scheduled_nid',
+      'field_article_scheduled_nid' => 'field_article_scheduled_nid',
       'phpcode_1' => 'phpcode_1',
       'field_timeslot_date_value' => 'field_timeslot_date_value',
       'field_timeslot_date_value_1' => 'field_timeslot_date_value_1',
       'field_timeslot_date_value2' => 'field_timeslot_date_value2',
-      'field_proposal_room_nid' => 'field_proposal_room_nid',
-      'field_proposal_presenters_uid' => 'field_proposal_presenters_uid',
+      'field_article_room_nid' => 'field_article_room_nid',
+      'field_article_presenters_uid' => 'field_article_presenters_uid',
       'title' => 'title',
       'name_1' => 'name_1',
       'phpcode_2' => 'phpcode_2',
@@ -540,7 +540,7 @@ function converge_views_default_views() {
         'sortable' => 0,
         'separator' => '',
       ),
-      'field_proposal_scheduled_nid' => array(
+      'field_article_scheduled_nid' => array(
         'separator' => '',
       ),
       'phpcode_1' => array(
@@ -558,10 +558,10 @@ function converge_views_default_views() {
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_room_nid' => array(
+      'field_article_room_nid' => array(
         'separator' => '',
       ),
-      'field_proposal_presenters_uid' => array(
+      'field_article_presenters_uid' => array(
         'separator' => '',
       ),
       'title' => array(
@@ -652,7 +652,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'story' => 0,
         'supporter' => 0,
       ),
@@ -696,7 +696,7 @@ function converge_views_default_views() {
         '5' => 0,
         '14' => 0,
       ),
-      'relationship' => 'field_proposal_presenters_uid',
+      'relationship' => 'field_article_presenters_uid',
       'default_options_div_prefix' => '',
       'default_argument_user' => 0,
       'default_argument_fixed' => '',
@@ -709,7 +709,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'sponsor' => 0,
         'story' => 0,
       ),
@@ -796,7 +796,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'story' => 0,
         'supporter' => 0,
       ),
@@ -840,7 +840,7 @@ function converge_views_default_views() {
         '5' => 0,
         '14' => 0,
       ),
-      'relationship' => 'field_proposal_presenters_uid',
+      'relationship' => 'field_article_presenters_uid',
       'default_options_div_prefix' => '',
       'default_argument_user' => 0,
       'default_argument_fixed' => '',
@@ -853,7 +853,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'sponsor' => 0,
         'story' => 0,
       ),
@@ -940,7 +940,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'story' => 0,
         'supporter' => 0,
       ),
@@ -984,7 +984,7 @@ function converge_views_default_views() {
         '5' => 0,
         '14' => 0,
       ),
-      'relationship' => 'field_proposal_presenters_uid',
+      'relationship' => 'field_article_presenters_uid',
       'default_options_div_prefix' => '',
       'default_argument_user' => 0,
       'default_argument_fixed' => '',
@@ -997,7 +997,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'sponsor' => 0,
         'story' => 0,
       ),
@@ -1024,7 +1024,7 @@ function converge_views_default_views() {
   if ($view->args[0]) {
     $terms = taxonomy_get_term_by_name($view->args[0]);
     foreach($terms as $term) {
-      if ($term->vid == variable_get(\'proposal_vocabulary_kind\', 0)) {
+      if ($term->vid == variable_get(\'article_vocabulary_kind\', 0)) {
         $arg = $term;
       }
     }
@@ -1053,34 +1053,34 @@ function converge_views_default_views() {
   ));
   $handler = $view->new_display('page', 'Schedule', 'page_5');
   $handler->override_option('relationships', array(
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Primary Presenter',
       'required' => 1,
       'delta' => '-1',
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
       'override' => array(
         'button' => 'Override',
       ),
     ),
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 1,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
-    'field_proposal_room_nid' => array(
+    'field_article_room_nid' => array(
       'label' => 'Room',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_room_nid',
-      'table' => 'node_data_field_proposal_room',
-      'field' => 'field_proposal_room_nid',
+      'id' => 'field_article_room_nid',
+      'table' => 'node_data_field_article_room',
+      'field' => 'field_article_room_nid',
       'relationship' => 'none',
     ),
   ));
@@ -1193,16 +1193,16 @@ function converge_views_default_views() {
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
       'override' => array(
         'button' => 'Use default',
       ),
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => ' ([field_proposal_presenters_uid])',
+        'text' => ' ([field_article_presenters_uid])',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',
@@ -1231,9 +1231,9 @@ function converge_views_default_views() {
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -1249,7 +1249,7 @@ function converge_views_default_views() {
   $handler->override_option('row_options', array(
     'inline' => array(
       'title' => 'title',
-      'field_proposal_presenters_uid' => 'field_proposal_presenters_uid',
+      'field_article_presenters_uid' => 'field_article_presenters_uid',
     ),
     'separator' => '',
     'hide_empty' => 0,
@@ -1271,34 +1271,34 @@ function converge_views_default_views() {
   ));
   $handler = $view->new_display('page', 'Timeslot', 'page_6');
   $handler->override_option('relationships', array(
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'required' => 1,
       'delta' => '-1',
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
       'override' => array(
         'button' => 'Override',
       ),
     ),
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 1,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
-    'field_proposal_room_nid' => array(
+    'field_article_room_nid' => array(
       'label' => 'Room',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_room_nid',
-      'table' => 'node_data_field_proposal_room',
-      'field' => 'field_proposal_room_nid',
+      'id' => 'field_article_room_nid',
+      'table' => 'node_data_field_article_room',
+      'field' => 'field_article_room_nid',
       'relationship' => 'none',
     ),
   ));
@@ -1336,7 +1336,7 @@ function converge_views_default_views() {
         'button' => 'Use default',
       ),
     ),
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -1369,13 +1369,13 @@ function converge_views_default_views() {
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'phpcode_1' => array(
       'label' => '',
@@ -1402,7 +1402,7 @@ function converge_views_default_views() {
       'empty_zero' => 0,
       'value' => '<?php
   global $user;
-  print url(\'user/\' . $user->uid . \'/sessions/add/\' . $data->node_node_data_field_proposal_scheduled_nid . \'/\'. $data->nid);
+  print url(\'user/\' . $user->uid . \'/sessions/add/\' . $data->node_node_data_field_article_scheduled_nid . \'/\'. $data->nid);
 ?>',
       'exclude' => 0,
       'id' => 'phpcode_1',
@@ -1458,7 +1458,7 @@ function converge_views_default_views() {
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'field_timeslot_date_value_1' => array(
       'label' => 'From',
@@ -1505,7 +1505,7 @@ function converge_views_default_views() {
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'field_timeslot_date_value2' => array(
       'label' => 'Until',
@@ -1552,9 +1552,9 @@ function converge_views_default_views() {
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
-    'field_proposal_room_nid' => array(
+    'field_article_room_nid' => array(
       'label' => 'Room',
       'alter' => array(
         'alter_text' => 0,
@@ -1587,15 +1587,15 @@ function converge_views_default_views() {
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 1,
-      'id' => 'field_proposal_room_nid',
-      'table' => 'node_data_field_proposal_room',
-      'field' => 'field_proposal_room_nid',
+      'id' => 'field_article_room_nid',
+      'table' => 'node_data_field_article_room',
+      'field' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'alter' => array(
         'alter_text' => 0,
@@ -1628,9 +1628,9 @@ function converge_views_default_views() {
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -1733,7 +1733,7 @@ function converge_views_default_views() {
     ),
   ));
   $handler->override_option('arguments', array(
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'default_action' => 'ignore',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
@@ -1747,9 +1747,9 @@ function converge_views_default_views() {
       'validate_fail' => 'not found',
       'break_phrase' => 1,
       'not' => 0,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
@@ -1782,7 +1782,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'room' => 0,
         'simplenews' => 0,
         'story' => 0,
@@ -1832,7 +1832,7 @@ function converge_views_default_views() {
         '12' => 0,
         '5' => 0,
       ),
-      'relationship' => 'field_proposal_presenters_uid',
+      'relationship' => 'field_article_presenters_uid',
       'default_options_div_prefix' => '',
       'default_argument_user' => 0,
       'default_argument_fixed' => '',
@@ -1849,7 +1849,7 @@ function converge_views_default_views() {
         'paper_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'room' => 0,
         'simplenews' => 0,
         'story' => 0,
@@ -1894,7 +1894,7 @@ function converge_views_default_views() {
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -1913,7 +1913,7 @@ function converge_views_default_views() {
       'field' => 'type',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value_many_to_one' => array(
+    'field_article_status_value_many_to_one' => array(
       'operator' => 'or',
       'value' => array(
         'review' => 'review',
@@ -1926,9 +1926,9 @@ function converge_views_default_views() {
         'operator' => FALSE,
         'label' => '',
       ),
-      'id' => 'field_proposal_status_value_many_to_one',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value_many_to_one',
+      'id' => 'field_article_status_value_many_to_one',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value_many_to_one',
       'override' => array(
         'button' => 'Override',
       ),
@@ -1973,31 +1973,31 @@ function converge_views_default_views() {
   ));
   $handler = $view->new_display('feed', 'Apple CSV', 'feed_1');
   $handler->override_option('relationships', array(
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 1,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
-    'field_proposal_room_nid' => array(
+    'field_article_room_nid' => array(
       'label' => 'Room',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_room_nid',
-      'table' => 'node_data_field_proposal_room',
-      'field' => 'field_proposal_room_nid',
+      'id' => 'field_article_room_nid',
+      'table' => 'node_data_field_article_room',
+      'field' => 'field_article_room_nid',
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenter 1',
       'required' => 1,
       'delta' => '0',
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
       'override' => array(
         'button' => 'Use default',
@@ -2010,18 +2010,18 @@ function converge_views_default_views() {
       'id' => 'content_profile_rel',
       'table' => 'users',
       'field' => 'content_profile_rel',
-      'relationship' => 'field_proposal_presenters_uid',
+      'relationship' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Use default',
       ),
     ),
-    'field_proposal_presenters_uid_1' => array(
+    'field_article_presenters_uid_1' => array(
       'label' => 'Presenter 2',
       'required' => 0,
       'delta' => '1',
-      'id' => 'field_proposal_presenters_uid_1',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid_1',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -2037,15 +2037,15 @@ function converge_views_default_views() {
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_presenters_uid_1',
+      'relationship' => 'field_article_presenters_uid_1',
     ),
-    'field_proposal_presenters_uid_2' => array(
+    'field_article_presenters_uid_2' => array(
       'label' => 'Presenter 3',
       'required' => 0,
       'delta' => '2',
-      'id' => 'field_proposal_presenters_uid_2',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid_2',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -2061,15 +2061,15 @@ function converge_views_default_views() {
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_presenters_uid_2',
+      'relationship' => 'field_article_presenters_uid_2',
     ),
-    'field_proposal_presenters_uid_3' => array(
+    'field_article_presenters_uid_3' => array(
       'label' => 'Presenter 4',
       'required' => 0,
       'delta' => '3',
-      'id' => 'field_proposal_presenters_uid_3',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid_3',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -2085,7 +2085,7 @@ function converge_views_default_views() {
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_presenters_uid_3',
+      'relationship' => 'field_article_presenters_uid_3',
     ),
   ));
   $handler->override_option('fields', array(
@@ -2157,7 +2157,7 @@ function converge_views_default_views() {
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'field_timeslot_date_value_1' => array(
       'label' => 'Time',
@@ -2201,7 +2201,7 @@ function converge_views_default_views() {
       'id' => 'field_timeslot_date_value_1',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -2237,7 +2237,7 @@ function converge_views_default_views() {
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
     'title' => array(
       'label' => 'Title',
@@ -2972,7 +2972,7 @@ function converge_views_default_views() {
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -2991,7 +2991,7 @@ function converge_views_default_views() {
       'field' => 'type',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value_many_to_one' => array(
+    'field_article_status_value_many_to_one' => array(
       'operator' => 'or',
       'value' => array(
         'review' => 'review',
@@ -3004,9 +3004,9 @@ function converge_views_default_views() {
         'operator' => FALSE,
         'label' => '',
       ),
-      'id' => 'field_proposal_status_value_many_to_one',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value_many_to_one',
+      'id' => 'field_article_status_value_many_to_one',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value_many_to_one',
       'override' => array(
         'button' => 'Override',
       ),
@@ -3049,16 +3049,16 @@ function converge_views_default_views() {
 
   $views[$view->name] = $view;
 
-  // Exported view: Proposals
+  // Exported view: Articles
   $view = new view;
-  $view->name = 'Proposals';
-  $view->description = 'A list of proposals for papers committee.';
+  $view->name = 'Articles';
+  $view->description = 'A list of articles for papers committee.';
   $view->tag = '';
   $view->view_php = '';
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
     'votingapi_cache_3' => array(
@@ -3203,7 +3203,7 @@ function converge_views_default_views() {
       'field' => 'tid',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value' => array(
+    'field_article_status_value' => array(
       'label' => 'Status',
       'alter' => array(
         'alter_text' => 0,
@@ -3232,12 +3232,12 @@ function converge_views_default_views() {
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_status_value',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value',
+      'id' => 'field_article_status_value',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value',
       'relationship' => 'none',
     ),
-    'field_proposal_files_fid' => array(
+    'field_article_files_fid' => array(
       'label' => 'Files',
       'alter' => array(
         'alter_text' => 0,
@@ -3266,9 +3266,9 @@ function converge_views_default_views() {
         'multiple_reversed' => 0,
       ),
       'exclude' => 1,
-      'id' => 'field_proposal_files_fid',
-      'table' => 'node_data_field_proposal_files',
-      'field' => 'field_proposal_files_fid',
+      'id' => 'field_article_files_fid',
+      'table' => 'node_data_field_article_files',
+      'field' => 'field_article_files_fid',
       'relationship' => 'none',
     ),
     'phpcode_1' => array(
@@ -3291,7 +3291,7 @@ function converge_views_default_views() {
         'html' => 0,
       ),
       'value' => '<?php
-if ( count($data->node_data_field_proposal_files_field_proposal_files_fid) > 0 && $data->node_data_field_proposal_files_field_proposal_files_fid[0][\'fid\'] > 0 ) {
+if ( count($data->node_data_field_article_files_field_article_files_fid) > 0 && $data->node_data_field_article_files_field_article_files_fid[0][\'fid\'] > 0 ) {
 print \'<img src="/sites/all/modules/filefield/icons/protocons/16x16/mimetypes/application-pdf.png" alt="Has Paper" title="Has Paper" />\';
 }
 ?>',
@@ -3354,7 +3354,7 @@ print \'<img src="/sites/all/modules/filefield/icons/protocons/16x16/mimetypes/a
       'field' => 'title',
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'alter' => array(
         'alter_text' => 0,
@@ -3383,9 +3383,9 @@ print \'<img src="/sites/all/modules/filefield/icons/protocons/16x16/mimetypes/a
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
     ),
     'access' => array(
@@ -3651,11 +3651,11 @@ print \'</a>\';
       'field' => 'value',
       'relationship' => 'votingapi_cache_3',
     ),
-    'field_proposal_reviewers_uid' => array(
+    'field_article_reviewers_uid' => array(
       'label' => 'Reviewers',
       'alter' => array(
         'alter_text' => 0,
-        'text' => '<a href="/user/">[field_proposal_reviewers_uid]</a>',
+        'text' => '<a href="/user/">[field_article_reviewers_uid]</a>',
         'make_link' => 0,
         'path' => 'test',
         'link_class' => '',
@@ -3680,9 +3680,9 @@ print \'</a>\';
         'multiple_reversed' => 0,
       ),
       'exclude' => 1,
-      'id' => 'field_proposal_reviewers_uid',
-      'table' => 'node_data_field_proposal_reviewers',
-      'field' => 'field_proposal_reviewers_uid',
+      'id' => 'field_article_reviewers_uid',
+      'table' => 'node_data_field_article_reviewers',
+      'field' => 'field_article_reviewers_uid',
       'relationship' => 'none',
     ),
     'phpcode_3' => array(
@@ -3705,7 +3705,7 @@ print \'</a>\';
         'html' => 0,
       ),
       'value' => '<?php
-$reviewers = $data->node_data_field_proposal_reviewers_field_proposal_reviewers_uid;
+$reviewers = $data->node_data_field_article_reviewers_field_article_reviewers_uid;
 
 $output = array();
 foreach ( $reviewers as $u ) {
@@ -3864,7 +3864,7 @@ else if ( array_key_exists(\'Accept\', $recommendation) && $recommendation[\'Acc
         'alter_text' => 1,
         'text' => 'Assign Reviewers',
         'make_link' => 1,
-        'path' => 'node/[nid]/edit?assign_reviewers=true&destination=review/proposals',
+        'path' => 'node/[nid]/edit?assign_reviewers=true&destination=review/articles',
         'link_class' => '',
         'alt' => '',
         'prefix' => '',
@@ -3945,7 +3945,7 @@ else if ( array_key_exists(\'Accept\', $recommendation) && $recommendation[\'Acc
         'alter_text' => 1,
         'text' => 'Change Status',
         'make_link' => 1,
-        'path' => 'node/[nid_4]/edit?change_status=true&destination=review/proposals',
+        'path' => 'node/[nid_4]/edit?change_status=true&destination=review/articles',
         'link_class' => '',
         'alt' => '',
         'prefix' => '',
@@ -3998,27 +3998,27 @@ else if ( array_key_exists(\'Accept\', $recommendation) && $recommendation[\'Acc
     ),
   ));
   $handler->override_option('filters', array(
-    'field_proposal_files_list' => array(
+    'field_article_files_list' => array(
       'operator' => '=',
       'value' => 'All',
       'group' => '0',
       'exposed' => TRUE,
       'expose' => array(
         'operator' => '',
-        'identifier' => 'field_proposal_files_list',
+        'identifier' => 'field_article_files_list',
         'label' => 'File?',
         'optional' => 1,
         'remember' => 0,
       ),
-      'id' => 'field_proposal_files_list',
-      'table' => 'node_data_field_proposal_files',
-      'field' => 'field_proposal_files_list',
+      'id' => 'field_article_files_list',
+      'table' => 'node_data_field_article_files',
+      'field' => 'field_article_files_list',
       'relationship' => 'none',
     ),
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -4115,8 +4115,8 @@ else if ( array_key_exists(\'Accept\', $recommendation) && $recommendation[\'Acc
   $handler->override_option('cache', array(
     'type' => 'none',
   ));
-  $handler->override_option('title', 'Proposals');
-  $handler->override_option('header', 'Manage proposals with the actions below.
+  $handler->override_option('title', 'Articles');
+  $handler->override_option('header', 'Manage articles with the actions below.
 
 <ul>
 <li><?php print l(\'Send reminder email to reviewers\', \'review/remind_reviewers\') ?></li>
@@ -4128,7 +4128,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
 <strong>Tip:</strong> Hover your mouse over the recommendations to see each reviewers opinion.');
   $handler->override_option('header_format', '5');
   $handler->override_option('header_empty', 0);
-  $handler->override_option('empty', 'There are currently no proposals to manage.');
+  $handler->override_option('empty', 'There are currently no articles to manage.');
   $handler->override_option('empty_format', '1');
   $handler->override_option('items_per_page', 20);
   $handler->override_option('use_pager', '1');
@@ -4142,12 +4142,12 @@ Each Criteria is out of 5. A score can total 25 points.<br />
     'columns' => array(
       'nid_6' => 'nid_6',
       'tid' => 'tid',
-      'field_proposal_status_value' => 'field_proposal_status_value',
-      'field_proposal_files_fid' => 'field_proposal_files_fid',
+      'field_article_status_value' => 'field_article_status_value',
+      'field_article_files_fid' => 'field_article_files_fid',
       'phpcode_1' => 'phpcode_1',
       'timestamp' => 'timestamp',
       'title' => 'title',
-      'field_proposal_presenters_uid' => 'field_proposal_presenters_uid',
+      'field_article_presenters_uid' => 'field_article_presenters_uid',
       'access' => 'access',
       'value_4' => 'value_4',
       'value_5' => 'value_5',
@@ -4156,7 +4156,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
       'value_8' => 'value_8',
       'phpcode' => 'phpcode',
       'value_3' => 'value_3',
-      'field_proposal_reviewers_uid' => 'field_proposal_reviewers_uid',
+      'field_article_reviewers_uid' => 'field_article_reviewers_uid',
       'phpcode_3' => 'phpcode_3',
       'phpcode_2' => 'phpcode_2',
       'uid' => 'uid',
@@ -4175,11 +4175,11 @@ Each Criteria is out of 5. A score can total 25 points.<br />
       'tid' => array(
         'separator' => '',
       ),
-      'field_proposal_status_value' => array(
+      'field_article_status_value' => array(
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_files_fid' => array(
+      'field_article_files_fid' => array(
         'separator' => '',
       ),
       'phpcode_1' => array(
@@ -4192,7 +4192,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_presenters_uid' => array(
+      'field_article_presenters_uid' => array(
         'separator' => '',
       ),
       'access' => array(
@@ -4226,7 +4226,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_reviewers_uid' => array(
+      'field_article_reviewers_uid' => array(
         'separator' => '',
       ),
       'phpcode_3' => array(
@@ -4267,10 +4267,10 @@ Each Criteria is out of 5. A score can total 25 points.<br />
     'default' => '-1',
   ));
   $handler = $view->new_display('page', 'Page', 'page_1');
-  $handler->override_option('path', 'review/proposals');
+  $handler->override_option('path', 'review/articles');
   $handler->override_option('menu', array(
     'type' => 'normal',
-    'title' => 'Proposals Overview',
+    'title' => 'Articles Overview',
     'description' => '',
     'weight' => '0',
     'name' => 'menu-committee',
@@ -4294,7 +4294,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
     'header' => 1,
   ));
   $handler->override_option('row_plugin', '');
-  $handler->override_option('path', 'review/proposals/csv');
+  $handler->override_option('path', 'review/articles/csv');
   $handler->override_option('menu', array(
     'type' => 'none',
     'title' => '',
@@ -4320,22 +4320,22 @@ Each Criteria is out of 5. A score can total 25 points.<br />
   // Exported view: Review_Assigned_Papers
   $view = new view;
   $view->name = 'Review_Assigned_Papers';
-  $view->description = 'A list of proposals you are assigned to review.';
+  $view->description = 'A list of articles you are assigned to review.';
   $view->tag = '';
   $view->view_php = '';
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
-    'field_proposal_reviewers_uid' => array(
+    'field_article_reviewers_uid' => array(
       'label' => 'Reviewers',
       'required' => 0,
       'delta' => '-1',
-      'id' => 'field_proposal_reviewers_uid',
-      'table' => 'node_data_field_proposal_reviewers',
-      'field' => 'field_proposal_reviewers_uid',
+      'id' => 'field_article_reviewers_uid',
+      'table' => 'node_data_field_article_reviewers',
+      'field' => 'field_article_reviewers_uid',
       'override' => array(
         'button' => 'Override',
       ),
@@ -4532,7 +4532,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -4560,7 +4560,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
       'override' => array(
         'button' => 'Override',
       ),
-      'relationship' => 'field_proposal_reviewers_uid',
+      'relationship' => 'field_article_reviewers_uid',
     ),
   ));
   $handler->override_option('access', array(
@@ -4572,17 +4572,17 @@ Each Criteria is out of 5. A score can total 25 points.<br />
   $handler->override_option('cache', array(
     'type' => 'none',
   ));
-  $handler->override_option('title', 'Assigned Proposals');
+  $handler->override_option('title', 'Assigned Articles');
   $handler->override_option('header', '<fieldset><legend>Editorial Policy</legend>
 <?php
 print nl2br(variable_get(\'review_editorial_policy\', \'\'));
 ?></fieldset>
 <br />
-Below is a list of your assigned proposals for blind peer review.<br /><br />
+Below is a list of your assigned articles for blind peer review.<br /><br />
 Click on the title of the paper to read the abstract and download the paper. When you are ready to submit your review click on Review Paper. If you have already submitted a review, you can see it by clicking on your recommendation.<br /><br />');
   $handler->override_option('header_format', '5');
   $handler->override_option('header_empty', 1);
-  $handler->override_option('empty', 'You currently have no proposals specifically assigned to you.');
+  $handler->override_option('empty', 'You currently have no articles specifically assigned to you.');
   $handler->override_option('empty_format', '1');
   $handler->override_option('items_per_page', 20);
   $handler->override_option('use_pager', '1');
@@ -4596,12 +4596,12 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     'columns' => array(
       'tid' => 'tid',
       'title' => 'title',
-      'field_proposal_presenters_uid' => 'field_proposal_presenters_uid',
-      'field_proposal_status_value' => 'field_proposal_status_value',
+      'field_article_presenters_uid' => 'field_article_presenters_uid',
+      'field_article_status_value' => 'field_article_status_value',
       'value' => 'value',
       'value_1' => 'value_1',
       'value_2' => 'value_2',
-      'field_proposal_reviewers_uid' => 'field_proposal_reviewers_uid',
+      'field_article_reviewers_uid' => 'field_article_reviewers_uid',
       'value_3' => 'value_3',
       'view_node' => 'view_node',
     ),
@@ -4613,10 +4613,10 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_presenters_uid' => array(
+      'field_article_presenters_uid' => array(
         'separator' => '',
       ),
-      'field_proposal_status_value' => array(
+      'field_article_status_value' => array(
         'sortable' => 1,
         'separator' => '',
       ),
@@ -4632,7 +4632,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_reviewers_uid' => array(
+      'field_article_reviewers_uid' => array(
         'separator' => '',
       ),
       'value_3' => array(
@@ -4646,7 +4646,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     'default' => '-1',
   ));
   $handler = $view->new_display('page', 'Page', 'page_1');
-  $handler->override_option('path', 'review/assigned_proposals');
+  $handler->override_option('path', 'review/assigned_articles');
   $handler->override_option('menu', array(
     'type' => 'normal',
     'title' => 'Assigned Reviews',
@@ -4673,7 +4673,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
     'field_paper_nid' => array(
@@ -4688,10 +4688,10 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       ),
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+    'field_article_presenters_uid' => array(
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
     ),
   ));
   $handler->override_option('fields', array(
@@ -4738,7 +4738,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'default_argument_fixed' => '',
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
         'webform' => 0,
         'image' => 0,
         'product' => 0,
@@ -4815,13 +4815,13 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       ),
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'required' => 1,
       'delta' => '-1',
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -4883,7 +4883,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'override' => array(
         'button' => 'Use default',
       ),
-      'relationship' => 'field_proposal_presenters_uid',
+      'relationship' => 'field_article_presenters_uid',
     ),
   ));
   $handler->override_option('access', array(
@@ -4918,25 +4918,25 @@ Click on the title of the paper to read the abstract and download the paper. Whe
 
   $views[$view->name] = $view;
 
-  // Exported view: co_proposals
+  // Exported view: co_articles
   $view = new view;
-  $view->name = 'co_proposals';
-  $view->description = 'List all proposals the user is a co-presenter for.';
-  $view->tag = 'proposal';
+  $view->name = 'co_articles';
+  $view->description = 'List all articles the user is a co-presenter for.';
+  $view->tag = 'article';
   $view->view_php = '';
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
   ));
@@ -4967,7 +4967,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'field' => 'title',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value' => array(
+    'field_article_status_value' => array(
       'label' => 'Acceptance',
       'alter' => array(
         'alter_text' => 0,
@@ -4996,9 +4996,9 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_status_value',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value',
+      'id' => 'field_article_status_value',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value',
       'relationship' => 'none',
     ),
     'field_timeslot_date_value' => array(
@@ -5043,7 +5043,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
   ));
   $handler->override_option('sorts', array(
@@ -5056,7 +5056,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     ),
   ));
   $handler->override_option('arguments', array(
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'default_action' => 'not found',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
@@ -5070,9 +5070,9 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'validate_fail' => 'not found',
       'break_phrase' => 0,
       'not' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'validate_user_argument_type' => 'either',
       'validate_user_roles' => array(
         '2' => 0,
@@ -5090,7 +5090,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'panel' => 0,
         'page' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'story' => 0,
       ),
       'validate_argument_node_access' => 0,
@@ -5139,7 +5139,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'panel' => 0,
         'page' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'story' => 0,
       ),
       'validate_argument_node_access' => 0,
@@ -5159,7 +5159,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -5192,7 +5192,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     'columns' => array(
       'title' => 'title',
       'name' => 'name',
-      'field_proposal_status_value' => 'field_proposal_status_value',
+      'field_article_status_value' => 'field_article_status_value',
     ),
     'info' => array(
       'title' => array(
@@ -5203,7 +5203,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_status_value' => array(
+      'field_article_status_value' => array(
         'sortable' => 1,
         'separator' => '',
       ),
@@ -5225,7 +5225,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('fields', array(
     'nid' => array(
@@ -5400,34 +5400,34 @@ Click on the title of the paper to read the abstract and download the paper. Whe
 
   $views[$view->name] = $view;
 
-  // Exported view: list_proposals
+  // Exported view: list_articles
   $view = new view;
-  $view->name = 'list_proposals';
-  $view->description = 'List all submitted proposals';
+  $view->name = 'list_articles';
+  $view->description = 'List all submitted articles';
   $view->tag = '';
   $view->view_php = '';
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
-    'field_proposal_room_nid' => array(
+    'field_article_room_nid' => array(
       'label' => 'Room',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_room_nid',
-      'table' => 'node_data_field_proposal_room',
-      'field' => 'field_proposal_room_nid',
+      'id' => 'field_article_room_nid',
+      'table' => 'node_data_field_article_room',
+      'field' => 'field_article_room_nid',
       'relationship' => 'none',
     ),
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
   ));
@@ -5626,7 +5626,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'field' => 'name',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value' => array(
+    'field_article_status_value' => array(
       'label' => 'Status',
       'alter' => array(
         'alter_text' => 0,
@@ -5655,9 +5655,9 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_status_value',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value',
+      'id' => 'field_article_status_value',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value',
       'relationship' => 'none',
     ),
     'status' => array(
@@ -5719,7 +5719,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'id' => 'title_1',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
     'title_2' => array(
       'label' => 'Scheduled',
@@ -5749,7 +5749,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'id' => 'title_2',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
   ));
   $handler->override_option('sorts', array(
@@ -5766,12 +5766,12 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'table' => 'node',
       'field' => 'title',
     ),
-    'field_proposal_status_value' => array(
+    'field_article_status_value' => array(
       'order' => 'ASC',
       'delta' => -1,
-      'id' => 'field_proposal_status_value',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value',
+      'id' => 'field_article_status_value',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value',
       'relationship' => 'none',
     ),
   ));
@@ -5779,7 +5779,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -5834,7 +5834,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'use_operator' => 0,
         'operator' => 'tid_op',
         'identifier' => 'tid',
-        'label' => 'Proposal Kind',
+        'label' => 'Article Kind',
         'optional' => 1,
         'single' => 0,
         'remember' => 0,
@@ -5875,7 +5875,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'use_operator' => 0,
         'operator' => 'tid_1_op',
         'identifier' => 'tid_1',
-        'label' => 'Proposal Category',
+        'label' => 'Article Category',
         'optional' => 1,
         'single' => 0,
         'remember' => 0,
@@ -5891,24 +5891,24 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'relationship' => 'none',
       'reduce_duplicates' => 1,
     ),
-    'field_proposal_status_value_many_to_one' => array(
+    'field_article_status_value_many_to_one' => array(
       'operator' => 'or',
       'value' => array(),
       'group' => '0',
       'exposed' => TRUE,
       'expose' => array(
         'use_operator' => 0,
-        'operator' => 'field_proposal_status_value_many_to_one_op',
-        'identifier' => 'field_proposal_status_value_many_to_one',
-        'label' => 'Proposal Status',
+        'operator' => 'field_article_status_value_many_to_one_op',
+        'identifier' => 'field_article_status_value_many_to_one',
+        'label' => 'Article Status',
         'optional' => 1,
         'single' => 0,
         'remember' => 0,
         'reduce' => 0,
       ),
-      'id' => 'field_proposal_status_value_many_to_one',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value_many_to_one',
+      'id' => 'field_article_status_value_many_to_one',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value_many_to_one',
       'relationship' => 'none',
       'reduce_duplicates' => 0,
     ),
@@ -5946,7 +5946,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'id' => 'title',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
     'date_filter' => array(
       'operator' => 'between',
@@ -5980,7 +5980,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'id' => 'date_filter',
       'table' => 'node',
       'field' => 'date_filter',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
   ));
   $handler->override_option('access', array(
@@ -5994,7 +5994,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
   $handler->override_option('cache', array(
     'type' => 'none',
   ));
-  $handler->override_option('title', 'Proposal Listing');
+  $handler->override_option('title', 'Article Listing');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('items_per_page', 0);
   $handler->override_option('distinct', 1);
@@ -6012,7 +6012,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'name_1' => 'name_1',
       'access' => 'access',
       'name' => 'name',
-      'field_proposal_status_value' => 'field_proposal_status_value',
+      'field_article_status_value' => 'field_article_status_value',
       'status' => 'status',
     ),
     'info' => array(
@@ -6043,7 +6043,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_status_value' => array(
+      'field_article_status_value' => array(
         'sortable' => 1,
         'separator' => '',
       ),
@@ -6096,10 +6096,10 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     ),
   ));
   $handler = $view->new_display('page', 'Page', 'page_1');
-  $handler->override_option('path', 'proposal/all');
+  $handler->override_option('path', 'article/all');
   $handler->override_option('menu', array(
     'type' => 'normal',
-    'title' => 'List all proposals',
+    'title' => 'List all articles',
     'description' => '',
     'weight' => '0',
     'name' => 'menu-committee',
@@ -6122,7 +6122,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     'header' => 1,
   ));
   $handler->override_option('row_plugin', '');
-  $handler->override_option('path', 'proposal/all/csv');
+  $handler->override_option('path', 'article/all/csv');
   $handler->override_option('menu', array(
     'type' => 'none',
     'title' => '',
@@ -6154,7 +6154,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
   $view->base_table = 'users';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
     'content_profile_rel' => array(
@@ -6528,7 +6528,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       ),
       'value' => '<?php
 
-  $query = "SELECT COUNT(nid) FROM {content_field_proposal_reviewers} WHERE field_proposal_reviewers_uid = %d";
+  $query = "SELECT COUNT(nid) FROM {content_field_article_reviewers} WHERE field_article_reviewers_uid = %d";
   $assigned = db_result(db_query($query, $data->uid));
 
   $query = "SELECT COUNT(nid) FROM {node} WHERE uid=%d and type=\'%s\'";
@@ -6644,25 +6644,25 @@ Click on the title of the paper to read the abstract and download the paper. Whe
 
   $views[$view->name] = $view;
 
-  // Exported view: my_proposals
+  // Exported view: my_articles
   $view = new view;
-  $view->name = 'my_proposals';
-  $view->description = 'List all proposals submitted by the user.';
-  $view->tag = 'proposal';
+  $view->name = 'my_articles';
+  $view->description = 'List all articles submitted by the user.';
+  $view->tag = 'article';
   $view->view_php = '';
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
   ));
@@ -6693,7 +6693,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'field' => 'title',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value' => array(
+    'field_article_status_value' => array(
       'label' => 'Acceptance',
       'alter' => array(
         'alter_text' => 0,
@@ -6722,9 +6722,9 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_status_value',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value',
+      'id' => 'field_article_status_value',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value',
       'relationship' => 'none',
     ),
     'field_timeslot_date_value' => array(
@@ -6769,7 +6769,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'new_comments' => array(
       'label' => 'New comments',
@@ -6893,7 +6893,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'panel' => 0,
         'page' => 0,
         'profile' => 0,
-        'proposal' => 0,
+        'article' => 0,
         'story' => 0,
       ),
       'validate_argument_node_access' => 0,
@@ -6913,7 +6913,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -6938,10 +6938,10 @@ Click on the title of the paper to read the abstract and download the paper. Whe
   $handler->override_option('cache', array(
     'type' => 'none',
   ));
-  $handler->override_option('title', 'My proposals');
-  $handler->override_option('header', 'To submit your full paper, slides, or session notes, click on the title of your proposal, then click \'Edit\'. Scroll down to the file upload, click the browse button to select the file from your computer and click \'Upload\'. This may take a moment. Once the name of the file appears, it has been successfully uploaded. Then click the \'Save\' button at the bottom of the page.
+  $handler->override_option('title', 'My articles');
+  $handler->override_option('header', 'To submit your full paper, slides, or session notes, click on the title of your article, then click \'Edit\'. Scroll down to the file upload, click the browse button to select the file from your computer and click \'Upload\'. This may take a moment. Once the name of the file appears, it has been successfully uploaded. Then click the \'Save\' button at the bottom of the page.
 
-To update your <strong>technical requirements</strong> click on the title of your proposal, then click \'Edit\'.  Technical Requirements, and Attendee notes are below the abstract.');
+To update your <strong>technical requirements</strong> click on the title of your article, then click \'Edit\'.  Technical Requirements, and Attendee notes are below the abstract.');
   $handler->override_option('header_format', '1');
   $handler->override_option('header_empty', 0);
   $handler->override_option('style_plugin', 'table');
@@ -6953,7 +6953,7 @@ To update your <strong>technical requirements</strong> click on the title of you
     'columns' => array(
       'title' => 'title',
       'name' => 'name',
-      'field_proposal_status_value' => 'field_proposal_status_value',
+      'field_article_status_value' => 'field_article_status_value',
     ),
     'info' => array(
       'title' => array(
@@ -6964,7 +6964,7 @@ To update your <strong>technical requirements</strong> click on the title of you
         'sortable' => 0,
         'separator' => '',
       ),
-      'field_proposal_status_value' => array(
+      'field_article_status_value' => array(
         'sortable' => 0,
         'separator' => '',
       ),
@@ -6986,25 +6986,25 @@ To update your <strong>technical requirements</strong> click on the title of you
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
-    'field_proposal_scheduled_nid' => array(
+    'field_article_scheduled_nid' => array(
       'label' => 'Scheduled',
       'required' => 1,
       'delta' => -1,
-      'id' => 'field_proposal_scheduled_nid',
-      'table' => 'node_data_field_proposal_scheduled',
-      'field' => 'field_proposal_scheduled_nid',
+      'id' => 'field_article_scheduled_nid',
+      'table' => 'node_data_field_article_scheduled',
+      'field' => 'field_article_scheduled_nid',
       'relationship' => 'none',
     ),
-    'field_proposal_room_nid' => array(
+    'field_article_room_nid' => array(
       'label' => 'Room',
       'required' => 0,
       'delta' => -1,
-      'id' => 'field_proposal_room_nid',
-      'table' => 'node_data_field_proposal_room',
-      'field' => 'field_proposal_room_nid',
+      'id' => 'field_article_room_nid',
+      'table' => 'node_data_field_article_room',
+      'field' => 'field_article_room_nid',
       'relationship' => 'none',
     ),
   ));
@@ -7037,7 +7037,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'title',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
     'field_room_code_value' => array(
       'label' => 'Code',
@@ -7075,7 +7075,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_code_value',
       'table' => 'node_data_field_room_code',
       'field' => 'field_room_code_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
     'field_timeslot_date_value' => array(
       'label' => 'Date',
@@ -7119,7 +7119,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
       'override' => array(
         'button' => 'Override',
       ),
@@ -7160,9 +7160,9 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_capacity_value',
       'table' => 'node_data_field_room_capacity',
       'field' => 'field_room_capacity_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
-    'field_proposal_tech_equipment_value' => array(
+    'field_article_tech_equipment_value' => array(
       'label' => 'Hardware',
       'alter' => array(
         'alter_text' => 0,
@@ -7195,12 +7195,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_equipment_value',
-      'table' => 'node_data_field_proposal_tech_equipment',
-      'field' => 'field_proposal_tech_equipment_value',
+      'id' => 'field_article_tech_equipment_value',
+      'table' => 'node_data_field_article_tech_equipment',
+      'field' => 'field_article_tech_equipment_value',
       'relationship' => 'none',
     ),
-    'field_proposal_attendee_notes_value' => array(
+    'field_article_attendee_notes_value' => array(
       'label' => 'Attendee Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -7233,12 +7233,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_attendee_notes_value',
-      'table' => 'node_data_field_proposal_attendee_notes',
-      'field' => 'field_proposal_attendee_notes_value',
+      'id' => 'field_article_attendee_notes_value',
+      'table' => 'node_data_field_article_attendee_notes',
+      'field' => 'field_article_attendee_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_tech_internet_value' => array(
+    'field_article_tech_internet_value' => array(
       'label' => 'Bandwidth',
       'alter' => array(
         'alter_text' => 0,
@@ -7271,12 +7271,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_internet_value',
-      'table' => 'node_data_field_proposal_tech_internet',
-      'field' => 'field_proposal_tech_internet_value',
+      'id' => 'field_article_tech_internet_value',
+      'table' => 'node_data_field_article_tech_internet',
+      'field' => 'field_article_tech_internet_value',
       'relationship' => 'none',
     ),
-    'field_proposal_admin_notes_value' => array(
+    'field_article_admin_notes_value' => array(
       'label' => 'Administrative Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -7309,12 +7309,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_admin_notes_value',
-      'table' => 'node_data_field_proposal_admin_notes',
-      'field' => 'field_proposal_admin_notes_value',
+      'id' => 'field_article_admin_notes_value',
+      'table' => 'node_data_field_article_admin_notes',
+      'field' => 'field_article_admin_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'alter' => array(
         'alter_text' => 0,
@@ -7347,9 +7347,9 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
     ),
     'markup' => array(
@@ -7454,7 +7454,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'field_timeslot_date_value2' => array(
       'order' => 'ASC',
@@ -7462,21 +7462,21 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_timeslot_date_value2',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value2',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
     ),
     'title' => array(
       'order' => 'ASC',
       'id' => 'title',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
     ),
   ));
   $handler->override_option('filters', array(
     'type' => array(
       'operator' => 'in',
       'value' => array(
-        'proposal' => 'proposal',
+        'article' => 'article',
       ),
       'group' => '0',
       'exposed' => FALSE,
@@ -7489,7 +7489,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'field' => 'type',
       'relationship' => 'none',
     ),
-    'field_proposal_status_value_many_to_one' => array(
+    'field_article_status_value_many_to_one' => array(
       'operator' => 'or',
       'value' => array(
         'accepted' => 'accepted',
@@ -7499,38 +7499,38 @@ To update your <strong>technical requirements</strong> click on the title of you
       'exposed' => TRUE,
       'expose' => array(
         'use_operator' => 0,
-        'operator' => 'field_proposal_status_value_many_to_one_op',
-        'identifier' => 'field_proposal_status_value_many_to_one',
-        'label' => 'Proposal Status',
+        'operator' => 'field_article_status_value_many_to_one_op',
+        'identifier' => 'field_article_status_value_many_to_one',
+        'label' => 'Article Status',
         'optional' => 1,
         'single' => 0,
         'remember' => 0,
         'reduce' => 0,
       ),
-      'id' => 'field_proposal_status_value_many_to_one',
-      'table' => 'node_data_field_proposal_status',
-      'field' => 'field_proposal_status_value_many_to_one',
+      'id' => 'field_article_status_value_many_to_one',
+      'table' => 'node_data_field_article_status',
+      'field' => 'field_article_status_value_many_to_one',
       'relationship' => 'none',
       'reduce_duplicates' => 0,
     ),
-    'field_proposal_tech_internet_value_many_to_one' => array(
+    'field_article_tech_internet_value_many_to_one' => array(
       'operator' => 'or',
       'value' => array(),
       'group' => '0',
       'exposed' => TRUE,
       'expose' => array(
         'use_operator' => 0,
-        'operator' => 'field_proposal_tech_internet_value_many_to_one_op',
-        'identifier' => 'field_proposal_tech_internet_value_many_to_one',
+        'operator' => 'field_article_tech_internet_value_many_to_one_op',
+        'identifier' => 'field_article_tech_internet_value_many_to_one',
         'label' => 'Bandwidth',
         'optional' => 1,
         'single' => 0,
         'remember' => 0,
         'reduce' => 0,
       ),
-      'id' => 'field_proposal_tech_internet_value_many_to_one',
-      'table' => 'node_data_field_proposal_tech_internet',
-      'field' => 'field_proposal_tech_internet_value_many_to_one',
+      'id' => 'field_article_tech_internet_value_many_to_one',
+      'table' => 'node_data_field_article_tech_internet',
+      'field' => 'field_article_tech_internet_value_many_to_one',
       'override' => array(
         'button' => 'Override',
       ),
@@ -7634,11 +7634,11 @@ To update your <strong>technical requirements</strong> click on the title of you
       'field_room_code_value' => 'field_room_code_value',
       'field_timeslot_date_value' => 'field_timeslot_date_value',
       'field_room_capacity_value' => 'field_room_capacity_value',
-      'field_proposal_tech_equipment_value' => 'field_proposal_tech_equipment_value',
-      'field_proposal_attendee_notes_value' => 'field_proposal_attendee_notes_value',
-      'field_proposal_tech_internet_value' => 'field_proposal_tech_internet_value',
-      'field_proposal_admin_notes_value' => 'field_proposal_admin_notes_value',
-      'field_proposal_presenters_uid' => 'field_proposal_presenters_uid',
+      'field_article_tech_equipment_value' => 'field_article_tech_equipment_value',
+      'field_article_attendee_notes_value' => 'field_article_attendee_notes_value',
+      'field_article_tech_internet_value' => 'field_article_tech_internet_value',
+      'field_article_admin_notes_value' => 'field_article_admin_notes_value',
+      'field_article_presenters_uid' => 'field_article_presenters_uid',
       'markup' => 'markup',
       'edit_node' => 'edit_node',
     ),
@@ -7659,23 +7659,23 @@ To update your <strong>technical requirements</strong> click on the title of you
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_tech_equipment_value' => array(
+      'field_article_tech_equipment_value' => array(
         'sortable' => 0,
         'separator' => '',
       ),
-      'field_proposal_attendee_notes_value' => array(
+      'field_article_attendee_notes_value' => array(
         'sortable' => 0,
         'separator' => '',
       ),
-      'field_proposal_tech_internet_value' => array(
+      'field_article_tech_internet_value' => array(
         'sortable' => 1,
         'separator' => '',
       ),
-      'field_proposal_admin_notes_value' => array(
+      'field_article_admin_notes_value' => array(
         'sortable' => 0,
         'separator' => '',
       ),
-      'field_proposal_presenters_uid' => array(
+      'field_article_presenters_uid' => array(
         'separator' => '',
       ),
       'markup' => array(
@@ -7688,7 +7688,7 @@ To update your <strong>technical requirements</strong> click on the title of you
     'default' => '-1',
   ));
   $handler = $view->new_display('page', 'Page', 'page_1');
-  $handler->override_option('path', 'proposal/tech');
+  $handler->override_option('path', 'article/tech');
   $handler->override_option('menu', array(
     'type' => 'normal',
     'title' => 'Tech Grid',
@@ -7747,7 +7747,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -7813,7 +7813,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'title',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -7854,7 +7854,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_code_value',
       'table' => 'node_data_field_room_code',
       'field' => 'field_room_code_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -7895,12 +7895,12 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_capacity_value',
       'table' => 'node_data_field_room_capacity',
       'field' => 'field_room_capacity_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
     ),
-    'field_proposal_tech_equipment_value' => array(
+    'field_article_tech_equipment_value' => array(
       'label' => 'Hardware',
       'alter' => array(
         'alter_text' => 0,
@@ -7933,12 +7933,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_equipment_value',
-      'table' => 'node_data_field_proposal_tech_equipment',
-      'field' => 'field_proposal_tech_equipment_value',
+      'id' => 'field_article_tech_equipment_value',
+      'table' => 'node_data_field_article_tech_equipment',
+      'field' => 'field_article_tech_equipment_value',
       'relationship' => 'none',
     ),
-    'field_proposal_attendee_notes_value' => array(
+    'field_article_attendee_notes_value' => array(
       'label' => 'Attendee Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -7971,12 +7971,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_attendee_notes_value',
-      'table' => 'node_data_field_proposal_attendee_notes',
-      'field' => 'field_proposal_attendee_notes_value',
+      'id' => 'field_article_attendee_notes_value',
+      'table' => 'node_data_field_article_attendee_notes',
+      'field' => 'field_article_attendee_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_tech_internet_value' => array(
+    'field_article_tech_internet_value' => array(
       'label' => 'Bandwidth',
       'alter' => array(
         'alter_text' => 0,
@@ -8009,12 +8009,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_internet_value',
-      'table' => 'node_data_field_proposal_tech_internet',
-      'field' => 'field_proposal_tech_internet_value',
+      'id' => 'field_article_tech_internet_value',
+      'table' => 'node_data_field_article_tech_internet',
+      'field' => 'field_article_tech_internet_value',
       'relationship' => 'none',
     ),
-    'field_proposal_admin_notes_value' => array(
+    'field_article_admin_notes_value' => array(
       'label' => 'Administrative Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -8047,12 +8047,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_admin_notes_value',
-      'table' => 'node_data_field_proposal_admin_notes',
-      'field' => 'field_proposal_admin_notes_value',
+      'id' => 'field_article_admin_notes_value',
+      'table' => 'node_data_field_article_admin_notes',
+      'field' => 'field_article_admin_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'alter' => array(
         'alter_text' => 0,
@@ -8085,9 +8085,9 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
     ),
     'markup' => array(
@@ -8162,7 +8162,7 @@ To update your <strong>technical requirements</strong> click on the title of you
     'description' => '',
   ));
   $handler->override_option('row_plugin', '');
-  $handler->override_option('path', 'proposal/tech/csv');
+  $handler->override_option('path', 'article/tech/csv');
   $handler->override_option('menu', array(
     'type' => 'none',
     'title' => '',
@@ -8226,7 +8226,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -8292,7 +8292,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'title',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -8333,7 +8333,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_code_value',
       'table' => 'node_data_field_room_code',
       'field' => 'field_room_code_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -8374,12 +8374,12 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_capacity_value',
       'table' => 'node_data_field_room_capacity',
       'field' => 'field_room_capacity_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
     ),
-    'field_proposal_tech_equipment_value' => array(
+    'field_article_tech_equipment_value' => array(
       'label' => 'Hardware',
       'alter' => array(
         'alter_text' => 0,
@@ -8412,12 +8412,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_equipment_value',
-      'table' => 'node_data_field_proposal_tech_equipment',
-      'field' => 'field_proposal_tech_equipment_value',
+      'id' => 'field_article_tech_equipment_value',
+      'table' => 'node_data_field_article_tech_equipment',
+      'field' => 'field_article_tech_equipment_value',
       'relationship' => 'none',
     ),
-    'field_proposal_attendee_notes_value' => array(
+    'field_article_attendee_notes_value' => array(
       'label' => 'Attendee Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -8450,12 +8450,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_attendee_notes_value',
-      'table' => 'node_data_field_proposal_attendee_notes',
-      'field' => 'field_proposal_attendee_notes_value',
+      'id' => 'field_article_attendee_notes_value',
+      'table' => 'node_data_field_article_attendee_notes',
+      'field' => 'field_article_attendee_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_tech_internet_value' => array(
+    'field_article_tech_internet_value' => array(
       'label' => 'Bandwidth',
       'alter' => array(
         'alter_text' => 0,
@@ -8488,12 +8488,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_internet_value',
-      'table' => 'node_data_field_proposal_tech_internet',
-      'field' => 'field_proposal_tech_internet_value',
+      'id' => 'field_article_tech_internet_value',
+      'table' => 'node_data_field_article_tech_internet',
+      'field' => 'field_article_tech_internet_value',
       'relationship' => 'none',
     ),
-    'field_proposal_admin_notes_value' => array(
+    'field_article_admin_notes_value' => array(
       'label' => 'Administrative Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -8526,12 +8526,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_admin_notes_value',
-      'table' => 'node_data_field_proposal_admin_notes',
-      'field' => 'field_proposal_admin_notes_value',
+      'id' => 'field_article_admin_notes_value',
+      'table' => 'node_data_field_article_admin_notes',
+      'field' => 'field_article_admin_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'alter' => array(
         'alter_text' => 0,
@@ -8564,9 +8564,9 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
     ),
     'markup' => array(
@@ -8641,7 +8641,7 @@ To update your <strong>technical requirements</strong> click on the title of you
     'description' => '',
   ));
   $handler->override_option('row_plugin', '');
-  $handler->override_option('path', 'proposal/tech/doc');
+  $handler->override_option('path', 'article/tech/doc');
   $handler->override_option('menu', array(
     'type' => 'none',
     'title' => '',
@@ -8705,7 +8705,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_timeslot_date_value',
       'table' => 'node_data_field_timeslot_date',
       'field' => 'field_timeslot_date_value',
-      'relationship' => 'field_proposal_scheduled_nid',
+      'relationship' => 'field_article_scheduled_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -8771,7 +8771,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'title',
       'table' => 'node',
       'field' => 'title',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -8812,7 +8812,7 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_code_value',
       'table' => 'node_data_field_room_code',
       'field' => 'field_room_code_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
@@ -8853,12 +8853,12 @@ To update your <strong>technical requirements</strong> click on the title of you
       'id' => 'field_room_capacity_value',
       'table' => 'node_data_field_room_capacity',
       'field' => 'field_room_capacity_value',
-      'relationship' => 'field_proposal_room_nid',
+      'relationship' => 'field_article_room_nid',
       'override' => array(
         'button' => 'Use default',
       ),
     ),
-    'field_proposal_tech_equipment_value' => array(
+    'field_article_tech_equipment_value' => array(
       'label' => 'Hardware',
       'alter' => array(
         'alter_text' => 0,
@@ -8891,12 +8891,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_equipment_value',
-      'table' => 'node_data_field_proposal_tech_equipment',
-      'field' => 'field_proposal_tech_equipment_value',
+      'id' => 'field_article_tech_equipment_value',
+      'table' => 'node_data_field_article_tech_equipment',
+      'field' => 'field_article_tech_equipment_value',
       'relationship' => 'none',
     ),
-    'field_proposal_attendee_notes_value' => array(
+    'field_article_attendee_notes_value' => array(
       'label' => 'Attendee Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -8929,12 +8929,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_attendee_notes_value',
-      'table' => 'node_data_field_proposal_attendee_notes',
-      'field' => 'field_proposal_attendee_notes_value',
+      'id' => 'field_article_attendee_notes_value',
+      'table' => 'node_data_field_article_attendee_notes',
+      'field' => 'field_article_attendee_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_tech_internet_value' => array(
+    'field_article_tech_internet_value' => array(
       'label' => 'Bandwidth',
       'alter' => array(
         'alter_text' => 0,
@@ -8967,12 +8967,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_tech_internet_value',
-      'table' => 'node_data_field_proposal_tech_internet',
-      'field' => 'field_proposal_tech_internet_value',
+      'id' => 'field_article_tech_internet_value',
+      'table' => 'node_data_field_article_tech_internet',
+      'field' => 'field_article_tech_internet_value',
       'relationship' => 'none',
     ),
-    'field_proposal_admin_notes_value' => array(
+    'field_article_admin_notes_value' => array(
       'label' => 'Administrative Notes',
       'alter' => array(
         'alter_text' => 0,
@@ -9005,12 +9005,12 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => FALSE,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_admin_notes_value',
-      'table' => 'node_data_field_proposal_admin_notes',
-      'field' => 'field_proposal_admin_notes_value',
+      'id' => 'field_article_admin_notes_value',
+      'table' => 'node_data_field_article_admin_notes',
+      'field' => 'field_article_admin_notes_value',
       'relationship' => 'none',
     ),
-    'field_proposal_presenters_uid' => array(
+    'field_article_presenters_uid' => array(
       'label' => 'Presenters',
       'alter' => array(
         'alter_text' => 0,
@@ -9043,9 +9043,9 @@ To update your <strong>technical requirements</strong> click on the title of you
         'multiple_reversed' => 0,
       ),
       'exclude' => 0,
-      'id' => 'field_proposal_presenters_uid',
-      'table' => 'node_data_field_proposal_presenters',
-      'field' => 'field_proposal_presenters_uid',
+      'id' => 'field_article_presenters_uid',
+      'table' => 'node_data_field_article_presenters',
+      'field' => 'field_article_presenters_uid',
       'relationship' => 'none',
     ),
     'markup' => array(
@@ -9121,7 +9121,7 @@ To update your <strong>technical requirements</strong> click on the title of you
     'filename' => 'view-%view.txt',
   ));
   $handler->override_option('row_plugin', '');
-  $handler->override_option('path', 'proposal/tech/txt');
+  $handler->override_option('path', 'article/tech/txt');
   $handler->override_option('menu', array(
     'type' => 'none',
     'title' => '',
@@ -9153,7 +9153,7 @@ To update your <strong>technical requirements</strong> click on the title of you
   $view->base_table = 'node';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('fields', array(
     'nid' => array(

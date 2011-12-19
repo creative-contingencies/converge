@@ -1,5 +1,5 @@
-name = Proposals workflow
-description = Users submit proposals, we need to generate a user account for anonymous users. Also to display link of invite with key.
+name = Articles workflow
+description = Users submit articles, we need to generate a user account for anonymous users. Also to display link of invite with key.
 package = "Converge"
 core = 6.x
 
@@ -7,5 +7,4 @@ dependencies[] = converge
 dependencies[] = content
 dependencies[] = content_permissions
 dependencies[] = logintoboggan
-dependencies[] = uuid
 dependencies[] = content_profile
