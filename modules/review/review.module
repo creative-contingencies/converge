@@ -42,7 +42,7 @@ function review_menu() {
 
   // Handler for the magic URL to add a reviewer to a proposal.
   // Needs to be hit by an authenticated user.
-  $items['manage/review/%/%/%/%'] = array(
+  $items['converge/review/%/%/%/%'] = array(
     'title' => 'Modify a review',
     'description' => 'Modify a review',
     'page callback' => 'review_manage_review',
@@ -53,7 +53,7 @@ function review_menu() {
 
   // Handler for the magic URL to accept or decline reviewer status.
   // Needs to be hit by any user.
-  $items['manage/reviewer/%/%/%'] = array(
+  $items['converge/reviewer/%/%/%'] = array(
     'title' => 'Modify a review',
     'description' => 'Modify a review',
     'page callback' => 'review_manage_reviewer',
@@ -1202,8 +1202,8 @@ function review_reviewer_csv_submit($form, &$form_state) {
     $params['!reviewer_lastname'] = $profile->field_profile_surname[0]['value'];
     $params['!reviewer_user'] = $reviewer->mail;
     $params['!reviewer_email'] = $reviewer->mail;
-    $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
-    $params['!decline_url'] = url('manage/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+    $params['!accept_url'] = url('converge/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+    $params['!decline_url'] = url('converge/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
 
     // Email this user.
     drupal_mail('review', 'reviewer_invite', $reviewer->mail, $language, $params);
