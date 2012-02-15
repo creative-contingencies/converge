@@ -402,6 +402,11 @@ function review_view_reviews($node) {
 
 function review_admin_settings() {
 
+  $form['invite'] = array(
+    '#type' => 'markup',
+    '#value' => t('You can import reviewers at !link', array('!link' => l('Reviewer Import', 'review/invite_reviewers'))),
+  );
+
   // Review policy.
   $form['review_editorial_policy'] = array(
     '#title' => 'Editorial Policy',
@@ -1264,10 +1269,10 @@ function review_manage_reviewer($op, $uuid, $vuid) {
 
       // Tell the $user what we did.
       drupal_set_message(t('Thank you for agreeing to review papers.'));
-      if ($user->uid) {
+      if ($victim->uid && ($victim->uid == $user->uid)) {
         drupal_set_message(t('Please complete this profile and indicate your interest areas below, so we can assign relevant papers.'));
         drupal_set_message(t('You will receive an email with instructions once a paper has been assigned for you to review.'));
-        drupal_goto('user/' . $user->uid . '/edit/profile');
+        drupal_goto('user/' . $victim->uid . '/profile/profile');
       }
       else {
         drupal_set_message(t('Please login and complete your profile and indicate your interest areas below, so we can assign relevant papers.'));
