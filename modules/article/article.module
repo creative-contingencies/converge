@@ -318,10 +318,10 @@ function article_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'article_node_form') {
 
     // Relabel 'taxonomy' as something else.
-    $form['taxonomy']['#title'] = t('Session Details');
+    $form['taxonomy']['#title'] = t('Article Details');
 
     // Hide the stream taxonomy if you're not an admin or papers chair.
-    if (!in_array('site administrator', $user->roles) || !in_array('papers chair',$user->roles) || $user->uid != 1) {
+    if (!in_array('site administrator', $user->roles) || !in_array('journal editor', $user->roles) || $user->uid != 1) {
       $js = "
         $(document).ready(function() {
           $('#edit-taxonomy-10-wrapper').hide();
@@ -404,8 +404,8 @@ function article_form_alter(&$form, $form_state, $form_id) {
 
     // Hide the 'presenters' userreference field.
     $form['field_article_presenters']['#access'] = FALSE;
-    $form['field_article_copresenters']['field_article_copresenters_add_more']['#value'] = t('Add another co-presenter');
-    $form['#validate'][] = 'article_node_form_copresenters_validate';
+    // $form['field_article_coauthors']['field_article_coauthors']['#value'] = t('Add another co-author');
+    $form['#validate'][] = 'article_node_form_coauthors_validate';
   } // end if form_id node_article_form
 }
 
@@ -445,9 +445,9 @@ function article_node_form_validate($form, &$form_state) {
 /**
  * Check the co-presenter fields.
  */
-function article_node_form_copresenters_validate($form, &$form_state) {
+function article_node_form_coauthors_validate($form, &$form_state) {
   // Check what's in the co-presenter fields.
-  foreach ($form_state['values']['field_article_copresenters'] as $field) {
+  foreach ($form_state['values']['field_article_coauthors'] as $field) {
     if (is_array($field) && !empty($field['value']) && !valid_email_address($field['value'])) {
       form_set_error($field['_error_element'], t('%mail is not a valid email address.', array('%mail' => $field['value'])));
     }

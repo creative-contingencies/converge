@@ -639,8 +639,8 @@ function review_form_alter(&$form, $form_state, $form_id) {
       $papers[$n->nid] = $n->title;
     }
     $form['paper'] = array(
-        '#title' => t('Paper'),
-        '#description' => t('Select the paper this e-mail is in reference to.'),
+        '#title' => t('Article'),
+        '#description' => t('Select the article this e-mail is in reference to.'),
         '#type' => 'select',
         '#options' => $papers,
         '#weight' => -10
@@ -731,7 +731,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
   }
 
 
-  if ($form_id == 'paper_review_node_form') {
+  if ($form_id == 'article_review_node_form') {
     // Remove the Preview button.
     unset($form['buttons']['preview']);
 
@@ -743,7 +743,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
 */
   }
 
-  if ( $form_id == 'article_node_form' && isset($_GET['assign_reviewers']) && $_GET['assign_reviewers'] == True ) {
+  if ( $form_id == 'article_node_form' && isset($_GET['assign_reviewers']) && !empty($_GET['assign_reviewers'])) { 
     //$form['field_article_reviewers']['#size'] = 12;
     
     // oddly field_article_reviewers doesn't exist so I commented out the above line
@@ -752,14 +752,18 @@ function review_form_alter(&$form, $form_state, $form_id) {
     // Show only reviewers field to allow reviewer assignment through standard node-edit and CCK.
     $js = "
     $(document).ready(function() {
-      $('#content .node-form .standard').children().each(function() {
+      $('.group-article-editorial').removeClass('collapsed');
+      $('#main-content .node-form .standard').children().each(function() {
         if ( $(this).attr('id') != 'field-article-reviewers-items' && $(this).attr('id') != 'edit-field-article-reviewers-uid-uid-wrapper' && $(this).attr('class') != 'not-hidden' ) {
           $(this).hide();
         }
       });
-      $('#content .help p').hide();
+      $('#main-content .help p').hide();
       $('#edit-preview').hide();
       $('#edit-delete').hide();
+      $('.group-article-editorial').show();
+      $('#edit-field-article-admin-notes-0-value-wrapper').hide();
+      $('#edit-field-article-status-value-wrapper').hide();
     });
     ";
     
@@ -768,8 +772,8 @@ function review_form_alter(&$form, $form_state, $form_id) {
     // Show a list of reviewers with interests that match the categories on this node.
 
     // Get category vid.
-    $vid = variable_get('article_vocabulary_category', 0);
-    if ($vid) {
+    // $vid = variable_get('article_vocabulary_category', 0);
+    // if ($vid) {
 
       $rid = db_result(db_query("SELECT rid FROM {role} WHERE name='reviewer'"));
 
@@ -812,7 +816,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
           '#attributes' => array('class' => 'not-hidden'),
         );
       } // !count
-    } // !vid
+    // } // !vid
   }
   else if ( $form_id == 'article_node_form' && isset($_GET['change_status']) && $_GET['change_status'] == True ) {
     // Show only status field for updating articles.
@@ -1070,8 +1074,8 @@ function review_link($type, $object, $teaser = FALSE) {
     }
     if ( $can_review ) {
         $links[] = array(
-          'title' => t('Review Paper'),
-          'href' => 'node/add/paper-review',
+          'title' => t('Review Article'),
+          'href' => 'node/add/article-review',
           'query' => 'nid=' . $object->nid,
         );
     }
