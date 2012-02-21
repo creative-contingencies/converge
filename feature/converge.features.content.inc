@@ -133,7 +133,7 @@ function converge_content_default_fields() {
       'old_timeslot' => 0,
       'page' => 0,
       'panel' => 0,
-      'paper_review' => 0,
+      'article_review' => 0,
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
@@ -166,9 +166,9 @@ function converge_content_default_fields() {
   );
 
   // Exported field: field_author_feedback
-  $fields['paper_review-field_author_feedback'] = array(
+  $fields['article_review-field_author_feedback'] = array(
     'field_name' => 'field_author_feedback',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'weight' => '5',
       'parent' => '',
@@ -229,9 +229,9 @@ function converge_content_default_fields() {
   );
 
   // Exported field: field_criteria_discussion
-  $fields['paper_review-field_criteria_discussion'] = array(
+  $fields['article_review-field_criteria_discussion'] = array(
     'field_name' => 'field_criteria_discussion',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'label' => array(
         'format' => 'above',
@@ -285,9 +285,9 @@ function converge_content_default_fields() {
   );
 
   // Exported field: field_criteria_impact
-  $fields['paper_review-field_criteria_impact'] = array(
+  $fields['article_review-field_criteria_impact'] = array(
     'field_name' => 'field_criteria_impact',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'label' => array(
         'format' => 'above',
@@ -341,9 +341,9 @@ function converge_content_default_fields() {
   );
 
   // Exported field: field_criteria_interesting
-  $fields['paper_review-field_criteria_interesting'] = array(
+  $fields['article_review-field_criteria_interesting'] = array(
     'field_name' => 'field_criteria_interesting',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'label' => array(
         'format' => 'above',
@@ -397,9 +397,9 @@ function converge_content_default_fields() {
   );
 
   // Exported field: field_criteria_references
-  $fields['paper_review-field_criteria_references'] = array(
+  $fields['article_review-field_criteria_references'] = array(
     'field_name' => 'field_criteria_references',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'label' => array(
         'format' => 'above',
@@ -453,9 +453,9 @@ function converge_content_default_fields() {
   );
 
   // Exported field: field_criteria_writing
-  $fields['paper_review-field_criteria_writing'] = array(
+  $fields['article_review-field_criteria_writing'] = array(
     'field_name' => 'field_criteria_writing',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'label' => array(
         'format' => 'above',
@@ -509,9 +509,9 @@ function converge_content_default_fields() {
   );
 
   // Exported field: field_paper
-  $fields['paper_review-field_paper'] = array(
+  $fields['article_review-field_paper'] = array(
     'field_name' => 'field_paper',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'weight' => '1',
       'parent' => '',
@@ -554,7 +554,7 @@ function converge_content_default_fields() {
       'image' => 0,
       'page' => 0,
       'panel' => 0,
-      'paper_review' => 0,
+      'article_review' => 0,
       'profile' => 0,
       'product' => 0,
       'story' => 0,
@@ -596,9 +596,9 @@ return array(
   );
 
   // Exported field: field_review
-  $fields['paper_review-field_review'] = array(
+  $fields['article_review-field_review'] = array(
     'field_name' => 'field_review',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'weight' => '6',
       'parent' => '',
@@ -659,9 +659,9 @@ return array(
   );
 
   // Exported field: field_review_recommendation
-  $fields['paper_review-field_review_recommendation'] = array(
+  $fields['article_review-field_review_recommendation'] = array(
     'field_name' => 'field_review_recommendation',
-    'type_name' => 'paper_review',
+    'type_name' => 'article_review',
     'display_settings' => array(
       'weight' => '7',
       'parent' => '',
@@ -2298,7 +2298,7 @@ Independent',
       'profile' => 0,
       'page' => 0,
       'panel' => 0,
-      'paper_review' => 0,
+      'article_review' => 0,
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
@@ -2606,7 +2606,7 @@ Independent',
       'old_timeslot' => 0,
       'page' => 0,
       'panel' => 0,
-      'paper_review' => 0,
+      'article_review' => 0,
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
@@ -2696,7 +2696,7 @@ Independent',
       'old_timeslot' => 0,
       'page' => 0,
       'panel' => 0,
-      'paper_review' => 0,
+      'article_review' => 0,
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,
@@ -2776,7 +2776,6 @@ review|Review in progress
 accepted|Accepted
 accepted_minor_changes|Accepted with minor changes
 needs_changes|Major changes needed
-backup|Backup
 rejected|Rejected
 withdrawn|Withdrawn
 cancelled|Cancelled',
@@ -2791,131 +2790,6 @@ cancelled|Cancelled',
       'label' => 'Status',
       'weight' => '40',
       'description' => 'This field is used by the papers committee to flag whether or not a article has been accepted.',
-      'type' => 'optionwidgets_select',
-      'module' => 'optionwidgets',
-    ),
-  );
-
-  // Exported field: field_article_tech_equipment
-  $fields['article-field_article_tech_equipment'] = array(
-    'field_name' => 'field_article_tech_equipment',
-    'type_name' => 'article',
-    'display_settings' => array(
-      'weight' => '5',
-      'parent' => 'group_article_tech',
-      'label' => array(
-        'format' => 'above',
-      ),
-      'teaser' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      '4' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      '2' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      '3' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'token' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-    'widget_active' => '1',
-    'type' => 'text',
-    'required' => '0',
-    'multiple' => '0',
-    'module' => 'text',
-    'active' => '1',
-    'text_processing' => '0',
-    'max_length' => '',
-    'allowed_values' => '',
-    'allowed_values_php' => '',
-    'widget' => array(
-      'rows' => 5,
-      'size' => '60',
-      'default_value' => array(
-        '0' => array(
-          'value' => '',
-          '_error_element' => 'default_value_widget][field_article_tech_equipment][0][value',
-        ),
-      ),
-      'default_value_php' => NULL,
-      'label' => 'Equipment',
-      'weight' => '5',
-      'description' => 'If you require any non-standard equipment, please specify it here.',
-      'type' => 'text_textfield',
-      'module' => 'text',
-    ),
-  );
-
-  // Exported field: field_article_tech_internet
-  $fields['article-field_article_tech_internet'] = array(
-    'field_name' => 'field_article_tech_internet',
-    'type_name' => 'article',
-    'display_settings' => array(
-      'weight' => '4',
-      'parent' => 'group_article_tech',
-      'label' => array(
-        'format' => 'above',
-      ),
-      'teaser' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      '4' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      '2' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      '3' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'token' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-    'widget_active' => '1',
-    'type' => 'text',
-    'required' => '1',
-    'multiple' => '0',
-    'module' => 'text',
-    'active' => '1',
-    'text_processing' => '0',
-    'max_length' => '',
-    'allowed_values' => 'none|I do not require internet access
-standard|128Kb/sec internet access is fine
-highspeed|I require high speed internet access',
-    'allowed_values_php' => '',
-    'widget' => array(
-      'default_value' => array(
-        '0' => array(
-          'value' => 'standard',
-        ),
-      ),
-      'default_value_php' => NULL,
-      'label' => 'Internet',
-      'weight' => '4',
-      'description' => '',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
     ),
@@ -2968,7 +2842,7 @@ highspeed|I require high speed internet access',
       'profile' => 0,
       'page' => 0,
       'panel' => 0,
-      'paper_review' => 0,
+      'article_review' => 0,
       'placeholder' => 0,
       'planet' => 0,
       'poll' => 0,

@@ -382,7 +382,7 @@ function converge_views_default_views() {
         'product' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -649,7 +649,7 @@ function converge_views_default_views() {
         'product' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -706,7 +706,7 @@ function converge_views_default_views() {
         'product' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -793,7 +793,7 @@ function converge_views_default_views() {
         'product' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -850,7 +850,7 @@ function converge_views_default_views() {
         'product' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -937,7 +937,7 @@ function converge_views_default_views() {
         'product' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -994,7 +994,7 @@ function converge_views_default_views() {
         'product' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -1779,7 +1779,7 @@ function converge_views_default_views() {
         'day' => 0,
         'old_timeslot' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -1846,7 +1846,7 @@ function converge_views_default_views() {
         'day' => 0,
         'old_timeslot' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'placeholder' => 0,
         'profile' => 0,
         'article' => 0,
@@ -3713,7 +3713,7 @@ foreach ( $reviewers as $u ) {
     $reviewer = content_profile_load(\'profile\', $u[\'uid\']);
     $reviewer_name = $reviewer->field_profile_firstname[0][\'value\'] . \' \' . $reviewer->field_profile_surname[0][\'value\'];
 
-    $query = "SELECT nid FROM {content_type_paper_review} WHERE field_paper_nid = %d";
+    $query = "SELECT nid FROM {content_type_article_review} WHERE field_paper_nid = %d";
     $result = db_query($query, $data->nid);
     $reviews = array();
     while ( $rid = db_fetch_object($result) ) {
@@ -3721,7 +3721,7 @@ foreach ( $reviewers as $u ) {
     }
 
     $query = "SELECT nid FROM {node} WHERE type=\'%s\' AND uid=%d AND nid IN (%s)";
-    $result = db_query($query, \'paper_review\', $u[\'uid\'], implode(\', \', $reviews));
+    $result = db_query($query, \'article_review\', $u[\'uid\'], implode(\', \', $reviews));
     if ( $rid = db_fetch_object($result) ) {
       $reviewer_name = l($reviewer_name, \'node/\' . $rid->nid);
     }
@@ -3756,7 +3756,7 @@ print implode(\', \', $output);
         'html' => 0,
       ),
       'value' => '<?php
-  $query = "SELECT nid FROM {content_type_paper_review} WHERE field_paper_nid = %d";
+  $query = "SELECT nid FROM {content_type_article_review} WHERE field_paper_nid = %d";
   $result = db_query($query, $data->nid);
   $recommendation = array();
   $hover = \'\';
@@ -4425,7 +4425,7 @@ Each Criteria is out of 5. A score can total 25 points.<br />
       ),
       'value' => '<?php
   global $user;
-  $query = "SELECT nid FROM {content_type_paper_review} WHERE field_paper_nid = %d";
+  $query = "SELECT nid FROM {content_type_article_review} WHERE field_paper_nid = %d";
   $result = db_query($query, $data->nid);
   $recommendation = array();
 
@@ -4745,7 +4745,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
         'webform_report' => 0,
         'panel' => 0,
         'page' => 0,
-        'paper_review' => 0,
+        'article_review' => 0,
         'profile' => 0,
         'story' => 0,
       ),
@@ -6532,7 +6532,7 @@ Click on the title of the paper to read the abstract and download the paper. Whe
   $assigned = db_result(db_query($query, $data->uid));
 
   $query = "SELECT COUNT(nid) FROM {node} WHERE uid=%d and type=\'%s\'";
-  $completed = db_result(db_query($query, $data->uid, \'paper_review\'));
+  $completed = db_result(db_query($query, $data->uid, \'article_review\'));
 
   print \'<a class="tooltipcontainer">\';
   print $completed . \'/\' . $assigned;

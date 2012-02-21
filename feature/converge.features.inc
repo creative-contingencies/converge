@@ -26,10 +26,10 @@ function converge_node_info() {
       'min_word_count' => '0',
       'help' => '',
     ),
-    'paper_review' => array(
-      'name' => t('Paper Review'),
+    'article_review' => array(
+      'name' => t('Article Review'),
       'module' => 'features',
-      'description' => t('Assign feedback and details to a paper article.'),
+      'description' => t('Assign feedback and details to a journal article.'),
       'has_title' => '1',
       'title_label' => t('Title'),
       'has_body' => '0',

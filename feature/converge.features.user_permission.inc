@@ -45,9 +45,9 @@ function converge_user_default_permissions() {
     ),
   );
 
-  // Exported permission: create paper_review content
-  $permissions['create paper_review content'] = array(
-    'name' => 'create paper_review content',
+  // Exported permission: create article_review content
+  $permissions['create article_review content'] = array(
+    'name' => 'create article_review content',
     'roles' => array(
       '0' => 'papers chair',
       '1' => 'reviewer',
@@ -103,9 +103,9 @@ function converge_user_default_permissions() {
     ),
   );
 
-  // Exported permission: delete any paper_review content
-  $permissions['delete any paper_review content'] = array(
-    'name' => 'delete any paper_review content',
+  // Exported permission: delete any article_review content
+  $permissions['delete any article_review content'] = array(
+    'name' => 'delete any article_review content',
     'roles' => array(
       '0' => 'papers chair',
     ),
@@ -157,9 +157,9 @@ function converge_user_default_permissions() {
     ),
   );
 
-  // Exported permission: delete own paper_review content
-  $permissions['delete own paper_review content'] = array(
-    'name' => 'delete own paper_review content',
+  // Exported permission: delete own article_review content
+  $permissions['delete own article_review content'] = array(
+    'name' => 'delete own article_review content',
     'roles' => array(
       '0' => 'papers chair',
       '1' => 'reviewer',
@@ -216,9 +216,9 @@ function converge_user_default_permissions() {
     ),
   );
 
-  // Exported permission: edit any paper_review content
-  $permissions['edit any paper_review content'] = array(
-    'name' => 'edit any paper_review content',
+  // Exported permission: edit any article_review content
+  $permissions['edit any article_review content'] = array(
+    'name' => 'edit any article_review content',
     'roles' => array(
       '0' => 'papers chair',
     ),
@@ -809,9 +809,9 @@ function converge_user_default_permissions() {
     ),
   );
 
-  // Exported permission: edit own paper_review content
-  $permissions['edit own paper_review content'] = array(
-    'name' => 'edit own paper_review content',
+  // Exported permission: edit own article_review content
+  $permissions['edit own article_review content'] = array(
+    'name' => 'edit own article_review content',
     'roles' => array(
       '0' => 'papers chair',
       '1' => 'reviewer',
