@@ -687,8 +687,11 @@ function proposal_fix_copresenters(&$node) {
       unset($node->field_proposal_presenters[($num + 1)]);
     }
     else {
-      // Check if the given email address is associated with an account.
+      // Check if the given email address is associated with an account as either name OR as email.
       $account = user_load(array('mail' => $field['value']));
+      if (empty($account->uid)) {
+        $account = user_load(array('name' => $field['value']));
+      }
       if (empty($account->uid)) {
 
         // Turn the email address into a name (for the profile).
