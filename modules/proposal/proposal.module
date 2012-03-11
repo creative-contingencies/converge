@@ -139,6 +139,28 @@ function proposal_admin_settings() {
     '#default_value' => variable_get('proposal_vocabulary_keywords', 0),
   );
 
+  $form['proposal_taxonomy']['proposal_refereed_open'] = array(
+    '#title' => t('Refereed Session Submissions'),
+    '#description' => t('Choose whether the site allows submission of refereed papers'),
+    '#type' => 'select',
+    '#options' => array(0 => t('Refereed session submission closed'), 1 => t('Refereed session submission open')),
+    '#default_value' => variable_get('proposal_refereed_open', 0),
+  );
+
+  $terms = taxonomy_get_tree(variable_get('proposal_vocabulary_kind', 0));
+  $options = array();
+  foreach ($terms as $term) {
+    $options[$term->tid] = $term->name;
+  }
+  $form['proposal_taxonomy']['proposal_refereed_tid'] = array(
+    '#title' => t('Refereed Session'),
+    '#description' => t('Select the taxonomy term that describes refereed papers.'),
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => variable_get('proposal_refereed_tid', 0),
+  );
+
+
   $form['proposal_chair']['proposal_chair_rid'] = array(
     '#title' => t('Chair'),
     '#description' => t('The user role that defines the paper committee chairperson(s).'),
@@ -342,12 +364,50 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     $form['taxonomy']['#title'] = t('Session Details');
 
     // Hide the stream taxonomy if you're not an admin or papers chair.
-    if (!in_array('site administrator', $user->roles) || !in_array('papers chair',$user->roles) || $user->uid != 1) {
+    if (!in_array('site administrator', $user->roles) || !in_array('papers chair', $user->roles) || $user->uid != 1) {
       $js = "
         $(document).ready(function() {
           $('#edit-taxonomy-10-wrapper').hide();
         });";
       drupal_add_js($js, 'inline');
+
+    }
+
+    // Remove refereed proposals from options for normal users.
+    $open = variable_get('proposal_refereed_open', 0);
+    if (empty($open)) {
+      $vid = variable_get('proposal_vocabulary_kind', 0);
+      $tid = variable_get('proposal_refereed_tid', 0);
+      $term = taxonomy_get_term($tid);
+
+      if (empty($form['nid']['#value'])) {
+        // If this is a NEW proposal, remove the option.
+        if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles) && $user->uid != 1) {
+          foreach ($form['taxonomy'][$vid]['#options'] as $idx => $option) {
+            if ($option->tid == $tid) {
+              unset($form['taxonomy'][$vid]['#options'][$idx]);
+            }
+          }
+        }
+        else {
+          drupal_set_message(t('You are still seeing the %term option because of site permissions.', array('%term' => $term->name)), 'warning');
+        }
+      }
+      else {
+        // If this is an existing proposal and the current tid is NOT refereed... also remove the option.
+        if ($form['taxonomy'][$vid]['#default_value'][0] != $tid) {
+          if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles) && $user->uid != 1) {
+            foreach ($form['taxonomy'][$vid]['#options'] as $idx => $option) {
+              if ($option->tid == $tid) {
+                unset($form['taxonomy'][$vid]['#options'][$idx]);
+              }
+            }
+          }
+          else {
+            drupal_set_message(t('You are still seeing the %term option because of site permissions.', array('%term' => $term->name)), 'warning');
+          }
+        }
+      }
     }
 
     if ((variable_get('proposal_c4p_open', 0) == 0) && !$form['title']['#default_value']) {
