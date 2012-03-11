@@ -632,7 +632,7 @@ function review_admin_settings() {
 function review_form_alter(&$form, $form_state, $form_id) {
   global $user;
 
-  if ( $form_id == 'contact_mail_user' && isset($_GET['contact_author']) && $_GET['contact_author'] == "true" && (in_array('papers chair', $user->roles) || user_access('administer users')) ) {
+  if ( $form_id == 'contact_mail_user' && !empty($_GET['contact_author']) && (in_array('papers chair', $user->roles) || user_access('administer users')) ) {
     // Allow substitution on contact form
 
     $form['message']['#description'] = t('The following substitution variables are available in this email: !author_firstname, !author_surname, !author_email, !proposal_title, !proposal_abstract, !proposal_url, !proposal_feedback_url, !proposal_status, !site, !site_url, !site_mail');
@@ -748,7 +748,7 @@ function review_form_alter(&$form, $form_state, $form_id) {
 */
   }
 
-  if ( $form_id == 'proposal_node_form' && isset($_GET['assign_reviewers']) && $_GET['assign_reviewers'] == True ) {
+  if ($form_id == 'proposal_node_form' && !empty($_GET['assign_reviewers'])) {
     //$form['field_proposal_reviewers']['#size'] = 12;
     
     // oddly field_proposal_reviewers doesn't exist so I commented out the above line
@@ -757,12 +757,12 @@ function review_form_alter(&$form, $form_state, $form_id) {
     // Show only reviewers field to allow reviewer assignment through standard node-edit and CCK.
     $js = "
     $(document).ready(function() {
-      $('#content .node-form .standard').children().each(function() {
+      $('#main-content .node-form .standard').children().each(function() {
         if ( $(this).attr('id') != 'field-proposal-reviewers-items' && $(this).attr('id') != 'edit-field-proposal-reviewers-uid-uid-wrapper' && $(this).attr('class') != 'not-hidden' ) {
           $(this).hide();
         }
       });
-      $('#content .help p').hide();
+      $('#main-content .help p').hide();
       $('#edit-preview').hide();
       $('#edit-delete').hide();
     });
@@ -819,16 +819,16 @@ function review_form_alter(&$form, $form_state, $form_id) {
       } // !count
     } // !vid
   }
-  else if ( $form_id == 'proposal_node_form' && isset($_GET['change_status']) && $_GET['change_status'] == True ) {
+  else if ( $form_id == 'proposal_node_form' && !empty($_GET['change_status'])) {
     // Show only status field for updating proposals.
     $js = "
     $(document).ready(function() {
-      $('#content .node-form .standard').children().each(function() {
+      $('#main-content .node-form .standard').children().each(function() {
         if ( $(this).attr('id') != 'edit-field-proposal-status-value-wrapper' ) {
           $(this).hide();
         }
       });
-      $('#content .help p').hide();
+      $('#main-content .help p').hide();
       $('#edit-preview').hide();
       $('#edit-delete').hide();
     });
@@ -905,7 +905,7 @@ function review_nodeapi(&$node, $op, $a1) {
         $js = "
         $(document).ready(function() {
           $('#edit-field-paper-0-nid-nid-wrapper').hide();
-          $('#content .title').text('Reviewing " . $proposal_node->title . "');
+          $('#main-content .title').text('Reviewing " . $proposal_node->title . "');
         });
         ";
       
