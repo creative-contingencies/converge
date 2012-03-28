@@ -1,5 +1,21 @@
 <?php
 /**
+ * Implements hook_menu()
+ */
+function register_menu() {
+  $items['admin/converge/register'] = array(
+    'title' => 'Registration Settings',
+    'description' => 'Change configuration for Registration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('register_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer registration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
  * Implements hook_user()
  */
 function register_user($op, &$edit, &$account, $category = NULL) {
@@ -123,4 +139,14 @@ function register_order_prepare(&$order) {
       node_save($profile);
     }
   }
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function register_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'register') .'/views',
+  );
 }
