@@ -364,12 +364,17 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
     $form['taxonomy']['#title'] = t('Session Details');
 
     // Hide the stream taxonomy if you're not an admin or papers chair.
-    if (!in_array('site administrator', $user->roles) || !in_array('papers chair', $user->roles) || $user->uid != 1) {
-      $js = "
-        $(document).ready(function() {
-          $('#edit-taxonomy-10-wrapper').hide();
-        });";
-      drupal_add_js($js, 'inline');
+    // if (!in_array('site administrator', $user->roles) || !in_array('papers chair', $user->roles) || $user->uid != 1) {
+    if (FALSE) {
+      $setting = array('element' => '#edit-taxonomy-10-wrapper');
+      drupal_add_js(array('proposal' => $setting), 'settings');
+      drupal_add_js(drupal_get_path('module', 'proposal') .'/proposal.js'. 'module', 'footer');
+
+      // $js = "
+      //   $(document).ready(function() {
+      //     $('#edit-taxonomy-10-wrapper').hide();
+      //   });";
+      // drupal_add_js($js, 'inline');
 
     }
 
@@ -382,9 +387,9 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
 
       if (empty($form['nid']['#value'])) {
         // If this is a NEW proposal, remove the option.
-        if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles) && $user->uid != 1) {
+        if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles)) {
           foreach ($form['taxonomy'][$vid]['#options'] as $idx => $option) {
-            if ($option->tid == $tid) {
+            if (isset($option->option[$tid])) {
               unset($form['taxonomy'][$vid]['#options'][$idx]);
             }
           }
