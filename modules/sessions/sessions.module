@@ -70,7 +70,7 @@ function sessions_menu() {
   );
 
   // Grid to see which sessions are full.
-  $items['admin/store/reports/sessions'] = array(
+  $items['admin/converge/sessions/report'] = array(
     'title' => 'Session Selection Report',
     'description' => 'List all sessions and their sizes',
     'page callback' => 'sessions_report',
@@ -80,7 +80,7 @@ function sessions_menu() {
   );
 
   // List who is in a particular session.
-  $items['admin/store/reports/sessions/%node'] = array(
+  $items['admin/converge/sessions/%node'] = array(
     'title' => 'Session Selection Report',
     'description' => 'List attendees for a session',
     'page callback' => 'sessions_report_session',
@@ -1529,4 +1529,14 @@ function sessions_set_speaker_role($account) {
   user_save($account, array('roles' => $roles));
 
   return;
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function sessions_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'sessions') .'/views',
+  );
 }
