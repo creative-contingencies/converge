@@ -15,29 +15,29 @@ function review_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['review/remind_reviewers'] = array(
+  $items['admin/converge/review/remind_reviewers'] = array(
     'title' => 'Send reminder email to reviewers',
     'description' => 'Change configuration and email templates for Reviews',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_remind_reviewers'),
     'access arguments' => array('send reviewers reminders'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
   );
 
-  $items['review/email_authors'] = array(
+  $items['admin/converge/review/email_authors'] = array(
     'title' => 'Send status emails to authors',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_email_authors'),
     'access arguments' => array('send authors their status'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
   );
 
-  $items['review/invite_reviewers'] = array(
+  $items['admin/converge/review/invite_reviewers'] = array(
     'title' => 'Invite potential reviewers',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('review_reviewer_csv'),
     'access arguments' => array('send authors their status'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
   );
 
   // Handler for the magic URL to add a reviewer to a proposal.
