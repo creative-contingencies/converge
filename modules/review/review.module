@@ -51,9 +51,29 @@ function review_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  // OLD-STYLE
+  $items['manage/review/%/%/%/%'] = array(
+    'title' => 'Modify a review',
+    'description' => 'Modify a review',
+    'page callback' => 'review_manage_review',
+    'page arguments' => array(2, 3, 4, 5),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
   // Handler for the magic URL to accept or decline reviewer status.
   // Needs to be hit by any user.
   $items['converge/reviewer/%/%/%'] = array(
+    'title' => 'Modify a review',
+    'description' => 'Modify a review',
+    'page callback' => 'review_manage_reviewer',
+    'page arguments' => array(2, 3, 4),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // OLD-STYLE
+  $items['manage/reviewer/%/%/%'] = array(
     'title' => 'Modify a review',
     'description' => 'Modify a review',
     'page callback' => 'review_manage_reviewer',
@@ -225,6 +245,13 @@ function review_email_authors_submit($form, &$form_state) {
     $params['!proposal_url'] = url('node/' . $proposal_node->nid, array('absolute' => TRUE));
     $params['!proposal_feedback_url'] = url('node/' . $proposal_node->nid . '/feedback', array('absolute' => TRUE));
     $params['!proposal_status'] = $proposal_node->field_proposal_status[0]['value'];
+
+    $type_vid = variable_get('proposal_vocabulary_kind', 0);
+    foreach ($proposal->taxonomy as $tid => $term) {
+      if ($term->vid == $type_vid) {
+        $params['!proposal_type'] = check_plain($term->name);
+      }
+    }
 
     // Add in 
     $params['!proposal_tech_internet'] = check_plain($proposal_node->field_proposal_tech_internet[0]['value']);
@@ -716,8 +743,8 @@ function review_form_alter(&$form, $form_state, $form_id) {
       $params['!reviewer_lastname'] = $profile->field_profile_surname[0]['value'];
       $params['!reviewer_user'] = $reviewer->mail;
       $params['!reviewer_email'] = $reviewer->mail;
-      $params['!accept_url'] = url('manage/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
-      $params['!decline_url'] = url('manage/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+      $params['!accept_url'] = url('converge/reviewer/accept/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
+      $params['!decline_url'] = url('converge/reviewer/decline/' . $reviewer->uuid . '/' . $reviewer->uid, array('absolute' => true));
 
 
       // If this module is ran too early manually copy across the values
@@ -836,8 +863,6 @@ function review_form_alter(&$form, $form_state, $form_id) {
     
     drupal_add_js($js, 'inline');
   }
-
-
 }
 
 
@@ -864,7 +889,7 @@ function review_nodeapi(&$node, $op, $a1) {
       }
     break;
     case 'prepare':
-      if ( arg(0) == 'node' && !($node->nid > 0) && $node->type == 'paper_review' && !isset($_GET['nid']) ) {
+      if (arg(0) == 'node' && !($node->nid > 0) && $node->type == 'paper_review' && !isset($_GET['nid']) ) {
         // no id set... take them back...
         drupal_set_message("You must use the Reviewers menu to review an item.");
         drupal_goto();
@@ -873,14 +898,15 @@ function review_nodeapi(&$node, $op, $a1) {
         // Check to see if a user has already reviewed this 
         $query = "SELECT nid FROM {node} WHERE type='paper_review' AND uid = %s";
         $result = db_query($query, $user->uid);
-        while ( $n = db_fetch_object($result) ) {
+        while ($n = db_fetch_object($result)) {
           $review_node = node_load($n->nid);
-          if ( $review_node->field_paper[0]['nid'] == $_GET['nid'] ) {
+          if ($review_node->field_paper[0]['nid'] == $_GET['nid']) {
             drupal_set_message("You have already reviewed this proposal. You may edit and update your review below.");
             drupal_goto('node/' . $review_node->nid . '/edit', array('nid' => $_GET['nid']));
           }
         }
         $proposal_node = node_load($_GET['nid']);
+        $node->field_paper[0]['nid'] = $_GET['nid'];
         $assigned = true;
         foreach ( $proposal_node->field_proposal_reviewers as $u ) {
           if ( is_numeric($u['uid']) ) {
@@ -901,11 +927,11 @@ function review_nodeapi(&$node, $op, $a1) {
       }
       
       // Add another if, or it'll show "Reviewing" as title everywhere.
-      if ( $node->type == 'paper_review' ) {
+      if ($node->type == 'paper_review') {
         $js = "
         $(document).ready(function() {
           $('#edit-field-paper-0-nid-nid-wrapper').hide();
-          $('#main-content .title').text('Reviewing " . $proposal_node->title . "');
+          $('#main-content .node-title').text('Reviewing " . $proposal_node->title . "');
         });
         ";
       
@@ -1004,7 +1030,7 @@ function review_nodeapi(&$node, $op, $a1) {
             if ( $reviewer['uid'] > 0 ) {
               $reviewer_profile = content_profile_load('profile', $reviewer['uid']);
               $reviewer_user = user_load(array('uid' => $reviewer['uid']));
-              $params['!review_decline_url'] = url('manage/review/decline/' . $node->nid . '/' . $node->uuid . '/' . $reviewer_user->uid , array('absolute' => true));
+              $params['!review_decline_url'] = url('converge/review/decline/' . $node->nid . '/' . $node->uuid . '/' . $reviewer_user->uid , array('absolute' => true));
               $params['!reviewer_firstname'] = $reviewer_profile->field_profile_firstname[0]['value'];
               $params['!reviewer_surname'] = $reviewer_profile->field_profile_surname[0]['value'];
               $params['!reviewer_lastname'] = $reviewer_profile->field_profile_surname[0]['value'];
