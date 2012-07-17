@@ -139,27 +139,18 @@ function proposal_admin_settings() {
     '#default_value' => variable_get('proposal_vocabulary_keywords', 0),
   );
 
-  $form['proposal_taxonomy']['proposal_refereed_open'] = array(
-    '#title' => t('Refereed Session Submissions'),
-    '#description' => t('Choose whether the site allows submission of refereed papers'),
-    '#type' => 'select',
-    '#options' => array(0 => t('Refereed session submission closed'), 1 => t('Refereed session submission open')),
-    '#default_value' => variable_get('proposal_refereed_open', 0),
-  );
-
   $terms = taxonomy_get_tree(variable_get('proposal_vocabulary_kind', 0));
   $options = array();
   foreach ($terms as $term) {
     $options[$term->tid] = $term->name;
   }
-  $form['proposal_taxonomy']['proposal_refereed_tid'] = array(
-    '#title' => t('Refereed Session'),
-    '#description' => t('Select the taxonomy term that describes refereed papers.'),
-    '#type' => 'select',
+  $form['proposal_taxonomy']['proposal_allowed_types'] = array(
+    '#title' => t('Allowed Types'),
+    '#description' => t('Check all proposal types that users should be able to submit. Users are not able to change the type of an already-submitted proposal.'),
+    '#type' => 'checkboxes',
     '#options' => $options,
-    '#default_value' => variable_get('proposal_refereed_tid', 0),
+    '#default_value' => variable_get('proposal_allowed_types', array()),
   );
-
 
   $form['proposal_chair']['proposal_chair_rid'] = array(
     '#title' => t('Chair'),
@@ -378,41 +369,28 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
 
     }
 
-    // Remove refereed proposals from options for normal users.
-    $open = variable_get('proposal_refereed_open', 0);
-    if (empty($open)) {
+    // Limit the proposal types that can be chosen for new proposals.
+    if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles)) {
       $vid = variable_get('proposal_vocabulary_kind', 0);
-      $tid = variable_get('proposal_refereed_tid', 0);
-      $term = taxonomy_get_term($tid);
-
+      $allowed_tids = array_filter(variable_get('proposal_allowed_types', array()));
+      // If this is a new proposal...
       if (empty($form['nid']['#value'])) {
-        // If this is a NEW proposal, remove the option.
-        if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles)) {
-          foreach ($form['taxonomy'][$vid]['#options'] as $idx => $option) {
-            if (isset($option->option[$tid])) {
+        foreach ($form['taxonomy'][$vid]['#options'] as $idx => $option) {
+          foreach ($option->option as $tid => $name) {
+            if (!in_array($tid, $allowed_tids)) {
               unset($form['taxonomy'][$vid]['#options'][$idx]);
             }
           }
         }
-        else {
-          drupal_set_message(t('You are still seeing the %term option because of site permissions.', array('%term' => $term->name)), 'warning');
-        }
       }
       else {
-        // If this is an existing proposal and the current tid is NOT refereed... also remove the option.
-        if ($form['taxonomy'][$vid]['#default_value'][0] != $tid) {
-          if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles) && $user->uid != 1) {
-            foreach ($form['taxonomy'][$vid]['#options'] as $idx => $option) {
-              if ($option->tid == $tid) {
-                unset($form['taxonomy'][$vid]['#options'][$idx]);
-              }
-            }
-          }
-          else {
-            drupal_set_message(t('You are still seeing the %term option because of site permissions.', array('%term' => $term->name)), 'warning');
-          }
-        }
+        // If this is an existing proposal... lock this field!
+        $form['taxonomy'][$vid]['#disabled'] = TRUE;
+        $form['taxonomy'][$vid]['#description'] = t('You are not able to modify proposal types after submission.');
       }
+    }
+    else {
+      drupal_set_message(t('You can see all available proposal types due to site permissions.'), 'warning');
     }
 
     if ((variable_get('proposal_c4p_open', 0) == 0) && !$form['title']['#default_value']) {
