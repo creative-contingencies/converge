@@ -5,6 +5,13 @@ function overrides_content_allowed_values($field) {
 }
 
 /**
+ *
+ */
+function overrides_init() {
+  drupal_add_js(drupal_get_path('module', 'overrides') .'/overrides.js'. 'module', 'footer');
+}
+
+/**
  * Add extra menu items to make it easier to edit permissions by role.
  * Pushed to github as caftools module.
  */
@@ -48,6 +55,10 @@ function overrides_menu_alter(&$items) {
  * Form alter overrides for the conference system.
  */
 function overrides_form_alter(&$form, $form_state, $form_id) {
+
+  if ($form_id == 'user_profile_form' && module_exists('uc_order')) {
+    $form['#submit'][] = 'overrides_uc_order_email_update';
+  }
 
   // Because we login via the email address only, hide the username field
   // on the signup form and do a pre-validate call so we can transpose the
@@ -130,7 +141,7 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
 
   // Override address titles on the uc checkout address form.
   if ($form_id == 'uc_cart_checkout_form') {
-    // dpm($form);
+
     $form['panes']['delivery']['#title'] = t('Home Address');
     $form['panes']['delivery']['#description'] = t('Please enter your home address.');
 
@@ -180,6 +191,10 @@ function overrides_form_alter(&$form, $form_state, $form_id) {
         array_unshift($form['#submit'], 'overrides_uc_cart_checkout_form_submit');
       }
     }
+
+    $form['panes']['coupon']['#title'] = t('Discount code');
+    $form['panes']['coupon']['#description'] = t('If you have a discount code, you should enter it here. The discount will be applied to your order.');
+    
   }
 
   // Change address labels on order edit form.
@@ -204,6 +219,19 @@ function overrides_uc_cart_checkout_form_validate($form, &$form_state) {
   if ($form_state['values']['panes']['billing']['copy_address']) {
     if (!$form_state['values']['panes']['billing']['billing_company']) {
       $form_state['values']['panes']['billing']['billing_company'] = 'N/A';
+    }
+  }
+}
+
+/**
+ * Update primary email on UC orders if the user email was changed.
+ */
+function overrides_uc_order_email_update($form, &$form_state) {
+  if (!empty($form['#uid']) && $form_state['values']['mail'] != $form['account']['mail']['#default_value']) {
+    db_query("UPDATE {uc_orders} SET primary_email = '%s' WHERE uid = %d", $form_state['values']['mail'], $form['#uid']);
+    $affected_rows = db_affected_rows();
+    if (!empty($affected_rows)) {
+      drupal_set_message(t('Also updated the primary email address on @order', array('@order' => format_plural($affected_rows, '1 store order', '@count store orders'))), 'info');
     }
   }
 }
@@ -261,7 +289,7 @@ function overrides_user_register_validate($form, &$form_state) {
  */
 function overrides_uc_product_add_to_cart_form_validate($form, &$form_state) {
   if($form_state['values']['op'] == variable_get('register_continue_shopping', 'Continue shopping')) {
-    drupal_goto('register');
+    drupal_goto('tickets');
   }
 }
 
