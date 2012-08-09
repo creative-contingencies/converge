@@ -114,7 +114,7 @@ function sessions_menu() {
 
   // Session selections - iCal view.
   // This is referenced by uuid, so no auth check!
-  $items['osdc2010/%/ical'] = array(
+  $items['acec2012/%/ical'] = array(
     'title' => 'My Program - iCal',
     'description' => 'iCal conference session selection',
     'page callback' => 'sessions_list_ical',
@@ -670,21 +670,21 @@ function sessions_get_days($uid) {
   $nids = array();
 
   $query = "SELECT
-     DISTINCT(cfrd.field_registration_day_nid) AS nid
+     DISTINCT(cfrd.field_registration_day_nid) AS nid, sl.nid as ticket
    FROM
-     {uc_order_products} AS uc_op
+     {signup_log} AS sl
    LEFT JOIN
-     {uc_orders} AS uc_o ON (uc_op.order_id = uc_o.order_id)
+     {uc_signup_log} AS usl ON (sl.sid = usl.sid)
    LEFT JOIN
-     {converge_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+     {uc_orders} AS o ON (usl.oid = o.order_id)
    LEFT JOIN
-     {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
+     {content_field_registration_day} AS cfrd ON (sl.nid = cfrd.nid)
    LEFT JOIN
      {content_type_day} AS ctd ON (cfrd.field_registration_day_nid = ctd.nid)
    WHERE
-       cccta.uid = %d
+       sl.uid = %d
      AND
-       uc_o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) ."')
+       o.order_status IN ('" . implode("','", variable_get('sessions_order_status', array('completed'))) ."')
    ORDER BY
      ctd.field_day_date_value ASC";
   $result = db_query($query, $uid);
@@ -747,17 +747,17 @@ function sessions_user_valid_timeslot($uid, $nid) {
   $query = "SELECT
      COUNT(ctt.nid)
    FROM
-     {uc_order_products} AS uc_op
+     {uc_signup_log} AS usl
    JOIN
-     {converge_ticket_allocation} AS cccta ON (uc_op.order_product_id = cccta.order_product_id)
+     {signup_log} AS sl ON (sl.sid = usl.sid)
    JOIN
-     {content_field_registration_day} AS cfrd ON (uc_op.nid = cfrd.nid)
+     {content_field_registration_day} AS cfrd ON (sl.nid = cfrd.nid)
    JOIN
      {content_field_day_timeslots} AS cfdt ON (cfdt.nid = cfrd.field_registration_day_nid)
    JOIN
      {content_type_timeslot} AS ctt ON (cfdt.field_day_timeslots_nid = ctt.nid)
    WHERE
-     cccta.uid = %d AND ctt.nid=%d";
+     sl.uid = %d AND ctt.nid=%d";
   return db_result(db_query($query, $uid, $nid));
 }
 
@@ -1294,11 +1294,9 @@ SELECT
 FROM
   {converge_session_selection} AS ss
 JOIN
-  {converge_ticket_allocation} AS ta ON (ta.uid = ss.uid)
+  {uc_signup_log} AS usl ON (usl.uid = ss.uid)
 JOIN
-  {uc_order_products} AS uc_op ON (uc_op.order_product_id = ta.order_product_id)
-JOIN
-  {uc_orders} AS uc_o ON (uc_o.order_id = uc_op.order_id)
+  {uc_orders} AS uc_o ON (uc_o.order_id = usl.oid)
 WHERE
   uc_o.order_status IN ('" . implode("', '", sessions_valid_order()) . "')
 AND

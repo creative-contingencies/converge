@@ -43,7 +43,7 @@
 </head>
 <body>
 
-  <h2>OSDC2010 Program for <?php print $username; ?></h2>
+  <h2>My Program for <?php print $username; ?></h2>
 
   <?php print $table; ?>
 
