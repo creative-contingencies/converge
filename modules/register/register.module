@@ -9,9 +9,18 @@ function register_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('register_admin_settings'),
     'access callback' => 'user_access',
-    'access arguments' => array('administer registration'),
+    'access arguments' => array('administer all signups'),
     'type' => MENU_NORMAL_ITEM,
   );
+
+  $items['myacec'] = array(
+    'title' => 'myACEC',
+    'page callback' => 'register_user_profile_goto',
+    'access callback' => 'user_access',
+    'access arguments' => array('edit own profile content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
   return $items;
 }
 
@@ -24,6 +33,18 @@ function register_user($op, &$edit, &$account, $category = NULL) {
     unset($account->profile_firstname);
     unset($account->profile_surname);
     unset($account->content['Name']);
+  }
+}
+
+/**
+ * Bounce users at their proile edit page.
+ */
+function register_user_profile_goto() {
+  if ($GLOBALS['user']->uid) {
+    drupal_goto('user/' . $GLOBALS['user']->uid . '/profile/profile' );
+  }
+  else {
+    return drupal_access_denied();
   }
 }
 
@@ -55,6 +76,7 @@ function _register_removetab($label, &$vars) {
  * Implements hook_form_alter()
  */
 function register_form_alter(&$form, &$form_state, $form_id) {
+
   if ($form_id == 'uc_signup_attendees_form') {
     // Build an array keyed on email addresses
     foreach ($form_state['storage']['uc_signup']['nids'] as $nid => $attendees) {
