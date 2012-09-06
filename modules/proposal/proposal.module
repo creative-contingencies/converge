@@ -84,20 +84,16 @@ function proposal_admin_settings() {
       0 => 'Closed',
       1 => 'Open',
     ),
-    '#description' => t('Is the call for proposals open or closed?'),
+    '#description' => t('Is the call for proposals open or closed? If closed, the proposal subkission form will return "Access Denied".'),
     '#default_value' => variable_get('proposal_c4p_open', 0),
   );
 
   // If not open, is the form enabled to accept backup proposals?
   $form['proposal_c4p']['proposal_c4p_backup'] = array(
-    '#type' => 'select',
-    '#title' => 'Call for Proposals Form',
-    '#options' => array(
-      0 => 'Disabled',
-      1 => 'Open to accept waiting list proposals',
-    ),
-    '#description' => t('Should the proposal submission form remain accessible and accept submissions to be wait-listed.'),
-    '#default_value' => variable_get('proposal_c4p_backup', 0),
+    '#type' => 'textfield',
+    '#title' => 'Warning Message',
+    '#description' => t('If set, this message will be shown as a warning at the top of the Call for Proposals form. You can use this to let users know they can only submit specific proposal types or that their proposal will now be wait-listed.'),
+    '#default_value' => variable_get('proposal_c4p_backup', ''),
   );
 
   // Taxonomy settings.
@@ -369,12 +365,16 @@ function proposal_form_alter(&$form, $form_state, $form_id) {
 
     }
 
+    if (($message = variable_get('proposal_c4p_backup', '')) && empty($form['nid']['#value'])) {
+      drupal_set_message(t('@message', array('@message' => $message)), 'warning');
+    }
+
     // Limit the proposal types that can be chosen for new proposals.
     if (!in_array('site administrator', $user->roles) && !in_array('papers chair', $user->roles)) {
       $vid = variable_get('proposal_vocabulary_kind', 0);
-      $allowed_tids = array_filter(variable_get('proposal_allowed_types', array()));
       // If this is a new proposal...
       if (empty($form['nid']['#value'])) {
+        $allowed_tids = array_filter(variable_get('proposal_allowed_types', array()));
         foreach ($form['taxonomy'][$vid]['#options'] as $idx => $option) {
           foreach ($option->option as $tid => $name) {
             if (!in_array($tid, $allowed_tids)) {
