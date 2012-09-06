@@ -25,7 +25,6 @@ function sessions_nodeapi(&$node, $op) {
   switch ($op) {
     case 'load':
       if ($node->type == 'timeslot') {
-
         // Create a formatted session time string.
         //
         $start = theme('sessions_timeslot', $node, array('value' => 'H:i'));
@@ -993,7 +992,7 @@ function sessions_list_table($account, $print = FALSE) {
 
   // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
   $offset = variable_get('date_default_timezone', 0);
-  $offset += 3600;
+  // $offset += 3600;
 
   if (!$days) {
     return t('There are no sessions to be selected. Please check that your order payment status is <en>completed</em> and that a ticket has been assigned to you.');
@@ -1140,7 +1139,7 @@ function sessions_list_view($account) {
   // Add a link to this user's myACEC iCal feed, if it has a uuid.
   //
   if ($account->uuid) {
-    drupal_set_html_head('<link rel="alternate" type="application/rss+xml" href="' . url('osdc2010/' . $account->uuid. '/ical', array('absolute' => TRUE)) . '" title="myACEC iCal" />');
+    drupal_set_html_head('<link rel="alternate" type="application/rss+xml" href="' . url('acec2012/' . $account->uuid. '/ical', array('absolute' => TRUE)) . '" title="myACEC iCal" />');
   }
 
   $table = sessions_list_table($account);
@@ -1149,7 +1148,7 @@ function sessions_list_view($account) {
   $output .= '<div style="float: right;">';
   $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
   if ($account->uuid) {
-    $output .= '<a href="' . url('osdc2010/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/ical-64x64.png" height="64" width="64" alt="iCal" align="right" /></a>';
+    $output .= '<a href="' . url('acec2012/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/ical-64x64.png" height="64" width="64" alt="iCal" align="right" /></a>';
   }
   $output .= '</div>';
   $output .= variable_get('sessions_program_header', '');
@@ -1499,7 +1498,7 @@ function sessions_report_session($proposal) {
 function theme_sessions_timeslot($timeslot, $fields) {
   // Need the timezone offset. Ugh. Used *ONLY* for display purposes, not in the utility functions that fetch data.
   $offset = variable_get('date_default_timezone', 0);
-  $offset += 3600;
+  // $offset += 3600;
 
   $output = '';
 
