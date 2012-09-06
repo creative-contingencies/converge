@@ -1138,6 +1138,95 @@ function register_views_data() {
       'group' => t('UberCart: States'),
     ),
   );
+
+  // Presenters reverse reference malarkeys!
+  $data['content_field_proposal_presenters'] = array(
+    'nid' => array(
+      'title' => t('nid'),
+      'help' => t('Proposal Node ID.'),
+      'field' => array(
+        'handler' => 'views_handler_field_numeric',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_numeric',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_numeric',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+    'delta' => array(
+      'title' => t('Delta'),
+      'help' => t(' Sort order (delta)'),
+      'field' => array(
+        'handler' => 'views_handler_field_numeric',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_numeric',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_numeric',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+    'uid' => array(
+      'title' => t('Presenter'),
+      'help' => t('The user ID of the presenter.'),
+      'field' => array(
+        'handler' => 'views_handler_field_numeric',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_numeric',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_numeric',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+      'relationship' => array(
+        'base' => 'users',
+        'base field' => 'uid',
+        'relationship field' => 'field_proposal_presenters_uid',
+        'label' => t('User'),
+      ),
+    ),
+    'table' => array(
+      'base' => array(
+        'field' => 'content_field_proposal_presenters',
+        'title' => t('Proposal Presenters'),
+        'help' => t('The presenters linked with a proposal.'),
+        'weight' => -10,
+        'database' => 'default',
+      ),
+      'group' => t('Conference Presenters'),
+      'join' => array(
+        'node' => array(
+          'handler' => 'views_join',
+          'left_table' => 'node',
+          'left_field' => 'nid',
+          'field' => 'nid',
+        ),
+        'users' => array(
+          'handler' => 'views_join',
+          'left_table' => 'users',
+          'left_field' => 'uid',
+          'field' => 'field_proposal_presenters_uid',
+        ),
+      ),
+    ),
+  );
+
   return $data;
 }
 
@@ -1195,5 +1284,15 @@ function register_views_data_alter(&$data) {
     ),
   );
 
-  // Join to node
+  $data['content_field_proposal_presenters']['node'] = array(
+    'group' => t('Conference Presenters'),
+    'title' => t('Proposal'),
+    'help' => t('Create a relationship to the proposal node.'),
+    'relationship' => array(
+      'base' => 'node',
+      'base field' => 'nid',
+      'relationship field' => 'nid',
+      'label' => t('Proposal'),
+    ),
+  );
 }
