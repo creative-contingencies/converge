@@ -24,6 +24,11 @@ function sessions_schema() {
   $schema['converge_session_selection'] = array(
     'description' => t('Store session selections made by users who have registered.'),
     'fields' => array(
+      'sid' => array(
+        'description' => t('Unique selection id'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
       'uid' => array(
         'description' => t('User {user}.uid'),
         'type' => 'int',
@@ -41,7 +46,9 @@ function sessions_schema() {
         'not null' => TRUE),
       'modified' => array(
         'description' => t('Timestamp of when this selection was made'),
-        'type' => 'datetime',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'default' => 0,
         'not null' => TRUE),
       ),
     'indexes' => array(
@@ -83,5 +90,22 @@ function sessions_update_6002() {
 function sessions_update_6003() {
   $ret = array();
   db_rename_table($ret, 'ccc_session_selection', 'converge_session_selection');
+  return $ret;
+}
+
+function sessions_update_6004() {
+  $ret = array();
+  // Add field,
+  db_add_field($ret, 'converge_session_selection', 'sid', array('description' => t('Unique selection id.'), 'type' => 'serial', 'unsigned' => TRUE, 'default' => 0, 'not null' => TRUE));
+  db_add_primary_key($ret, 'converge_session_selection', array('sid'));
+
+  db_add_field($ret, 'converge_session_selection', 'changed', array('description' => t('Timestamp of when this selection was made'), 'type' => 'int', 'unsigned' => TRUE, 'default' => 0, 'not null' => TRUE));
+  db_query("UPDATE {converge_session_selection} SET changed = UNIX_TIMESTAMP(modified)");
+  db_drop_field($ret, 'converge_session_selection', 'modified');
+
+  db_add_field($ret, 'converge_session_selection', 'modified', array('description' => t('Timestamp of when this selection was made'), 'type' => 'int', 'unsigned' => TRUE, 'default' => 0, 'not null' => TRUE));
+  db_query("UPDATE {converge_session_selection} SET modified = changed");
+  db_drop_field($ret, 'converge_session_selection', 'changed');
+
   return $ret;
 }

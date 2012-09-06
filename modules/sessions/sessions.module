@@ -79,7 +79,7 @@ function sessions_menu() {
   );
 
   // List who is in a particular session.
-  $items['admin/converge/sessions/%node'] = array(
+  $items['admin/converge/sessionz/%node'] = array(
     'title' => 'Session Selection Report',
     'description' => 'List attendees for a session',
     'page callback' => 'sessions_report_session',
@@ -348,8 +348,8 @@ function sessions_autoselect_sessions($account = NULL) {
         $result = db_query($query, $order->nid);
 
         while ($row = db_fetch_array($result)) {
-          db_query("REPLACE INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())",
-            $account->uid, $row['nid'], $row['timeslot']);
+          db_query("REPLACE INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, %d)",
+            $account->uid, $row['nid'], $row['timeslot'], time());
         }
       }
     }
@@ -823,8 +823,8 @@ function sessions_list($account, $action = NULL, $timeslot = NULL, $session = NU
 
         // Add the new selection to the database.
         //
-        $query = "INSERT INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
-        db_query($query, $account->uid, $session->nid, $timeslot);
+        $query = "INSERT INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, %d)";
+        db_query($query, $account->uid, $session->nid, $timeslot, time());
 
         drupal_set_message(t('Added session "!title"', array('!title' => $session->title)));
 
@@ -956,8 +956,8 @@ function sessions_list_form_submit($form, &$form_state) {
 
       // Add the new selection to the database.
       //
-      $query = "INSERT INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, NOW())";
-      db_query($query, $uid, $session, $timeslot);
+      $query = "INSERT INTO {converge_session_selection} (uid, nid, timeslot, modified) VALUES (%d, %d, %d, %d)";
+      db_query($query, $uid, $session, $timeslot, time());
 
       // Tell the user what we did.
       $session = node_load($session);
@@ -1436,7 +1436,7 @@ function sessions_report($nid = 0) {
       'attendees' => $row['attendees'],
       'capacity' => $row['capacity'],
       'available' => ($row['available'] < variable_get('sessions_available_warning', 10)) ? '<strong>' . $row['available'] . '</strong>' : $row['available'],
-      'list' => l('list', 'admin/store/reports/sessions/' . $row['nid']),
+      'list' => l('list', 'admin/converge/reports/sessions/' . $row['nid']),
     );
     $data[] = $tuple;
   }
@@ -1456,7 +1456,7 @@ function sessions_report_session($proposal) {
     ctp.field_profile_firstname_value AS firstname,
     ctp.field_profile_surname_value AS surname,
     u.mail AS mail,
-    UNIX_TIMESTAMP(converge_ss.modified) AS modified
+    converge_ss.modified AS modified
   FROM
     {converge_session_selection} AS converge_ss
   LEFT JOIN
