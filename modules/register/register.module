@@ -25,6 +25,13 @@ function register_menu() {
 }
 
 /**
+ * Implements hook_init()
+ */
+function register_init() {
+  drupal_add_js(drupal_get_path('module', 'register') .'/register.js', 'header');
+}
+
+/**
  * Implements hook_user()
  */
 function register_user($op, &$edit, &$account, $category = NULL) {
@@ -171,4 +178,107 @@ function register_views_api() {
     'api' => 2,
     'path' => drupal_get_path('module', 'register') .'/views',
   );
+}
+
+/**
+ * Check a user for a highest role that needs to be printed on their badge.
+ */
+function register_export_badges_format_roles($account, $tickets = array()) {
+
+  $result = db_query("SELECT nid FROM {signup_log} AS sl LEFT JOIN {uc_signup_log} AS ucsl USING(sid) WHERE sl.uid = %d AND ucsl.type = 1", $account->uid);
+  while ($nid = db_result($result)) {
+    $tickets[$nid] = $nid;
+  }
+
+  if (in_array('keynote', $account->roles))
+    return 'KEYNOTE';
+
+  if (in_array('acce board', $account->roles))
+    return 'ACCE';
+
+  if (in_array('ictev board', $account->roles))
+    return 'ICTEV';
+
+  if (in_array('site administrator', $account->roles))
+    return 'ORGANISER';
+
+  if (in_array('organiser', $account->roles))
+    return 'ORGANISER';
+
+  if (in_array('papers chair', $account->roles))
+    return 'ORGANISER';
+
+  if (in_array('sponsor', $account->roles))
+    return 'SPONSOR';
+
+  // Is this person a speaker?
+  //
+  $query = "
+SELECT
+  COUNT(DISTINCT(cfpp.field_proposal_presenters_uid)) AS num FROM
+  {content_field_proposal_presenters} AS cfpp
+LEFT JOIN
+  {content_type_proposal} AS ctp ON (ctp.nid = cfpp.nid)
+WHERE
+    ctp.field_proposal_status_value IN ('" . implode("','", sessions_valid_status()) . "')
+  AND
+    cfpp.field_proposal_presenters_uid = %d";
+  $presenter = db_result(db_query($query, $account->uid));
+
+  if ($presenter) {
+    $rid = db_result(db_query("SELECT rid FROM {role} WHERE name = '%s'", 'presenter'));
+    $roles = $account->roles + array($rid => 'presenter');
+    user_save($account, array('roles' => $roles));
+    return 'PRESENTER';
+  }
+
+  if (in_array('volunteer', $account->roles))
+    return 'VOLUNTEER';
+
+  if (count($tickets) == 1 && !empty($tickets[36])) {
+    return 'DINNER ONLY';
+  }
+
+  $badge = array();
+  foreach ($tickets as $ticket) {
+    if ($ticket == 150 || $ticket == 174)
+      $badge[] = 'WEDNESDAY';
+    if ($ticket == 151 || $ticket == 175)
+      $badge[] = 'THURSDAY';
+    if ($ticket == 152 || $ticket == 176)
+      $badge[] = 'FRIDAY';
+  }
+
+  if (!empty($badge)) {
+    return implode(', ', $badge);
+  }
+
+  if (in_array('attendee', $account->roles))
+    return '';
+
+  if (in_array('delegate', $account->roles))
+    return '';
+
+  return '';
+}
+
+/**
+ * Check a user for dinner.
+ */
+function register_export_badges_format_dinner($account) {
+  $result = db_result(db_query("SELECT COUNT(sl.nid) FROM {signup_log} AS sl LEFT JOIN {uc_signup_log} AS ucsl USING(sid) WHERE sl.uid = %d AND ucsl.type = 1 AND sl.nid = 36", $account->uid));
+  
+  return ($result != 0) ? t('Yes') : t('No');
+}
+
+/**
+ * Check a user for extra stuff they'll be attending.
+ */
+function register_export_badges_format_extra($account) {
+  $result = db_query("SELECT sl.nid, n.title FROM {signup_log} AS sl LEFT JOIN {uc_signup_log} AS ucsl USING(sid) LEFT JOIN {node} AS n USING(nid) WHERE sl.uid = %d AND ucsl.type = 1 ORDER BY n.nid ASC", $account->uid);
+  while ($row = db_fetch_object($result)) {
+    $tickets[$row->nid] = $row->title;
+  }
+
+  return implode(', ', $tickets);
 }
