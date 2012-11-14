@@ -530,7 +530,7 @@ function sessions_presenter_select($uid) {
           $warning .= t('<li>!title</li>', array('!title' => l($conflict['title'], 'node/' . $conflict['nid'])));
         }
         $warning .= t('</ul>');
-        drupal_Set_message($warning);
+        drupal_set_message($warning);
 
         $timeslots = sessions_overlapping_timeslots($timeslot->nid);
         foreach ($timeslots as $t) {
@@ -1046,15 +1046,15 @@ function sessions_list_table($account, $print = FALSE) {
           'room' => (!$print) ? l($room->title, 'program/schedule/room/' . $room->nid) : check_plain($room->title),
           'presenter' => theme('username', user_load($session->uid)),
           'session' => (!$print) ? l($session->title, 'node/' . $session->nid) : check_plain($session->title),
-          'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids))),
-          'remove' => theme('sessions_form', 'Remove', url('user/' . $account->uid . '/sessions/remove/' . $timeslot->nid . '/' . $session->nid), NULL, 'form-submit-red'),
+          'action' => theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids)), NULL, 'orange'),
+          'remove' => theme('sessions_form', 'Remove', url('user/' . $account->uid . '/sessions/remove/' . $timeslot->nid . '/' . $session->nid), NULL, 'red'),
         );
 
         // Remove the remove button (yes) if the user is presenting this session.
         foreach ($session->field_proposal_presenters as $presenter) {
           if ($presenter['uid'] == $account->uid) {
             $tuple['action'] = null;
-            $tuple['remove'] = theme('sessions_form', 'My Session', '#', NULL, 'form-submit-green');
+            $tuple['remove'] = theme('sessions_form', 'My Session', 'javascript:alert(\'This is your session, you cannot change or deselect it.\');', NULL, 'form-submit green');
           }
         }
 
@@ -1062,7 +1062,7 @@ function sessions_list_table($account, $print = FALSE) {
         //
         if (!in_array($session->field_proposal_status[0]['value'], sessions_valid_status())) {
           $tuple['session'] = l($session->title, 'node/' . $session->nid) . ' <em>(' . $session->field_proposal_status[0]['value'] . ')</em>';
-          $tuple['action'] = theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids)), NULL, 'form-submit-red');
+          $tuple['action'] = theme('sessions_form', 'Change...', url('program/schedule/timeslot/' . implode('+', $nids)), NULL, 'form-submit red');
         }
 
         // Remove the action buttons in the print view.
@@ -1146,7 +1146,7 @@ function sessions_list_view($account) {
 
   $output = '';
   $output .= '<div style="float: right;">';
-  $output .= theme('sessions_form', 'Print...', url('user/' . $account->uid . '/sessions/print'));
+  $output .= theme('sessions_form', 'Print preview...', url('user/' . $account->uid . '/sessions/print'));
   if ($account->uuid) {
     $output .= '<a href="' . url('acec2012/' . $account->uuid . '/ical', array('absolute' => TRUE)) . '"><img src="/misc/ical-64x64.png" height="64" width="64" alt="iCal" align="right" /></a>';
   }

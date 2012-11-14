@@ -7,9 +7,9 @@ function overrides_content_allowed_values($field) {
 /**
  *
  */
-function overrides_init() {
-  drupal_add_js(drupal_get_path('module', 'overrides') .'/overrides.js'. 'module', 'footer');
-}
+// function overrides_init() {
+//   drupal_add_js(drupal_get_path('module', 'overrides') .'/overrides'. 'js', 'footer');
+// }
 
 /**
  * Add extra menu items to make it easier to edit permissions by role.

@@ -10,7 +10,7 @@ function converge_menu() {
     'description' => 'Administer converge settings.',
     'page callback' => 'converge_admin',
     'access callback' => 'user_perm',
-    'access arguments' => array('administer converge'),
+    'access arguments' => array('access converge'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'converge.admin.inc',
   );
@@ -21,7 +21,7 @@ function converge_menu() {
  * Implements hook_perm()
  */
 function converge_perm() {
-  return array('administer converge');
+  return array('access converge');
 }
 
 include_once('converge.features.inc');

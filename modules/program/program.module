@@ -139,6 +139,10 @@ function program_block_related_proposals_by_nid($nid) {
     $nodes[] = l($row['title'], 'node/' . $row['nid']);
   }
 
+  if (!count($nodes)) {
+    return array('subject' => '');
+  }
+
   // Output.
   $block = array(
     'subject' => 'Related sessions',

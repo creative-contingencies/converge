@@ -139,7 +139,7 @@ function sessions_views_data_alter(&$data) {
     'title' => t('Session Selections'),
     'help' => t('Create a relationship to the session selections of the user.'),
     'relationship' => array(
-      'base' => 'converge_session_selections',
+      'base' => 'converge_session_selection',
       'base field' => 'uid',
       'relationship field' => 'uid',
       'label' => t('Session Selections'),
@@ -150,7 +150,7 @@ function sessions_views_data_alter(&$data) {
     'title' => t('Selected Session'),
     'help' => t('Create a relationship to the session selections of the user.'),
     'relationship' => array(
-      'base' => 'converge_session_selections',
+      'base' => 'converge_session_selection',
       'base field' => 'nid',
       'relationship field' => 'nid',
       'label' => t('Selected Session'),
@@ -161,7 +161,7 @@ function sessions_views_data_alter(&$data) {
     'title' => t('Session Timeslot'),
     'help' => t('Create a relationship to the session selections of the user.'),
     'relationship' => array(
-      'base' => 'converge_session_selections',
+      'base' => 'converge_session_selection',
       'base field' => 'nid',
       'relationship field' => 'timeslot',
       'label' => t('Session Timeslot'),

@@ -1,6 +1,7 @@
 <?php
 function register_views_data() {
   $data = array();
+/*
   $data['converge_ticket_allocation'] = array(
     'tid' => array(
       'title' => t('tid'),
@@ -77,24 +78,10 @@ function register_views_data() {
         'database' => 'default',
       ),
       'group' => t('Conference Tickets'),
-/*
-      'join' => array(
-        'uc_order_products' => array(
-          'handler' => 'views_join',
-          'left_table' => 'uc_order_products',
-          'left_field' => 'order_product_id',
-          'field' => 'order_product_id',
-        ),
-        'node' => array(
-          'handler' => 'views_join',
-          'left_table' => 'node',
-          'left_field' => 'nid',
-          'field' => 'timeslot',
-        ),
       ),
-*/
     ),
   );
+*/
 
   $data['uc_order_products'] = array(
     'order_product_id' => array(
@@ -315,7 +302,7 @@ function register_views_data() {
       'base' => array(
         'field' => 'order_product_id',
         'title' => t('UberCart Order Products'),
-        'help' => t('The products that have been ordered.'),
+        'help' => t('The products in this order.'),
         'weight' => -10,
         'database' => 'default',
       ),
@@ -340,7 +327,7 @@ function register_views_data() {
   $data['uc_orders'] = array(
     'order_id' => array(
       'title' => t('order_id'),
-      'help' => t('Primary key: the order ID.'),
+      'help' => t('Ordered Product'),
       'field' => array(
         'handler' => 'views_handler_field_numeric',
         'click sortable' => TRUE,
@@ -358,7 +345,7 @@ function register_views_data() {
       'relationship' => array(
         'base' => 'uc_order_products',
         'base field' => 'order_id',
-        'label' => t('Join uc_orders to uc_order_products'),
+        'label' => t('Product'),
       ),
     ),
     'uid' => array(
@@ -379,9 +366,10 @@ function register_views_data() {
         'handler' => 'views_handler_sort',
       ),
       'relationship' => array(
-        'base' => 'converge_ticket_allocation',
+        'base' => 'users',
         'base field' => 'uid',
-        'label' => t('Join uc_orders to converge_ticket_allocation'),
+        'relationship field' => 'uid',
+        'label' => t('Customer'),
       ),
     ),
     'order_status' => array(
@@ -942,7 +930,6 @@ function register_views_data() {
         ),
       ),
     ),
-  );
 
   // Need to also link zone and country data.
   $data['uc_countries'] = array(
@@ -1045,6 +1032,7 @@ function register_views_data() {
         'database' => 'default',
       ),
       'group' => t('UberCart: Countries'),
+      ),
     ),
   );
 
@@ -1177,7 +1165,7 @@ function register_views_data() {
         'handler' => 'views_handler_sort',
       ),
     ),
-    'uid' => array(
+    'field_proposal_presenters_uid' => array(
       'title' => t('Presenter'),
       'help' => t('The user ID of the presenter.'),
       'field' => array(
@@ -1203,7 +1191,7 @@ function register_views_data() {
     ),
     'table' => array(
       'base' => array(
-        'field' => 'content_field_proposal_presenters',
+        'field' => 'nid',
         'title' => t('Proposal Presenters'),
         'help' => t('The presenters linked with a proposal.'),
         'weight' => -10,
@@ -1227,6 +1215,141 @@ function register_views_data() {
     ),
   );
 
+  // Order comments!
+  $data['uc_order_admin_comments'] = array(
+    'comment_id' => array(
+      'title' => t('Comment ID'),
+      'help' => t('The unique comment identifier.'),
+      'field' => array(
+        'handler' => 'views_handler_field_numeric',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_numeric',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_numeric',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+    'order_id' => array(
+      'title' => t('Order ID'),
+      'help' => t('The unique UberCart order identifier.'),
+      'field' => array(
+        'handler' => 'views_handler_field_numeric',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_numeric',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_numeric',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+      'relationship' => array(
+        'base' => 'uc_orders',
+        'base field' => 'order_id',
+        'relationship field' => 'order_id',
+        'label' => t('Order'),
+      ),
+    ),
+//'handler' => 'views_handler_field_user',
+//'handler' => 'views_handler_argument_user_uid',
+//'handler' => 'views_handler_filter_user_name',
+
+    'uid' => array(
+      'title' => t('User ID'),
+      'help' => t('The unique user id.'),
+      'field' => array(
+        'handler' => 'views_handler_field_user',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_user_name',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_user_uid',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+      'relationship' => array(
+        'base' => 'users',
+        'base field' => 'uid',
+        'relationship field' => 'uid',
+        'label' => t('Admin'),
+      ),
+    ),
+    'message' => array(
+      'title' => t('Message'),
+      'help' => t('The order comment text.'),
+      'field' => array(
+        'handler' => 'views_handler_field_markup',
+        'format' => 2,
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_string',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_string',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+    'created' => array(
+      'title' => t('Created Date'),
+      'help' => t('The unix timestamp when the comment was added.'),
+      'field' => array(
+        'handler' => 'views_handler_field_date',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_date',
+        'allow empty' => TRUE,
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_date',
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+    'table' => array(
+      'base' => array(
+        'field' => 'comment_id',
+        'title' => t('Ubercart Order Comments'),
+        'help' => t('The presenters linked with a proposal.'),
+        'weight' => -10,
+        'database' => 'default',
+      ),
+      'group' => t('UberCart: Order Comments'),
+      'join' => array(
+        'uc_orders' => array(
+          'handler' => 'views_join',
+          'left_table' => 'uc_orders',
+          'left_field' => 'order_id',
+          'field' => 'order_id',
+        ),
+        'users' => array(
+          'handler' => 'views_join',
+          'left_table' => 'users',
+          'left_field' => 'uid',
+          'field' => 'uid',
+        ),
+      ),
+    ),
+  );
+
   return $data;
 }
 
@@ -1235,17 +1358,17 @@ function register_views_data() {
  */
 function register_views_data_alter(&$data) {
   // User relationship for ticket allocations
-  $data['users']['converge_ticket_allocation'] = array(
-    'group' => t('Conference Tickets'),
-    'title' => t('Ticket Allocation'),
-    'help' => t('Create a relationship to the ticket allocations of the user.'),
-    'relationship' => array(
-      'base' => 'converge_ticket_allocation',
-      'base field' => 'uid',
-      'relationship field' => 'uid',
-      'label' => t('tickets'),
-    ),
-  );
+  // $data['users']['converge_ticket_allocation'] = array(
+  //   'group' => t('Conference Tickets'),
+  //   'title' => t('Ticket Allocation'),
+  //   'help' => t('Create a relationship to the ticket allocations of the user.'),
+  //   'relationship' => array(
+  //     'base' => 'converge_ticket_allocation',
+  //     'base field' => 'uid',
+  //     'relationship field' => 'uid',
+  //     'label' => t('tickets'),
+  //   ),
+  // );
 
   // node relationship for allocations
   $data['uc_order_products']['term_node'] = array(
@@ -1257,6 +1380,7 @@ function register_views_data_alter(&$data) {
       'base field' => 'nid',
       'relationship field' => 'nid',
       'label' => t('product taxonomy'),
+      'handler' => 'views_handler_relationship',
     ),
   );
 
@@ -1269,6 +1393,7 @@ function register_views_data_alter(&$data) {
       'base field' => 'order_id',
       'relationship field' => 'order_id',
       'label' => t('order'),
+      'handler' => 'views_handler_relationship',
     ),
   );
 
@@ -1281,11 +1406,25 @@ function register_views_data_alter(&$data) {
       'base field' => 'nid',
       'relationship field' => 'nid',
       'label' => t('Product'),
+      'handler' => 'views_handler_relationship',
+    ),
+  );
+
+  $data['uc_orders']['uc_order_admin_comments'] = array(
+    'group' => t('UberCart'),
+    'title' => t('Order Comments'),
+    'help' => t('Create a relationship to the order comments.'),
+    'relationship' => array(
+      'base' => 'uc_order_admin_comments',
+      'base field' => 'order_id',
+      'relationship field' => 'order_id',
+      'label' => t('order'),
+      'handler' => 'views_handler_relationship',
     ),
   );
 
   $data['content_field_proposal_presenters']['node'] = array(
-    'group' => t('Conference Presenters'),
+    'group' => t('Node'),
     'title' => t('Proposal'),
     'help' => t('Create a relationship to the proposal node.'),
     'relationship' => array(
@@ -1293,6 +1432,48 @@ function register_views_data_alter(&$data) {
       'base field' => 'nid',
       'relationship field' => 'nid',
       'label' => t('Proposal'),
+      'handler' => 'views_handler_relationship',
     ),
   );
+
+  $data['signup_log']['oid'] = array(
+    'group' => t('Signup'),
+    'title' => t('Signup Order'),
+    'help' => ('Link to the order data in this signup.'),
+    'relationship' => array(
+      'base' => 'uc_signup_log',
+      'base field' => 'sid',
+      'relationship field' => 'sid',
+      'label' => t('Signup'),
+      'handler' => 'views_handler_relationship',
+    ),
+  );
+
+  $data['uc_signup_log']['order_id'] = array(
+    'group' => t('Signup'),
+    'title' => t('Ubercart Order'),
+    'help' => ('Link to the UberCart order associated with this signup.'),
+    'relationship' => array(
+      'base' => 'uc_order',
+      'base field' => 'oid',
+      'relationship field' => 'oid',
+      'label' => t('Order'),
+      'handler' => 'views_handler_relationship',
+    ),
+  );
+
+  $data['uc_signup_log']['uid'] = array(
+    'group' => t('Unpaid Signup'),
+    'title' => t('Unconfirmed User'),
+    'help' => ('Link to the user account for this unpaid signup.'),
+    'relationship' => array(
+      'base' => 'users',
+      'base field' => 'uid',
+      'relationship field' => 'uid',
+      'label' => t('Unpaid Signup'),
+      'handler' => 'views_handler_relationship',
+    ),
+  );
+
+  return $data;
 }

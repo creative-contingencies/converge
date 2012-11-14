@@ -32,6 +32,28 @@ function register_init() {
 }
 
 /**
+ * Implements hook_cron
+ */
+function register_cron() {
+  if (variable_get('register_profile_fix', 0)) {
+    register_profile_fix();
+  }
+}
+
+/**
+ * Create the settings form for this module.
+ */
+function register_admin_settings() {
+  $form['register_profile_fix'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Create missing profile nodes on cron run.'),
+    '#decription' => t('Use signup information to create content profile nodes for registered users when cron runs.'),
+    '#default_value' => variable_get('register_profile_fix', 0),
+  );
+  return system_settings_form($form);
+}
+
+/**
  * Implements hook_user()
  */
 function register_user($op, &$edit, &$account, $category = NULL) {
@@ -281,4 +303,45 @@ function register_export_badges_format_extra($account) {
   }
 
   return implode(', ', $tickets);
+}
+
+/**
+ * Helper that creates profiles for registered users (with a signup)
+ * that do not yet have one.
+ *
+ * @return
+ *   An array of notification strings.
+ */
+function register_profile_fix() {
+  $statuses = array();
+  $message = 'Created a new profile for @firstname @lastname';
+
+  $users = db_query("SELECT DISTINCT uid FROM {uc_signup_log} sl WHERE type = 1 AND uid NOT IN (SELECT uid FROM {node} WHERE type = 'profile')");
+
+  while ($uid = db_result($users)) {
+    // Double check.
+    $profile = content_profile_load('profile', $uid);   
+    if (empty($profile) || empty($profile->nid)) {
+      $firstname = db_result(db_query("SELECT value FROM {profile_values} WHERE fid = 1 AND uid = %d", $uid));
+      $lastname = db_result(db_query("SELECT value FROM {profile_values} WHERE fid = 2 AND uid = %d", $uid));
+
+      // Create a profile for the user.
+      $profile = new StdClass();
+
+      $profile->type = 'profile';
+      $profile->nid = NULL;
+      $profile->vid = NULL;
+      $profile->title = NULL;
+      $profile->body = NULL;
+      $profile->uid = $uid;
+      $profile->field_profile_firstname = array(0 => array('value' => $firstname));
+      $profile->field_profile_surname = array(0 => array('value' => $lastname));
+
+      node_save($profile);
+
+      watchdog('register', $message,  array('@firstname' => $firstname, '@lastname' => $lastname),  WATCHDOG_INFO, l(t('view profile'), 'node/' . $profile->nid));
+      $statuses[] = t($message, array('@firstname' => $firstname, '@lastname' => $lastname));
+    }
+  }
+  return $statuses;
 }

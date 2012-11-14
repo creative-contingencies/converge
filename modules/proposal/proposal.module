@@ -56,6 +56,59 @@ function proposal_menu() {
     'access arguments' => array('export proposals'),
     'type' => MENU_CALLBACK,
   );
+
+  // Display a session grid with timeslot/room.
+  $items['admin/converge/proposal/grid'] = array(
+    'title' => 'Conference Grid',
+    'description' => 'Node ID based conference grid',
+    'page callback' => 'proposal_grid',
+    'access arguments' => array('export proposals'),
+    'file' => 'proposal.admin.pages.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/converge/proposal/grid/title/1'] = array(
+    'title' => 'Titles (links)',
+    'description' => 'Node title based conference grid (with links)',
+    'page callback' => 'proposal_grid_title',
+    'page arguments' => array(5),
+    'access arguments' => array('export proposals'),
+    'file' => 'proposal.admin.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/converge/proposal/grid/title/0'] = array(
+    'title' => 'Titles (no links)',
+    'description' => 'Node title based conference grid (without links)',
+    'page callback' => 'proposal_grid_title',
+    'page arguments' => array(5),
+    'access arguments' => array('export proposals'),
+    'file' => 'proposal.admin.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/converge/proposal/grid/title/1/csv'] = array(
+    'title' => 'CSV Titles (links)',
+    'description' => 'Node title based conference grid (with links)',
+    'page callback' => 'proposal_grid_title',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('export proposals'),
+    'file' => 'proposal.admin.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/converge/proposal/grid/title/0/csv'] = array(
+    'title' => 'CSV Titles (no links)',
+    'description' => 'Node title based conference grid (without links)',
+    'page callback' => 'proposal_grid_title',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('export proposals'),
+    'file' => 'proposal.admin.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['grid'] = array(
+    'title' => t('Program grid'),
+    'page callback' => 'program_dump_grid',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -1206,4 +1259,8 @@ function proposal_filefield_file($file) {
  */
 function proposal_filefield_size($file) {
   return '<span class="filefield-size">' . '(' . format_size($file['filesize']) . ')' . '</span>';
+}
+
+function program_dump_grid() {
+  die(readfile('sites/acec2012.acce.edu.au/files/attachment/acec2012-program-grid.html'));
 }

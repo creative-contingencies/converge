@@ -23,28 +23,35 @@
 <style type="text/css">
   table tr th {
     color: #fff;
-    background: #333;
+    background: #057338;
+    font-family: Arial, Verdana, sans-serif;
   }
   table tr.even {
-    background: #ccc;
+    background: #eee;
   }
   table td {
     align: left;
     verical-align: top;
+    font-family: Arial, Verdana, sans-serif;
+    font-size: 0.8em;
   }
   h2, h3 {
-    font-family: sans-serif;
+    color: #057338;
+    font-size: 1.2em;
+    font-family: Arial, Verdana, sans-serif;
   }
   h3 {
     margin-bottom: 0px;
     margin-top: 8px;
+    font-family: Arial, Verdana, sans-serif;
   }
 </style>
 </head>
 <body>
-
-  <h2>My Program for <?php print $username; ?></h2>
-
+	<h2><img src="/sites/acec2012.acce.edu.au/files/ACEC2012-shoutout.png" align="right" />
+		My Program for <?php print $username; ?></h2>
+		<br clear="all">
+		<p>&nbsp;</p>
   <?php print $table; ?>
 
 </body>

@@ -29,6 +29,8 @@ function register_reports_menu() {
   );
 
 
+/*
+ * Redone as view.
   $items['admin/converge/register/custom/presenters'] = array(
     'title' => 'DEVELOPMENT: Presenter Registration Report',
     'description' => 'List the registration status for presenters with accepted proposals.',
@@ -37,6 +39,7 @@ function register_reports_menu() {
     'access arguments' => array('view all orders'),
     'type' => MENU_LOCAL_TASK,
   );
+*/
 
   $items['admin/converge/register/custom/coupons'] = array(
     'title' => 'DEVELOPMENT: Coupon usage list with names',
